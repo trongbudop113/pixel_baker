@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: pixel-bakery-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: APP_NAME
+        value: Pixel Bakery API
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: API_V1_PREFIX
+        value: /api/v1
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: pixel_bakery
+      - key: MONGODB_TIMEOUT_MS
+        value: "5000"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "1440"
+      - key: JWT_REFRESH_EXPIRE_DAYS
+        value: "30"
+      - key: PASSWORD_RESET_EXPIRE_MINUTES
+        value: "30"
+      - key: LOGIN_MAX_ATTEMPTS
+        value: "5"
+      - key: LOGIN_LOCK_MINUTES
+        value: "15"
+      - key: LOG_LEVEL
+        value: INFO

@@ -1,0 +1,57 @@
+{
+  "heroTitle": "Liên hệ 8 Bit Bakery",
+  "heroDescription": "Kết nối nhanh, chúng tôi sẽ phản hồi và hỗ trợ sớm nhất.",
+  "formTitle": "Biểu mẫu liên hệ",
+  "submitLabel": "Gửi liên hệ",
+  "mobileTitle": "Liên hệ",
+  "mobileBadge": "Hotline",
+  "fields": [
+    {
+      "label": "Họ và tên",
+      "placeholder": "Họ và tên",
+      "multiline": false
+    },
+    {
+      "label": "Email",
+      "placeholder": "Email",
+      "multiline": false
+    },
+    {
+      "label": "Số điện thoại",
+      "placeholder": "Số điện thoại",
+      "multiline": false
+    },
+    {
+      "label": "Nội dung liên hệ",
+      "placeholder": "Nội dung liên hệ",
+      "multiline": true
+    }
+  ],
+  "infoCards": [
+    {
+      "title": "Thông tin cửa hàng",
+      "lines": [
+        "Hotline: 0909 123 456",
+        "Email: support@8bitbakery.vn",
+        "Địa chỉ: 123 Lê Lợi, Q1, TP.HCM"
+      ]
+    },
+    {
+      "title": "Giờ mở cửa",
+      "lines": [
+        "T2-T6: 7:30 - 21:00",
+        "Thứ 7 - CN: 8:00 - 22:00"
+      ]
+    },
+    {
+      "title": "Bản đồ",
+      "previewLabel": "Map Preview"
+    }
+  ],
+  "bottomNavLabels": [
+    "Home",
+    "Menu",
+    "Liên hệ",
+    "Profile"
+  ]
+}

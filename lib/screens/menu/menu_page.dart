@@ -1,0 +1,1969 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../app/models/cart_models.dart';
+import '../../app/models/menu_models.dart';
+import '../../app/services/app_services.dart';
+import '../../app/state/screen_controller.dart';
+import '../../app/routing/app_router.dart';
+import '../shared/app_header.dart';
+import 'menu_state.dart';
+
+class MenuColors {
+  static const red = Color(0xFFE53935);
+  static const blue = Color(0xFF1E88E5);
+  static const green = Color(0xFF2E7D32);
+  static const gray = Color(0xFF8A8A8A);
+}
+
+class ResponsiveMenuScreen extends StatefulWidget {
+  const ResponsiveMenuScreen({super.key, this.showTopHeader = true});
+
+  final bool showTopHeader;
+
+  @override
+  State<ResponsiveMenuScreen> createState() => _ResponsiveMenuScreenState();
+}
+
+class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
+  late final MenuState _menuState;
+  final TextEditingController _searchController = TextEditingController();
+  String? _lastCategoryQuery;
+
+  @override
+  void initState() {
+    super.initState();
+    _menuState = MenuState(
+      repository: AppServices.instance.menuRepository,
+      wishlistSession: AppServices.instance.wishlistSession,
+    );
+    _menuState.loadMenuPage();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final category = GoRouterState.of(context).uri.queryParameters['category'];
+    if (category == _lastCategoryQuery) return;
+    _lastCategoryQuery = category;
+    _menuState.applyCategoryFocus(category);
+  }
+
+  @override
+  void dispose() {
+    _menuState.clearMooncakeBoxPurchase();
+    _searchController.dispose();
+    _menuState.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 900;
+        return isMobile
+            ? MobileMenuLayout(
+                state: _menuState,
+                searchController: _searchController,
+                showTopHeader: widget.showTopHeader)
+            : WebMenuLayout(
+                state: _menuState,
+                searchController: _searchController,
+                showTopHeader: widget.showTopHeader);
+      },
+    );
+  }
+}
+
+class WebMenuLayout extends StatelessWidget {
+  final MenuState state;
+  final TextEditingController searchController;
+  final bool showTopHeader;
+  const WebMenuLayout(
+      {super.key,
+      required this.state,
+      required this.searchController,
+      this.showTopHeader = true});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 1200,
+      height: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: MenuColors.gray, width: 3),
+        ),
+        child: AnimatedBuilder(
+          animation: state,
+          builder: (context, _) => Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (showTopHeader)
+                    const PixelHeaderBar(
+                        rightLabel: 'thực đơn', showBack: true, showBrand: false),
+                  if (showTopHeader) const SizedBox(height: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _intro(),
+                          const SizedBox(height: 10),
+                          _searchAndSort(),
+                          const SizedBox(height: 10),
+                          _filters(),
+                          const SizedBox(height: 10),
+                          _sectionTitle(),
+                          if (state.isMooncakeTabSelected) ...[
+                            const SizedBox(height: 10),
+                            _mooncakeBoxToolbar(context),
+                          ],
+                          const SizedBox(height: 8),
+                          _menuGrid(),
+                          const SizedBox(height: 10),
+                          _combo(),
+                          const SizedBox(height: 10),
+                          _faq(),
+                          const SizedBox(height: 10),
+                          _footer(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (state.isMooncakeBoxMode)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: _MooncakeBoxOverlay(
+                    state: state,
+                    compact: false,
+                    onRemove: state.removeMooncakeBoxItemAt,
+                    onCancel: state.clearMooncakeBoxPurchase,
+                    onSubmit: () {
+                      final item = state.buildMooncakeBoxCartItem();
+                      if (item == null) {
+                        return;
+                      }
+                      AppServices.instance.cartSession.addCartItem(item);
+                      state.clearMooncakeBoxPurchase();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã thêm ${item.title} vào giỏ hàng'),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _intro() => Container(
+        child: ControllerSelector<MenuState, MenuIntroSection>(
+          controller: state,
+          selector: (controller) => controller.pageResponse.intro,
+          builder: (context, intro, _) => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: _boxDec(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _txt(intro.title, MenuColors.blue, 34, FontWeight.w900),
+                const SizedBox(height: 3),
+                _txt(intro.description, MenuColors.gray, 13, FontWeight.w500),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Widget _filters() => Container(
+        padding: const EdgeInsets.all(10),
+        decoration: _boxDec(),
+        child: ControllerSelector<MenuState, MenuViewState>(
+          controller: state,
+          selector: (controller) => controller.state,
+          builder: (context, menuState, _) => Row(
+            children: List.generate(menuState.pageResponse.filters.length * 2 - 1,
+                (index) {
+              if (index.isOdd) {
+                return const SizedBox(width: 6);
+              }
+              final filter = menuState.pageResponse.filters[index ~/ 2];
+              final filterIndex = index ~/ 2;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => _selectFilter(context, filterIndex, filter),
+                  child: _FilterChip(
+                    label: filter.label,
+                    selected: menuState.selectedFilterIndex == filterIndex,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      );
+
+  Widget _searchAndSort() => ControllerSelector<MenuState, MenuViewState>(
+        controller: state,
+        selector: (controller) => controller.state,
+        builder: (context, menuState, _) => Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFDCE4EF)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextField(
+                  controller: searchController,
+                  onChanged: state.setSearchQuery,
+                  decoration: _storefrontFieldDecoration(
+                    hintText: 'Tìm bánh, danh mục, hương vị...',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 4,
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: 190,
+                      child: DropdownButtonFormField<String>(
+                        value: menuState.sortKey,
+                        style: _storefrontDropdownTextStyle(),
+                        items: const [
+                          DropdownMenuItem(value: 'featured', child: Text('Nổi bật')),
+                          DropdownMenuItem(value: 'rating_desc', child: Text('Đánh giá cao')),
+                          DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
+                          DropdownMenuItem(value: 'price_desc', child: Text('Giá giảm dần')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) state.setSortKey(value);
+                        },
+                        decoration: _storefrontFieldDecoration(labelText: 'Sắp xếp'),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 180,
+                      child: DropdownButtonFormField<String>(
+                        value: menuState.priceRangeKey,
+                        style: _storefrontDropdownTextStyle(),
+                        items: const [
+                          DropdownMenuItem(value: 'all', child: Text('Mọi mức giá')),
+                          DropdownMenuItem(value: 'under_100k', child: Text('Dưới 100k')),
+                          DropdownMenuItem(value: '100k_200k', child: Text('100k - 200k')),
+                          DropdownMenuItem(value: 'over_200k', child: Text('Trên 200k')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) state.setPriceRangeKey(value);
+                        },
+                        decoration: _storefrontFieldDecoration(labelText: 'Giá'),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 170,
+                      child: DropdownButtonFormField<double>(
+                        value: menuState.minimumRating,
+                        style: _storefrontDropdownTextStyle(),
+                        items: const [
+                          DropdownMenuItem(value: 0, child: Text('Mọi đánh giá')),
+                          DropdownMenuItem(value: 4, child: Text('Từ 4.0 sao')),
+                          DropdownMenuItem(value: 4.5, child: Text('Từ 4.5 sao')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) state.setMinimumRating(value);
+                        },
+                        decoration: _storefrontFieldDecoration(labelText: 'Đánh giá'),
+                      ),
+                    ),
+                    _StorefrontActionButton(
+                      label: 'Yêu thích',
+                      isActive: menuState.favoritesOnly,
+                      onTap: state.toggleFavoritesOnly,
+                    ),
+                    _StorefrontActionButton(
+                      label: 'Xóa lọc',
+                      onTap: () {
+                        searchController.clear();
+                        state.clearSearchFilters();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _sectionTitle() => ControllerSelector<MenuState, String>(
+        controller: state,
+        selector: (controller) => controller.pageResponse.productsSectionTitle,
+        builder: (context, title, _) =>
+            _txt(title, MenuColors.blue, 20, FontWeight.w800),
+      );
+
+  Widget _mooncakeBoxToolbar(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F0FF),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFDCC8F7), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Mua theo hộp bánh trung thu: chọn hộp trước, sau đó bấm thêm vào giỏ ở từng bánh để nạp vào hộp.',
+                style: TextStyle(
+                  color: Color(0xFF4B5563),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton(
+              onPressed: () => _showMooncakeBoxPicker(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF8E44AD),
+                minimumSize: const Size(150, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                state.isMooncakeBoxMode ? 'Đổi hộp' : 'Mua theo hộp',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _menuGrid() => AnimatedBuilder(
+        animation: Listenable.merge([state, AppServices.instance.wishlistSession]),
+        builder: (context, _) {
+          final items = state.filteredProducts;
+          if (state.isLoading && items.isEmpty) {
+            return const _MenuGridSkeleton();
+          }
+
+          if (state.errorMessage != null && items.isEmpty) {
+            return _MenuFeedback(
+              message: 'Không tải được dữ liệu menu.',
+              actionLabel: 'Tải lại',
+              onTap: state.loadMenuPage,
+            );
+          }
+          if (items.isEmpty) {
+            return const _MenuEmptyState(
+              message: 'Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.',
+            );
+          }
+
+          final rows = <Widget>[];
+          for (var i = 0; i < items.length; i += 3) {
+            final rowItems = items.skip(i).take(3).toList();
+            rows.add(
+              Row(
+                children: List.generate(rowItems.length * 2 - 1, (index) {
+                  if (index.isOdd) return const SizedBox(width: 10);
+                  final item = rowItems[index ~/ 2];
+                  return Expanded(
+                    child: _MenuItemCard(
+                      productId: item.id,
+                      title: item.title,
+                      price: item.price,
+                      imageUrl: item.images.isEmpty ? null : item.images.first,
+                      averageRating: item.averageRating,
+                      reviewCount: item.reviewCount,
+                      tone: _toneFor(item),
+                      accent: _accentFor(item),
+                      isMooncake: item.mooncakeConfig != null,
+                      isAddingToBox:
+                          state.isMooncakeBoxMode && item.mooncakeConfig != null,
+                      onTap: () => _openDetail(context, item),
+                      onAddToCart: () => _addToCart(context, item),
+                    ),
+                  );
+                }),
+              ),
+            );
+            if (i + 3 < items.length) {
+              rows.add(const SizedBox(height: 10));
+            }
+          }
+          return Column(children: rows);
+        },
+      );
+
+  Widget _combo() => ControllerSelector<MenuState, MenuComboSection>(
+        controller: state,
+        selector: (controller) => controller.pageResponse.combo,
+        builder: (context, combo, _) => Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF3FF),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: MenuColors.gray, width: 2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _txt(combo.title, MenuColors.blue, 24, FontWeight.w800),
+              const SizedBox(height: 4),
+              _txt(combo.description, MenuColors.gray, 12, FontWeight.w500),
+              const SizedBox(height: 8),
+              Container(
+                width: 120,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: MenuColors.red,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: MenuColors.gray, width: 2),
+                ),
+                child: _txt(combo.actionLabel, Colors.white, 13, FontWeight.w800),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _faq() => ControllerSelector<MenuState, List<MenuFaqItem>>(
+        controller: state,
+        selector: (controller) => controller.pageResponse.faqs,
+        builder: (context, faqs, _) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: _boxDec(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _txt('FAQ nhanh', MenuColors.blue, 22, FontWeight.w800),
+              const SizedBox(height: 4),
+              ...faqs.map(
+                (faq) => _txt(
+                  '- ${faq.question} ${faq.answer}',
+                  MenuColors.gray,
+                  11,
+                  FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _footer() => ControllerSelector<MenuState, String>(
+        controller: state,
+        selector: (controller) => controller.pageResponse.footer.tagline,
+        builder: (context, tagline, _) => Container(
+          height: 34,
+          alignment: Alignment.center,
+          decoration: _boxDec(),
+          child: _txt(tagline, MenuColors.gray, 9, FontWeight.w600),
+        ),
+      );
+
+  BoxDecoration _boxDec() => BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: MenuColors.gray, width: 2),
+      );
+
+  Widget _txt(String text, Color color, double size, FontWeight weight) => Text(
+        text,
+        style: TextStyle(color: color, fontSize: size, fontWeight: weight),
+      );
+
+  Color _toneFor(MenuProduct item) {
+    if (item.category == 'Cookie') return const Color(0xFFFFF1F1);
+    if (item.category == 'Combo') return const Color(0xFFF1FAF1);
+    return const Color(0xFFEAF3FF);
+  }
+
+  Color _accentFor(MenuProduct item) {
+    if (item.category == 'Cookie') return MenuColors.red;
+    if (item.category == 'Combo') return MenuColors.green;
+    return MenuColors.blue;
+  }
+
+  void _openDetail(BuildContext context, MenuProduct item) {
+    context.go('${AppRoutePaths.productDetail}?id=${item.id}');
+  }
+
+  void _selectFilter(
+    BuildContext context,
+    int filterIndex,
+    MenuFilterOption filter,
+  ) {
+    state.selectFilter(filterIndex);
+    final category = _routeCategoryFor(filter.category);
+    if (category == null) {
+      context.goNamed(AppRouteNames.menu);
+      return;
+    }
+    context.goNamed(
+      AppRouteNames.menu,
+      queryParameters: {'category': category},
+    );
+  }
+
+  void _addToCart(BuildContext context, MenuProduct item) {
+    if (item.mooncakeConfig != null) {
+      _handleMooncakeAction(context, item);
+      return;
+    }
+    AppServices.instance.cartSession.addProduct(item);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm ${item.title} vào giỏ hàng'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _showMooncakeBoxPicker(BuildContext context) async {
+    final boxOptions = state.mooncakeConfig?.boxOptions ?? const [];
+    if (boxOptions.isEmpty) {
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Chọn hộp bánh trung thu'),
+        content: SizedBox(
+          width: 720,
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: boxOptions.map((box) {
+              return GestureDetector(
+                onTap: () {
+                  state.startMooncakeBoxPurchase(box.code);
+                  Navigator.of(dialogContext).pop();
+                },
+                child: Container(
+                  width: 210,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFDCC8F7),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          box.imageUrl,
+                          height: 110,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        box.label,
+                        style: const TextStyle(
+                          color: MenuColors.blue,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${box.cakeCount} bánh • Phụ phí ${box.packagePrice}',
+                        style: const TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(growable: false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleMooncakeAction(BuildContext context, MenuProduct item) async {
+    final config = item.mooncakeConfig;
+    if (config == null) {
+      return;
+    }
+    final selection = await _showMooncakeVariantPicker(
+      context,
+      product: item,
+      config: config,
+    );
+    if (selection == null) {
+      return;
+    }
+    if (state.isMooncakeBoxMode) {
+      final added = state.addMooncakeItemToBox(
+        item,
+        weight: selection.$1,
+        egg: selection.$2,
+      );
+      if (!added) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hộp đã đủ số lượng bánh. Hãy xóa bớt hoặc thêm vào giỏ.'),
+          ),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Đã thêm ${item.title} (${selection.$1.label} - ${selection.$2.label}) vào hộp.',
+          ),
+        ),
+      );
+      return;
+    }
+    final cartItem = CartItem(
+      productId: item.id,
+      title: item.title,
+      price: selection.$2.price,
+      priceValue: selection.$2.priceValue,
+      category: item.category,
+      imageUrl: item.images.isEmpty ? '' : item.images.first,
+      quantity: 1,
+      variantKey: 'single:${selection.$1.code}:${selection.$2.count}',
+      variantLabel: '${selection.$1.label} • ${selection.$2.label}',
+    );
+    AppServices.instance.cartSession.addCartItem(cartItem);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm ${item.title} (${cartItem.variantLabel}) vào giỏ hàng'),
+      ),
+    );
+  }
+
+  Future<(MooncakeWeightOption, MooncakeEggOption)?> _showMooncakeVariantPicker(
+    BuildContext context, {
+    required MenuProduct product,
+    required MooncakeProductConfig config,
+  }) async {
+    var selectedWeight = config.weightOptions.first;
+    var selectedEgg = selectedWeight.eggOptions.first;
+    return showDialog<(MooncakeWeightOption, MooncakeEggOption)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Chọn phiên bản ${product.title}'),
+          content: SizedBox(
+            width: 460,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Khối lượng',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: config.weightOptions.map((weight) {
+                    final selected = selectedWeight.code == weight.code;
+                    return ChoiceChip(
+                      label: Text(weight.label),
+                      selected: selected,
+                      onSelected: (_) {
+                        selectedWeight = weight;
+                        selectedEgg = weight.eggOptions.first;
+                        setDialogState(() {});
+                      },
+                    );
+                  }).toList(growable: false),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Số trứng',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: selectedWeight.eggOptions.map((egg) {
+                    final selected = selectedEgg.count == egg.count;
+                    return ChoiceChip(
+                      label: Text('${egg.label} • ${egg.price}'),
+                      selected: selected,
+                      onSelected: (_) {
+                        selectedEgg = egg;
+                        setDialogState(() {});
+                      },
+                    );
+                  }).toList(growable: false),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop((selectedWeight, selectedEgg)),
+              child: const Text('Xác nhận'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _routeCategoryFor(String category) {
+    final normalized = category.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == 'all') {
+      return null;
+    }
+    if (normalized.contains('trung thu') || normalized == 'mooncake') {
+      return 'mooncake';
+    }
+    if (normalized.contains('bánh kem') || normalized == 'cake') {
+      return 'cake';
+    }
+    if (normalized.contains('bánh pía') || normalized.contains('pia')) {
+      return 'pia';
+    }
+    return normalized;
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+
+  const _FilterChip({required this.label, this.selected = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: selected ? const Color(0xFFEAF3FF) : const Color(0xFFFCFDFF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: selected ? MenuColors.blue : const Color(0xFFD7DEE8),
+          width: selected ? 1.8 : 1.2,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: selected ? MenuColors.blue : const Color(0xFF374151),
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+InputDecoration _storefrontFieldDecoration({
+  String? hintText,
+  String? labelText,
+  Widget? prefixIcon,
+}) {
+  return InputDecoration(
+    hintText: hintText,
+    labelText: labelText,
+    prefixIcon: prefixIcon,
+    filled: true,
+    fillColor: Colors.white,
+    hintStyle: const TextStyle(
+      color: Color(0xFF6B7280),
+      fontWeight: FontWeight.w500,
+    ),
+    labelStyle: const TextStyle(
+      color: MenuColors.blue,
+      fontWeight: FontWeight.w700,
+    ),
+    floatingLabelStyle: const TextStyle(
+      color: MenuColors.blue,
+      fontWeight: FontWeight.w800,
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFD6DCE5)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFD6DCE5)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: MenuColors.blue, width: 1.5),
+    ),
+  );
+}
+
+TextStyle _storefrontDropdownTextStyle() {
+  return const TextStyle(
+    color: Color(0xFF1F2937),
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+  );
+}
+
+class _StorefrontActionButton extends StatelessWidget {
+  const _StorefrontActionButton({
+    required this.label,
+    required this.onTap,
+    this.isActive = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 56),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        backgroundColor:
+            isActive ? const Color(0xFFEAF3FF) : Colors.white,
+        side: BorderSide(
+          color: isActive ? MenuColors.blue : const Color(0xFFD6E4FF),
+          width: isActive ? 1.5 : 1.0,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isActive ? MenuColors.blue : const Color(0xFF374151),
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class MobileMenuLayout extends StatelessWidget {
+  final MenuState state;
+  final TextEditingController searchController;
+  final bool showTopHeader;
+  const MobileMenuLayout(
+      {super.key,
+      required this.state,
+      required this.searchController,
+      this.showTopHeader = true});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 390,
+      height: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: MenuColors.gray, width: 3),
+        ),
+        child: AnimatedBuilder(
+          animation: state,
+          builder: (context, _) => Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (showTopHeader)
+                    const PixelHeaderBar(
+                        rightLabel: 'thực đơn', showBack: true, showBrand: false),
+                  if (showTopHeader) const SizedBox(height: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          _mobileSearchAndSort(),
+                          if (state.isMooncakeTabSelected) ...[
+                            const SizedBox(height: 12),
+                            _mobileMooncakeBoxToolbar(context),
+                          ],
+                          const SizedBox(height: 12),
+                          AnimatedBuilder(
+                            animation: Listenable.merge(
+                              [state, AppServices.instance.wishlistSession],
+                            ),
+                            builder: (context, _) {
+                              final items = state.filteredProducts;
+                              return Column(
+                                children: items.isEmpty
+                                    ? [
+                                        if (state.isLoading)
+                                          const _MenuGridSkeleton(mobile: true)
+                                        else if (state.errorMessage != null)
+                                          _MenuFeedback(
+                                            message: state.errorMessage ??
+                                                'Chưa có sản phẩm để hiển thị.',
+                                            actionLabel: 'Tải lại',
+                                            onTap: state.loadMenuPage,
+                                          )
+                                        else
+                                          const _MenuEmptyState(
+                                            message: 'Không tìm thấy sản phẩm phù hợp.',
+                                          ),
+                                      ]
+                                    : List.generate(items.length * 2 - 1, (index) {
+                                        if (index.isOdd) {
+                                          return const SizedBox(height: 10);
+                                        }
+                                        final item = items[index ~/ 2];
+                                        return _MenuItemCard(
+                                          productId: item.id,
+                                          title: item.title,
+                                          price: item.price,
+                                          imageUrl: item.images.isEmpty ? null : item.images.first,
+                                          averageRating: item.averageRating,
+                                          reviewCount: item.reviewCount,
+                                          tone: item.category == 'Cookie'
+                                              ? const Color(0xFFFFF1F1)
+                                              : const Color(0xFFEAF3FF),
+                                          accent: item.category == 'Cookie'
+                                              ? MenuColors.red
+                                              : MenuColors.blue,
+                                          isMooncake: item.mooncakeConfig != null,
+                                          isAddingToBox: state.isMooncakeBoxMode &&
+                                              item.mooncakeConfig != null,
+                                          compact: true,
+                                          onTap: () => _openDetail(context, item),
+                                          onAddToCart: () => _addToCart(context, item),
+                                        );
+                                      }),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (state.isMooncakeBoxMode)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _MooncakeBoxOverlay(
+                    state: state,
+                    compact: true,
+                    onRemove: state.removeMooncakeBoxItemAt,
+                    onCancel: state.clearMooncakeBoxPurchase,
+                    onSubmit: () {
+                      final item = state.buildMooncakeBoxCartItem();
+                      if (item == null) {
+                        return;
+                      }
+                      AppServices.instance.cartSession.addCartItem(item);
+                      state.clearMooncakeBoxPurchase();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã thêm ${item.title} vào giỏ hàng'),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openDetail(BuildContext context, MenuProduct item) {
+    context.go('${AppRoutePaths.productDetail}?id=${item.id}');
+  }
+
+  void _addToCart(BuildContext context, MenuProduct item) {
+    if (item.mooncakeConfig != null) {
+      _handleMooncakeAction(context, item);
+      return;
+    }
+    AppServices.instance.cartSession.addProduct(item);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm ${item.title} vào giỏ hàng'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _mobileSearchAndSort() => ControllerSelector<MenuState, MenuViewState>(
+        controller: state,
+        selector: (controller) => controller.state,
+        builder: (context, menuState, _) => Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFDCE4EF), width: 1.5),
+          ),
+          child: Column(
+          children: [
+            TextField(
+              controller: searchController,
+              onChanged: state.setSearchQuery,
+              decoration: _storefrontFieldDecoration(
+                hintText: 'Tìm sản phẩm...',
+                prefixIcon: const Icon(Icons.search_rounded),
+              ),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: menuState.sortKey,
+              style: _storefrontDropdownTextStyle(),
+              items: const [
+                DropdownMenuItem(value: 'featured', child: Text('Nổi bật')),
+                DropdownMenuItem(value: 'rating_desc', child: Text('Đánh giá cao')),
+                DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
+                DropdownMenuItem(value: 'price_desc', child: Text('Giá giảm dần')),
+              ],
+              onChanged: (value) {
+                if (value != null) state.setSortKey(value);
+              },
+              decoration: _storefrontFieldDecoration(labelText: 'Sắp xếp'),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: menuState.priceRangeKey,
+              style: _storefrontDropdownTextStyle(),
+              items: const [
+                DropdownMenuItem(value: 'all', child: Text('Mọi mức giá')),
+                DropdownMenuItem(value: 'under_100k', child: Text('Dưới 100k')),
+                DropdownMenuItem(value: '100k_200k', child: Text('100k - 200k')),
+                DropdownMenuItem(value: 'over_200k', child: Text('Trên 200k')),
+              ],
+              onChanged: (value) {
+                if (value != null) state.setPriceRangeKey(value);
+              },
+              decoration: _storefrontFieldDecoration(labelText: 'Giá'),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<double>(
+              value: menuState.minimumRating,
+              style: _storefrontDropdownTextStyle(),
+              items: const [
+                DropdownMenuItem(value: 0, child: Text('Mọi đánh giá')),
+                DropdownMenuItem(value: 4, child: Text('Từ 4.0 sao')),
+                DropdownMenuItem(value: 4.5, child: Text('Từ 4.5 sao')),
+              ],
+              onChanged: (value) {
+                if (value != null) state.setMinimumRating(value);
+              },
+              decoration: _storefrontFieldDecoration(labelText: 'Đánh giá'),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _StorefrontActionButton(
+                    label: 'Chỉ yêu thích',
+                    isActive: menuState.favoritesOnly,
+                    onTap: state.toggleFavoritesOnly,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _StorefrontActionButton(
+                  label: 'Xóa lọc',
+                  onTap: () {
+                    searchController.clear();
+                    state.clearSearchFilters();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+        ),
+      );
+
+  Widget _mobileMooncakeBoxToolbar(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F0FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFDCC8F7), width: 1.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Mua theo hộp bánh trung thu',
+              style: TextStyle(
+                color: MenuColors.blue,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Chọn hộp trước, sau đó dùng nút thêm trên từng bánh để nạp vào hộp.',
+              style: TextStyle(
+                color: Color(0xFF4B5563),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => _showMooncakeBoxPicker(context),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF8E44AD),
+                  minimumSize: const Size(0, 46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  state.isMooncakeBoxMode ? 'Đổi hộp' : 'Mua theo hộp',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Future<void> _showMooncakeBoxPicker(BuildContext context) async {
+    final boxOptions = state.mooncakeConfig?.boxOptions ?? const [];
+    if (boxOptions.isEmpty) {
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Chọn hộp bánh trung thu'),
+        content: SizedBox(
+          width: 720,
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: boxOptions.map((box) {
+              return GestureDetector(
+                onTap: () {
+                  state.startMooncakeBoxPurchase(box.code);
+                  Navigator.of(dialogContext).pop();
+                },
+                child: Container(
+                  width: 210,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFDCC8F7),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          box.imageUrl,
+                          height: 110,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        box.label,
+                        style: const TextStyle(
+                          color: MenuColors.blue,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${box.cakeCount} bánh • Phụ phí ${box.packagePrice}',
+                        style: const TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(growable: false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleMooncakeAction(BuildContext context, MenuProduct item) async {
+    final config = item.mooncakeConfig;
+    if (config == null) {
+      return;
+    }
+    final selection = await _showMooncakeVariantPicker(
+      context,
+      product: item,
+      config: config,
+    );
+    if (selection == null) {
+      return;
+    }
+    if (state.isMooncakeBoxMode) {
+      final added = state.addMooncakeItemToBox(
+        item,
+        weight: selection.$1,
+        egg: selection.$2,
+      );
+      if (!added) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hộp đã đủ số lượng bánh. Hãy xóa bớt hoặc thêm vào giỏ.'),
+          ),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Đã thêm ${item.title} (${selection.$1.label} - ${selection.$2.label}) vào hộp.',
+          ),
+        ),
+      );
+      return;
+    }
+    final cartItem = CartItem(
+      productId: item.id,
+      title: item.title,
+      price: selection.$2.price,
+      priceValue: selection.$2.priceValue,
+      category: item.category,
+      imageUrl: item.images.isEmpty ? '' : item.images.first,
+      quantity: 1,
+      variantKey: 'single:${selection.$1.code}:${selection.$2.count}',
+      variantLabel: '${selection.$1.label} • ${selection.$2.label}',
+    );
+    AppServices.instance.cartSession.addCartItem(cartItem);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm ${item.title} (${cartItem.variantLabel}) vào giỏ hàng'),
+      ),
+    );
+  }
+
+  Future<(MooncakeWeightOption, MooncakeEggOption)?> _showMooncakeVariantPicker(
+    BuildContext context, {
+    required MenuProduct product,
+    required MooncakeProductConfig config,
+  }) async {
+    var selectedWeight = config.weightOptions.first;
+    var selectedEgg = selectedWeight.eggOptions.first;
+    return showDialog<(MooncakeWeightOption, MooncakeEggOption)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Chọn phiên bản ${product.title}'),
+          content: SizedBox(
+            width: 460,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Khối lượng',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: config.weightOptions.map((weight) {
+                    final selected = selectedWeight.code == weight.code;
+                    return ChoiceChip(
+                      label: Text(weight.label),
+                      selected: selected,
+                      onSelected: (_) {
+                        selectedWeight = weight;
+                        selectedEgg = weight.eggOptions.first;
+                        setDialogState(() {});
+                      },
+                    );
+                  }).toList(growable: false),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Số trứng',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: selectedWeight.eggOptions.map((egg) {
+                    final selected = selectedEgg.count == egg.count;
+                    return ChoiceChip(
+                      label: Text('${egg.label} • ${egg.price}'),
+                      selected: selected,
+                      onSelected: (_) {
+                        selectedEgg = egg;
+                        setDialogState(() {});
+                      },
+                    );
+                  }).toList(growable: false),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop((selectedWeight, selectedEgg)),
+              child: const Text('Xác nhận'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuItemCard extends StatelessWidget {
+  final int productId;
+  final String title;
+  final String price;
+  final String? imageUrl;
+  final double averageRating;
+  final int reviewCount;
+  final Color tone;
+  final Color accent;
+  final bool compact;
+  final bool isMooncake;
+  final bool isAddingToBox;
+  final VoidCallback? onTap;
+  final VoidCallback? onAddToCart;
+
+  const _MenuItemCard({
+    required this.productId,
+    required this.title,
+    required this.price,
+    this.imageUrl,
+    required this.averageRating,
+    required this.reviewCount,
+    required this.tone,
+    required this.accent,
+    this.compact = false,
+    this.isMooncake = false,
+    this.isAddingToBox = false,
+    this.onTap,
+    this.onAddToCart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final width = compact ? double.infinity : 376.0;
+    return AnimatedBuilder(
+      animation: AppServices.instance.wishlistSession,
+      builder: (context, _) {
+        final isFavorite =
+            AppServices.instance.wishlistSession.contains(productId);
+        return GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: width,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: MenuColors.gray, width: 2),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      height: compact ? 120 : 150,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: tone,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: MenuColors.gray, width: 2),
+                        image: imageUrl == null
+                            ? null
+                            : DecorationImage(
+                                image: NetworkImage(imageUrl!),
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () =>
+                            AppServices.instance.wishlistSession.toggle(productId),
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: MenuColors.gray, width: 2),
+                          ),
+                          child: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            size: 18,
+                            color: isFavorite ? MenuColors.red : MenuColors.blue,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(title,
+                    style: TextStyle(
+                        color: accent,
+                        fontSize: compact ? 14 : 16,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.star, size: compact ? 14 : 16, color: Colors.amber.shade700),
+                    const SizedBox(width: 4),
+                    Text(
+                      averageRating <= 0 ? 'Mới' : averageRating.toStringAsFixed(1),
+                      style: TextStyle(
+                        color: MenuColors.blue,
+                        fontSize: compact ? 11 : 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '($reviewCount)',
+                      style: TextStyle(
+                        color: MenuColors.gray,
+                        fontSize: compact ? 11 : 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(price,
+                    style: TextStyle(
+                        color: MenuColors.green,
+                        fontSize: compact ? 18 : 22,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: onAddToCart,
+                  child: Container(
+                    width: double.infinity,
+                    height: compact ? 34 : 38,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isAddingToBox ? const Color(0xFF8E44AD) : MenuColors.red,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: MenuColors.gray, width: 2),
+                    ),
+                    child: Text(
+                      isAddingToBox
+                          ? 'Thêm vào hộp'
+                          : isMooncake
+                              ? 'Thêm vào giỏ'
+                              : 'Thêm vào giỏ',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: compact ? 11 : 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MooncakeBoxOverlay extends StatelessWidget {
+  const _MooncakeBoxOverlay({
+    required this.state,
+    required this.onRemove,
+    required this.onCancel,
+    required this.onSubmit,
+    this.compact = false,
+  });
+
+  final MenuState state;
+  final ValueChanged<int> onRemove;
+  final VoidCallback onCancel;
+  final VoidCallback onSubmit;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final box = state.activeMooncakeBoxOption;
+    if (box == null) {
+      return const SizedBox.shrink();
+    }
+
+    final width = compact ? double.infinity : 360.0;
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: width,
+        margin: EdgeInsets.only(top: 16, left: compact ? 0 : 16),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFDCC8F7), width: 2),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x22000000),
+              blurRadius: 20,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        box.label,
+                        style: const TextStyle(
+                          color: Color(0xFF8E44AD),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Đã chọn ${state.mooncakeBoxItems.length}/${box.cakeCount} bánh',
+                        style: const TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F0FF),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${state.remainingMooncakeBoxSlots} chỗ trống',
+                    style: const TextStyle(
+                      color: Color(0xFF8E44AD),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: compact ? 200 : 260),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: List.generate(box.cakeCount, (index) {
+                    final hasItem = index < state.mooncakeBoxItems.length;
+                    if (!hasItem) {
+                      return Container(
+                        width: double.infinity,
+                        margin: EdgeInsets.only(
+                          bottom: index == box.cakeCount - 1 ? 0 : 8,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFD7DEE8),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Text(
+                          'Ô bánh ${index + 1}: Chưa chọn bánh',
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      );
+                    }
+
+                    final item = state.mooncakeBoxItems[index];
+                    return Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(
+                        bottom: index == box.cakeCount - 1 ? 0 : 8,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F0FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFDCC8F7),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: item.imageUrl.isEmpty
+                                ? Container(
+                                    width: 48,
+                                    height: 48,
+                                    color: const Color(0xFFE5E7EB),
+                                  )
+                                : Image.network(
+                                    item.imageUrl,
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Bánh ${index + 1}: ${item.title}',
+                                  style: const TextStyle(
+                                    color: Color(0xFF1F2937),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.variantLabel,
+                                  style: const TextStyle(
+                                    color: Color(0xFF6B7280),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.price,
+                                  style: const TextStyle(
+                                    color: MenuColors.green,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => onRemove(index),
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: MenuColors.red,
+                            ),
+                            tooltip: 'Xóa bánh khỏi hộp',
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Tạm tính hộp: ${_formatCurrency(state.mooncakeBoxSubtotal)}',
+                    style: const TextStyle(
+                      color: MenuColors.blue,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onCancel,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 46),
+                      side: const BorderSide(color: Color(0xFFD6DCE5)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Hủy hộp',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: state.canSubmitMooncakeBox ? onSubmit : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF8E44AD),
+                      minimumSize: const Size(0, 46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Thêm hộp vào giỏ',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatCurrency(int value) {
+    final digits = value.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      final reversedIndex = digits.length - i;
+      buffer.write(digits[i]);
+      if (reversedIndex > 1 && reversedIndex % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    return '${buffer.toString()}đ';
+  }
+}
+
+class _MenuGridSkeleton extends StatelessWidget {
+  const _MenuGridSkeleton({this.mobile = false});
+
+  final bool mobile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(mobile ? 3 : 2, (rowIndex) {
+        final children = List.generate(mobile ? 1 : 3, (index) {
+          return Expanded(
+            child: Container(
+              height: mobile ? 230 : 290,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: MenuColors.gray, width: 2),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    height: mobile ? 120 : 150,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECEFF3),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(height: 16, color: const Color(0xFFECEFF3)),
+                  const SizedBox(height: 8),
+                  Container(height: 14, width: 100, color: const Color(0xFFECEFF3)),
+                  const Spacer(),
+                  Container(
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECEFF3),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            children: List.generate(children.length * 2 - 1, (index) {
+              if (index.isOdd) return const SizedBox(width: 10);
+              return children[index ~/ 2];
+            }),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _MenuEmptyState extends StatelessWidget {
+  const _MenuEmptyState({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: MenuColors.gray, width: 2),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: MenuColors.gray,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+class _MenuFeedback extends StatelessWidget {
+  const _MenuFeedback({
+    required this.message,
+    required this.actionLabel,
+    required this.onTap,
+  });
+
+  final String message;
+  final String actionLabel;
+  final Future<void> Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: MenuColors.gray, width: 2),
+      ),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: MenuColors.gray,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => onTap(),
+            child: Container(
+              width: 110,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: MenuColors.blue,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: MenuColors.gray, width: 2),
+              ),
+              child: const Text(
+                'Tải lại',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

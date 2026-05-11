@@ -1,0 +1,19 @@
+{
+  "headerBrand": "PIXEL BAKERY",
+  "headerTitle": "ĐĂNG KÝ",
+  "introTitle": "Tạo tài khoản mới",
+  "introDescription": "Đăng ký để nhận ưu đãi độc quyền và theo dõi đơn hàng nhanh hơn.",
+  "fields": [
+    { "label": "Họ và tên" },
+    { "label": "Email" },
+    { "label": "Số điện thoại" },
+    { "label": "Mật khẩu" },
+    { "label": "Nhập lại mật khẩu" }
+  ],
+  "helpText": null,
+  "primaryActionLabel": "Tạo tài khoản",
+  "socialActionLabel": "Đăng ký với Google",
+  "switchPrompt": "Đã có tài khoản?",
+  "switchActionLabel": "Đăng nhập",
+  "footerTagline": "PIXEL BAKERY | SIGN UP"
+}

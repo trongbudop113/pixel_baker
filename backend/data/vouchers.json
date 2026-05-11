@@ -1,0 +1,29 @@
+[
+  {
+    "code": "PIXEL15",
+    "title": "Giảm 15% cho đơn đầu tiên",
+    "note": "HSD: 31/12/2026",
+    "accent": "red",
+    "discountType": "percent",
+    "discountValue": 15,
+    "minOrderValue": 0
+  },
+  {
+    "code": "FREESHIP20",
+    "title": "Giảm 20.000đ phí vận chuyển",
+    "note": "Đơn từ 149.000đ",
+    "accent": "blue",
+    "discountType": "shipping",
+    "discountValue": 20000,
+    "minOrderValue": 149000
+  },
+  {
+    "code": "SWEET10",
+    "title": "Giảm 10% cho combo bánh ngọt",
+    "note": "Áp dụng thứ 2 - thứ 6",
+    "accent": "green",
+    "discountType": "percent",
+    "discountValue": 10,
+    "minOrderValue": 99000
+  }
+]

@@ -1,0 +1,144 @@
+{
+  "hero": {
+    "title": "Hương vị cổ điển\nGiao diện hiện đại",
+    "description": "Pixel Bakery kết hợp cảm hứng máy game cổ điển với trải nghiệm mua bánh hiện đại, dễ dùng.",
+    "primaryAction": {
+      "label": "XEM THỰC ĐƠN",
+      "routeName": "menu",
+      "routePath": null,
+      "queryParameters": {}
+    },
+    "secondaryAction": {
+      "label": "ĐẶT NGAY",
+      "routeName": "ordersInfo",
+      "routePath": null,
+      "queryParameters": {}
+    }
+  },
+  "highlights": [
+    {
+      "title": "Giao nhanh trong ngày",
+      "description": "Nội thành nhận bánh trong 2 giờ.",
+      "accent": "blue"
+    },
+    {
+      "title": "Nguyên liệu tươi mới",
+      "description": "Làm bánh mỗi ngày, không chất bảo quản.",
+      "accent": "red"
+    },
+    {
+      "title": "Mở cửa mỗi ngày",
+      "description": "08:00 - 21:30, hỗ trợ đặt online.",
+      "accent": "green"
+    }
+  ],
+  "featuredProducts": [
+    {
+      "productId": 1,
+      "title": "BÁNH DÂU PIXEL",
+      "price": "55.000đ",
+      "imageUrl": "https://images.unsplash.com/photo-1621177921600-13666f61db2d?auto=format&fit=crop&w=1080&q=80",
+      "titleAccent": "blue",
+      "priceAccent": "green"
+    },
+    {
+      "productId": 2,
+      "title": "BÁNH VIỆT QUẤT 8-BIT",
+      "price": "60.000đ",
+      "imageUrl": "https://images.unsplash.com/photo-1723760822616-67baeb5559fe?auto=format&fit=crop&w=1080&q=80",
+      "titleAccent": "red",
+      "priceAccent": "green"
+    },
+    {
+      "productId": 3,
+      "title": "TART LÁ XANH",
+      "price": "58.000đ",
+      "imageUrl": "https://images.unsplash.com/photo-1567624725806-227866a3f784?auto=format&fit=crop&w=1080&q=80",
+      "titleAccent": "blue",
+      "priceAccent": "red"
+    }
+  ],
+  "story": {
+    "title": "Câu chuyện Pixel Bakery",
+    "description": "Từ cảm hứng máy game thùng, chúng tôi tạo nên những chiếc bánh có màu sắc vui mắt, vị ngon cân bằng và chất lượng ổn định mỗi ngày.",
+    "badgeText": "100% Làm mới trong ngày"
+  },
+  "categories": [
+    {
+      "label": "Cupcake",
+      "routeCategory": "cupcake",
+      "accent": "red"
+    },
+    {
+      "label": "Cookie",
+      "routeCategory": "cookie",
+      "accent": "blue"
+    },
+    {
+      "label": "Tart",
+      "routeCategory": "tart",
+      "accent": "green"
+    },
+    {
+      "label": "Bánh sinh nhật",
+      "routeCategory": "cake",
+      "accent": "gray"
+    }
+  ],
+  "testimonials": [
+    {
+      "content": "“Bánh đẹp như game pixel, vị lại rất vừa miệng.”",
+      "author": "- Minh Anh",
+      "accent": "red"
+    },
+    {
+      "content": "“Đặt online nhanh, nhận bánh đúng giờ, đóng gói xịn.”",
+      "author": "- Tuấn Khoa",
+      "accent": "blue"
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Có nhận đặt bánh theo mẫu không?",
+      "answer": "Có, bạn chỉ cần gửi ảnh mẫu trước 24-48 giờ.",
+      "accent": "red"
+    },
+    {
+      "question": "Có giao bánh theo khung giờ không?",
+      "answer": "Có, bạn chọn giờ nhận khi đặt đơn online.",
+      "accent": "blue"
+    }
+  ],
+  "promo": {
+    "message": "Giảm 15% cho đơn đầu tiên - dùng mã PIXEL15",
+    "action": {
+      "label": "Dùng ngay",
+      "routeName": "voucher",
+      "routePath": null,
+      "queryParameters": {}
+    }
+  },
+  "footer": {
+    "tagline": "PIXEL BAKERY  |  VỊ CỔ ĐIỂN, CHẤT HIỆN ĐẠI",
+    "links": [
+      {
+        "label": "Liên hệ",
+        "routeName": "contact",
+        "routePath": null,
+        "queryParameters": {}
+      },
+      {
+        "label": "Chính sách giao hàng",
+        "routeName": "deliveryPolicy",
+        "routePath": null,
+        "queryParameters": {}
+      },
+      {
+        "label": "Chính sách thanh toán",
+        "routeName": "paymentPolicy",
+        "routePath": null,
+        "queryParameters": {}
+      }
+    ]
+  }
+}

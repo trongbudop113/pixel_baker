@@ -1,0 +1,426 @@
+{
+  "intro": {
+    "title": "Chọn bánh theo phong cách của bạn",
+    "description": "Từ cupcake, cookie đến combo tiết kiệm mỗi ngày."
+  },
+  "filters": [
+    {
+      "label": "Tất cả",
+      "category": "all"
+    },
+    {
+      "label": "Cupcake",
+      "category": "Cupcake"
+    },
+    {
+      "label": "Cookie",
+      "category": "Cookie"
+    },
+    {
+      "label": "Bánh kem",
+      "category": "Bánh kem"
+    },
+    {
+      "label": "Bánh pía",
+      "category": "Bánh pía"
+    },
+    {
+      "label": "Bánh trung thu",
+      "category": "mooncake"
+    }
+  ],
+  "productsSectionTitle": "Món bán chạy",
+  "products": [
+    {
+      "id": 1,
+      "sku": "BK-CUPCAKE-01",
+      "stockStatus": "Còn hàng",
+      "weight": "420g",
+      "storageNote": "2-4°C, dùng ngon trong 48h",
+      "deliveryNote": "Nội thành 2 giờ",
+      "title": "Bánh dâu pixel",
+      "price": "55.000đ",
+      "priceValue": 55000,
+      "category": "Cupcake",
+      "description": "Bánh mềm, kem ít ngọt, topping dâu tươi.",
+      "detailBullets": [
+        "Cốt bánh vanilla mềm ẩm, cân bằng độ ngọt.",
+        "Kem phô mai mịn, topping dâu tươi cắt trong ngày.",
+        "Phù hợp tiệc nhỏ hoặc set quà sinh nhật."
+      ],
+      "reviews": [
+        {
+          "author": "Minh Anh",
+          "content": "Bánh đẹp và ngon, giao đúng giờ."
+        },
+        {
+          "author": "Tuấn Khoa",
+          "content": "Kem vừa vị, sẽ mua lại."
+        }
+      ],
+      "relatedProductIds": [4, 3, 5],
+      "images": [
+        "https://images.unsplash.com/photo-1621177921600-13666f61db2d?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 2,
+      "sku": "BK-COOKIE-02",
+      "stockStatus": "Còn hàng",
+      "weight": "250g",
+      "storageNote": "Đậy kín, dùng ngon trong 5 ngày",
+      "deliveryNote": "Nội thành 2 giờ",
+      "title": "Cookie choco",
+      "price": "48.000đ",
+      "priceValue": 48000,
+      "category": "Cookie",
+      "description": "Cookie giòn bên ngoài, mềm bên trong, vị cacao đậm.",
+      "detailBullets": [
+        "Bơ thơm và cacao đậm, vị cân bằng.",
+        "Texture giòn viền ngoài, mềm nhẹ bên trong.",
+        "Phù hợp ăn kèm trà hoặc cafe."
+      ],
+      "reviews": [
+        {
+          "author": "Lan Chi",
+          "content": "Cookie thơm, không bị quá ngọt."
+        }
+      ],
+      "relatedProductIds": [6, 1, 3],
+      "images": [
+        "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1495214783159-3503fd1b572d?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 3,
+      "sku": "BK-TART-03",
+      "stockStatus": "Còn hàng",
+      "weight": "380g",
+      "storageNote": "Giữ lạnh nhẹ, dùng trong 24 giờ",
+      "deliveryNote": "Nội thành 2 giờ",
+      "title": "Tart lá xanh",
+      "price": "58.000đ",
+      "priceValue": 58000,
+      "category": "Tart",
+      "description": "Tart mát nhẹ, cân bằng vị trái cây và kem.",
+      "detailBullets": [
+        "Đế tart giòn nhẹ, nhân kem mượt.",
+        "Vị trái cây thanh, hậu vị dịu.",
+        "Phù hợp cho set tea break."
+      ],
+      "reviews": [
+        {
+          "author": "Bảo Trân",
+          "content": "Vị mát, không ngấy, nhìn cũng rất đẹp."
+        }
+      ],
+      "relatedProductIds": [1, 4, 2],
+      "images": [
+        "https://images.unsplash.com/photo-1464306076886-da185f6a9d05?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 4,
+      "sku": "BK-CUPCAKE-04",
+      "stockStatus": "Còn hàng",
+      "weight": "360g",
+      "storageNote": "2-4°C, dùng ngon trong 48h",
+      "deliveryNote": "Nội thành 2 giờ",
+      "title": "Cupcake vanilla",
+      "price": "45.000đ",
+      "priceValue": 45000,
+      "category": "Cupcake",
+      "description": "Cupcake vanilla mềm mịn, lớp kem béo nhẹ.",
+      "detailBullets": [
+        "Mùi vanilla rõ nhưng không gắt.",
+        "Lớp kem béo nhẹ, texture mềm.",
+        "Dễ kết hợp trong combo tiệc nhỏ."
+      ],
+      "reviews": [
+        {
+          "author": "Hà My",
+          "content": "Cupcake mềm, trẻ em rất thích."
+        }
+      ],
+      "relatedProductIds": [1, 3, 5],
+      "images": [
+        "https://images.unsplash.com/photo-1505253213348-cd54c92b37f6?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 5,
+      "sku": "BK-CAKE-05",
+      "stockStatus": "Còn hàng",
+      "weight": "500g",
+      "storageNote": "Dùng ngon khi ấm nhẹ",
+      "deliveryNote": "Nội thành 2 giờ",
+      "title": "Bánh chuối nướng",
+      "price": "52.000đ",
+      "priceValue": 52000,
+      "category": "Cake",
+      "description": "Bánh chuối nướng thơm dịu, dùng ngon khi ấm.",
+      "detailBullets": [
+        "Chuối chín tự nhiên, hương thơm dịu.",
+        "Độ ẩm ổn định, không khô.",
+        "Phù hợp bữa xế hoặc quà tặng."
+      ],
+      "reviews": [
+        {
+          "author": "Quang Vũ",
+          "content": "Bánh thơm, ăn lúc ấm rất ngon."
+        }
+      ],
+      "relatedProductIds": [1, 4, 6],
+      "images": [
+        "https://images.unsplash.com/photo-1607920591413-4ec007e70023?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1612203985729-70726954388c?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1599785209796-786432b228bc?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 6,
+      "sku": "BK-COMBO-06",
+      "stockStatus": "Còn hàng",
+      "weight": "1.2kg",
+      "storageNote": "Dùng trong ngày để giữ chất lượng tốt nhất",
+      "deliveryNote": "Nội thành 2 giờ",
+      "title": "Set mini party",
+      "price": "149.000đ",
+      "priceValue": 149000,
+      "category": "Combo",
+      "description": "Set tiệc mini nhiều vị, phù hợp nhóm 4-6 người.",
+      "detailBullets": [
+        "Nhiều vị trong một set, dễ chia phần.",
+        "Phù hợp nhóm 4-6 người.",
+        "Tiết kiệm hơn khi đặt lẻ từng món."
+      ],
+      "reviews": [
+        {
+          "author": "Gia Hân",
+          "content": "Set tiện cho tiệc nhỏ, đóng gói rất ổn."
+        }
+      ],
+      "relatedProductIds": [2, 1, 5],
+      "images": [
+        "https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1461009683693-342af2f2d6ce?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 7,
+      "sku": "BK-CREAM-07",
+      "stockStatus": "Còn hàng",
+      "weight": "700g",
+      "storageNote": "Giữ lạnh 2-4°C, ngon nhất trong 24 giờ",
+      "deliveryNote": "Nội thành 2-4 giờ",
+      "title": "Bánh kem dâu lưới",
+      "price": "289.000đ",
+      "priceValue": 289000,
+      "category": "Bánh kem",
+      "description": "Bánh kem tươi trang trí lưới kem và dâu tươi, hợp tiệc sinh nhật nhỏ.",
+      "detailBullets": [
+        "Cốt vanilla ẩm nhẹ, lớp kem tươi thanh vị.",
+        "Trang trí dâu và piping lưới theo phong cách hiện đại.",
+        "Phù hợp 4-6 người."
+      ],
+      "reviews": [
+        {
+          "author": "Trúc Linh",
+          "content": "Bánh kem lên form đẹp, kem không bị ngọt gắt.",
+          "rating": 5
+        }
+      ],
+      "relatedProductIds": [5, 1, 9],
+      "images": [
+        "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 8,
+      "sku": "BK-PIA-08",
+      "stockStatus": "Còn hàng",
+      "weight": "500g",
+      "storageNote": "Nơi khô ráo, dùng ngon trong 7 ngày",
+      "deliveryNote": "Nội thành 2 giờ",
+      "title": "Bánh pía sầu riêng mini",
+      "price": "95.000đ",
+      "priceValue": 95000,
+      "category": "Bánh pía",
+      "description": "Bánh pía lớp mỏng, nhân sầu riêng và đậu xanh theo kiểu mini dễ ăn.",
+      "detailBullets": [
+        "Lớp vỏ mỏng, tách lớp rõ.",
+        "Nhân sầu riêng đậm vừa, cân bằng với đậu xanh.",
+        "Phù hợp biếu tặng hoặc dùng cùng trà nóng."
+      ],
+      "reviews": [
+        {
+          "author": "Huyền Trâm",
+          "content": "Nhân thơm, lớp vỏ mỏng và không bị khô.",
+          "rating": 5
+        }
+      ],
+      "relatedProductIds": [2, 9, 5],
+      "images": [
+        "https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1519915028121-7d3463d20b13?auto=format&fit=crop&w=1200&q=80"
+      ]
+    },
+    {
+      "id": 9,
+      "sku": "BK-MOON-09",
+      "stockStatus": "Còn hàng",
+      "weight": "150g / 200g / 250g",
+      "storageNote": "Bảo quản mát, dùng ngon trong 5 ngày sau khi mở hộp",
+      "deliveryNote": "Giao nhanh trong ngày, hỗ trợ quà biếu theo set",
+      "title": "Bánh trung thu thập cẩm đặc biệt",
+      "price": "68.000đ",
+      "priceValue": 68000,
+      "category": "Bánh trung thu",
+      "description": "Dòng bánh trung thu đặc biệt có nhiều mức gram, lựa chọn số trứng và mua theo hộp quà.",
+      "detailBullets": [
+        "Có thể mua lẻ theo từng phiên bản 150g, 200g, 250g.",
+        "Hỗ trợ cấu hình theo số trứng ngay trên trang chi tiết.",
+        "Có thể mua theo hộp 2, 4, 6 bánh để biếu tặng."
+      ],
+      "reviews": [
+        {
+          "author": "Ái Nhi",
+          "content": "Hộp quà đẹp, chọn từng bánh rất tiện.",
+          "rating": 5
+        }
+      ],
+      "relatedProductIds": [8, 7, 6],
+      "mooncakeConfig": {
+        "weightOptions": [
+          {
+            "code": "150g",
+            "label": "150g",
+            "eggOptions": [
+              {
+                "count": 0,
+                "label": "0 trứng",
+                "priceValue": 68000,
+                "price": "68.000đ"
+              },
+              {
+                "count": 1,
+                "label": "1 trứng",
+                "priceValue": 76000,
+                "price": "76.000đ"
+              }
+            ]
+          },
+          {
+            "code": "200g",
+            "label": "200g",
+            "eggOptions": [
+              {
+                "count": 0,
+                "label": "0 trứng",
+                "priceValue": 86000,
+                "price": "86.000đ"
+              },
+              {
+                "count": 1,
+                "label": "1 trứng",
+                "priceValue": 94000,
+                "price": "94.000đ"
+              },
+              {
+                "count": 2,
+                "label": "2 trứng",
+                "priceValue": 102000,
+                "price": "102.000đ"
+              }
+            ]
+          },
+          {
+            "code": "250g",
+            "label": "250g",
+            "eggOptions": [
+              {
+                "count": 0,
+                "label": "0 trứng",
+                "priceValue": 98000,
+                "price": "98.000đ"
+              },
+              {
+                "count": 1,
+                "label": "1 trứng",
+                "priceValue": 106000,
+                "price": "106.000đ"
+              },
+              {
+                "count": 2,
+                "label": "2 trứng",
+                "priceValue": 114000,
+                "price": "114.000đ"
+              }
+            ]
+          }
+        ],
+        "boxOptions": [
+          {
+            "code": "box-2",
+            "label": "Hộp 2 bánh",
+            "cakeCount": 2,
+            "imageUrl": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=80",
+            "packagePriceValue": 30000,
+            "packagePrice": "30.000đ"
+          },
+          {
+            "code": "box-4",
+            "label": "Hộp 4 bánh",
+            "cakeCount": 4,
+            "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
+            "packagePriceValue": 50000,
+            "packagePrice": "50.000đ"
+          },
+          {
+            "code": "box-6",
+            "label": "Hộp 6 bánh",
+            "cakeCount": 6,
+            "imageUrl": "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80",
+            "packagePriceValue": 75000,
+            "packagePrice": "75.000đ"
+          }
+        ]
+      },
+      "images": [
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=80"
+      ]
+    }
+  ],
+  "combo": {
+    "title": "Combo nổi bật",
+    "description": "Combo 4 bánh bất kỳ + 2 cookie, giảm 12% khi đặt online.",
+    "actionLabel": "Đặt combo"
+  },
+  "faqs": [
+    {
+      "question": "Có nhận đặt bánh theo mẫu không?",
+      "answer": "Có, trước 24-48 giờ."
+    },
+    {
+      "question": "Có giao theo khung giờ không?",
+      "answer": "Có, chọn giờ khi đặt đơn."
+    }
+  ],
+  "footer": {
+    "tagline": "PIXEL BAKERY  |  MENU"
+  }
+}

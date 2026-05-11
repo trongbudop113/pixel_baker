@@ -1,0 +1,47 @@
+[
+  {
+    "id": "flour-premium",
+    "name": "Bột mì số 13",
+    "category": "Bột",
+    "unit": "kg",
+    "unitPrice": 38000,
+    "availableQuantity": 42,
+    "lowStockThreshold": 12
+  },
+  {
+    "id": "butter-anchor",
+    "name": "Bơ Anchor",
+    "category": "Bơ sữa",
+    "unit": "kg",
+    "unitPrice": 245000,
+    "availableQuantity": 8,
+    "lowStockThreshold": 10
+  },
+  {
+    "id": "cream-cheese",
+    "name": "Cream Cheese",
+    "category": "Bơ sữa",
+    "unit": "kg",
+    "unitPrice": 210000,
+    "availableQuantity": 5,
+    "lowStockThreshold": 6
+  },
+  {
+    "id": "egg-farm",
+    "name": "Trứng gà trang trại",
+    "category": "Trứng",
+    "unit": "vỉ",
+    "unitPrice": 42000,
+    "availableQuantity": 18,
+    "lowStockThreshold": 8
+  },
+  {
+    "id": "strawberry-fresh",
+    "name": "Dâu tây tươi",
+    "category": "Trái cây",
+    "unit": "hộp",
+    "unitPrice": 95000,
+    "availableQuantity": 0,
+    "lowStockThreshold": 4
+  }
+]

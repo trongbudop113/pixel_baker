@@ -1,0 +1,27 @@
+# macOS / IDE
+.DS_Store
+.idea/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+
+# Local runtime files
+.backend.pid
+*.log
+
+# Environment files
+.env
+.env.*
+!backend/.env.example
+!backend/.env.production.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+backend/.venv/

@@ -1,0 +1,60 @@
+{
+  "headerTitle": "Câu chuyện thương hiệu",
+  "heroTitle": "Câu chuyện Pixel Bakery",
+  "heroDescription": "Từ cảm hứng máy game thùng cổ điển, Pixel Bakery ra đời như một tiệm bánh mang tinh thần vui nhộn, chỉn chu và nhất quán. Mỗi chiếc bánh là một \"level\" nhỏ của cảm xúc: dễ nhớ, tươi mới và đủ bất ngờ để khách muốn quay lại.",
+  "heroBadge": "100% Làm mới trong ngày",
+  "timelineTitle": "Hành trình phát triển",
+  "timelineItems": [
+    {
+      "year": "2021",
+      "description": "Bắt đầu từ căn bếp nhỏ với những mẻ cupcake đầu tiên dành cho bạn bè và khách quen quanh khu phố."
+    },
+    {
+      "year": "2023",
+      "description": "Mở rộng menu với cookie, tart, box cake và các bộ sưu tập bánh theo mùa."
+    },
+    {
+      "year": "2025",
+      "description": "Ra mắt trải nghiệm đặt bánh online mang phong cách Pixel UI để đồng bộ từ thương hiệu đến sản phẩm."
+    }
+  ],
+  "imageTimelineTitle": "Dòng thời gian hình ảnh",
+  "imageTimelineItems": [
+    {
+      "year": "2021",
+      "title": "Góc bếp đầu tiên",
+      "description": "Không gian nhỏ nơi những mẻ cupcake đầu tiên được thử nghiệm thủ công và điều chỉnh từng vị bánh.",
+      "previewLabel": "Kitchen Corner"
+    },
+    {
+      "year": "2023",
+      "title": "Mở rộng menu",
+      "description": "Quầy trưng bày và khu bếp được mở rộng để phát triển cookie, tart và các bộ sưu tập bánh theo mùa.",
+      "previewLabel": "Seasonal Lab"
+    },
+    {
+      "year": "2025",
+      "title": "Ra mắt Pixel UI",
+      "description": "Hệ hình ảnh thương hiệu được thống nhất từ cửa hàng, bao bì cho tới trải nghiệm đặt bánh online.",
+      "previewLabel": "Brand Launch"
+    }
+  ],
+  "values": {
+    "title": "Giá trị cốt lõi",
+    "items": [
+      "Nguyên liệu rõ nguồn gốc, làm mới mỗi ngày.",
+      "Hương vị cân bằng, ưu tiên độ ngọt vừa phải và dễ ăn.",
+      "Dịch vụ nhanh, lịch sự và nhất quán ở mọi điểm chạm."
+    ]
+  },
+  "craft": {
+    "title": "Góc làm bánh",
+    "description": "Mỗi chiếc bánh đi qua ba bước chính: phát triển công thức, nướng đúng nhiệt và hoàn thiện thủ công. Chúng tôi ưu tiên cấu trúc mềm ẩm, lớp kem gọn vị và cảm giác ăn không bị ngấy.",
+    "previewLabel": "Kitchen Preview"
+  },
+  "cta": {
+    "description": "Khám phá menu và chọn vị bánh bạn thích ngay hôm nay.",
+    "buttonLabel": "XEM THỰC ĐƠN"
+  },
+  "footerLabel": "PIXEL BAKERY | STORY"
+}

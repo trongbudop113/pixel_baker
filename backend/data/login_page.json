@@ -1,0 +1,16 @@
+{
+  "headerBrand": "PIXEL BAKERY",
+  "headerTitle": "ĐĂNG NHẬP",
+  "introTitle": "Chào mừng quay lại",
+  "introDescription": "Đăng nhập để xem ưu đãi cá nhân và lịch sử đơn hàng của bạn.",
+  "fields": [
+    { "label": "Email hoặc số điện thoại" },
+    { "label": "Mật khẩu" }
+  ],
+  "helpText": "Quên mật khẩu?",
+  "primaryActionLabel": "Đăng nhập",
+  "socialActionLabel": "Đăng nhập với Google",
+  "switchPrompt": "Chưa có tài khoản?",
+  "switchActionLabel": "Đăng ký",
+  "footerTagline": "PIXEL BAKERY | SIGN IN"
+}
