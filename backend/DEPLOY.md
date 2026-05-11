@@ -12,7 +12,7 @@ The repo includes a root `render.yaml` Blueprint for Render.
 1. Create a MongoDB Atlas account.
 2. Create a free `M0` cluster.
 3. Create a database user.
-4. In Network Access, allow Render to connect. For a free demo, use `0.0.0.0/0`.
+4. In Network Access, allow Render to connect. For a free Render service, use `0.0.0.0/0` because free Render services do not provide a fixed outbound IP.
 5. Copy the connection string, for example:
 
 ```text
@@ -20,6 +20,13 @@ mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=major
 ```
 
 Use a URL-encoded password if it contains special characters.
+
+If Render logs show `SSL handshake failed` or `ServerSelectionTimeoutError` while connecting to `*.mongodb.net:27017`, check Atlas first:
+
+- Atlas > Network Access includes `0.0.0.0/0`
+- Atlas database user exists and has the right password
+- `MONGODB_URI` in Render uses the `mongodb+srv://` connection string copied from Atlas
+- Special characters in the database password are URL-encoded, for example `@` becomes `%40`
 
 ## 2. Push this repo to GitHub
 
