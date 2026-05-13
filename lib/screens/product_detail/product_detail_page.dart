@@ -981,6 +981,7 @@ class _MobileProductDetail extends StatelessWidget {
                     ],
                   ),
                 ),
+                ),
               ],
             ),
           ),
