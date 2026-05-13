@@ -1,6 +1,8 @@
+import os
+import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
 
 from app.models.admin import AdminDashboardResponse
 from app.models.admin import (
@@ -25,6 +27,7 @@ from app.models.admin import (
     AdminOrderAdvanceCheckResponse,
     AdminProductCostReportResponse,
     AdminRevenueSummaryResponse,
+    AdminProductReviewResponse,
     AdminRecipeExcelImportRequest,
     AdminRecipeExcelRow,
     AdminRecipeCopyRequest,
@@ -405,6 +408,55 @@ async def list_admin_product_cost_reports(
     repository: AdminRepository = Depends(get_admin_repository),
 ) -> list[AdminProductCostReportResponse]:
     return await repository.list_product_cost_reports()
+
+
+_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+_MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+_UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "uploads")
+
+
+@router.post("/upload-image", response_model=AdminActionResponse)
+async def upload_product_image(
+    file: UploadFile = File(...),
+    _: UserResponse = Depends(require_admin_permission("products:manage")),
+) -> AdminActionResponse:
+    if file.content_type not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Chỉ chấp nhận ảnh JPEG, PNG, WebP hoặc GIF.",
+        )
+    contents = await file.read()
+    if len(contents) > _MAX_IMAGE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ảnh không được vượt quá 5MB.",
+        )
+    ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    os.makedirs(_UPLOADS_DIR, exist_ok=True)
+    filepath = os.path.join(_UPLOADS_DIR, filename)
+    with open(filepath, "wb") as f:
+        f.write(contents)
+    return AdminActionResponse(message=f"/uploads/{filename}")
+
+
+@router.get("/reviews", response_model=list[AdminProductReviewResponse])
+async def list_admin_reviews(
+    _: UserResponse = Depends(require_admin_permission("reports:view")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> list[AdminProductReviewResponse]:
+    return await repository.list_all_reviews()
+
+
+@router.delete("/reviews/{product_id}/{created_at}", response_model=AdminActionResponse)
+async def delete_admin_review(
+    product_id: int,
+    created_at: str,
+    _: UserResponse = Depends(require_admin_permission("products:manage")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> AdminActionResponse:
+    await repository.delete_review(product_id, created_at)
+    return AdminActionResponse(message="Đã xóa review.")
 
 
 @router.get("/revenue-summary", response_model=AdminRevenueSummaryResponse)

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://trongbudop113.github.io/pixel_baker/sitemap.xml

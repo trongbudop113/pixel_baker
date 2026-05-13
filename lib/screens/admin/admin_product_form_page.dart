@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
@@ -205,32 +203,48 @@ class _ResponsiveAdminProductFormScreenState
       type: FileType.image,
       withData: true,
     );
-    if (result == null) {
-      return;
-    }
-    final dataUrls = <String>[];
+    if (result == null) return;
+
+    final repository = AppServices.instance.adminRepository;
+    final uploadedUrls = <String>[];
+    final failedFiles = <String>[];
+
     for (final file in result.files) {
       final bytes = file.bytes;
-      if (bytes == null) {
-        continue;
-      }
-      final extension = (file.extension ?? 'png').toLowerCase();
-      final mime = extension == 'jpg' || extension == 'jpeg'
+      if (bytes == null) continue;
+      final ext = (file.extension ?? 'jpg').toLowerCase();
+      final mime = ext == 'jpg' || ext == 'jpeg'
           ? 'image/jpeg'
-          : extension == 'webp'
+          : ext == 'webp'
               ? 'image/webp'
-              : 'image/png';
-      dataUrls.add('data:$mime;base64,${base64Encode(bytes)}');
+              : ext == 'gif'
+                  ? 'image/gif'
+                  : 'image/png';
+      try {
+        final url = await repository.uploadImage(bytes, file.name, mime);
+        uploadedUrls.add(url);
+      } catch (_) {
+        failedFiles.add(file.name);
+      }
     }
-    if (dataUrls.isEmpty) {
-      return;
+
+    if (uploadedUrls.isNotEmpty) {
+      final existing = _imagesController.text
+          .split('\n')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+      _imagesController.text = [...existing, ...uploadedUrls].join('\n');
     }
-    final existing = _imagesController.text
-        .split('\n')
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty)
-        .toList();
-    _imagesController.text = [...existing, ...dataUrls].join('\n');
+
+    if (failedFiles.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Upload thất bại: ${failedFiles.join(', ')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
     setState(() {});
   }
 

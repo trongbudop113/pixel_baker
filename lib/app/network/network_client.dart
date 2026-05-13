@@ -150,6 +150,35 @@ class ApiClient {
     );
   }
 
+  Future<String> uploadFile(
+    String path, {
+    required List<int> bytes,
+    required String filename,
+    required String mimeType,
+  }) async {
+    if (!_config.hasBaseUrl) throw Exception('No base URL configured');
+    final token = await _tokenProvider?.call();
+    final uri = Uri.parse('${_config.baseUrl}$path');
+    final request = http.MultipartRequest('POST', uri);
+    if (token != null && token.trim().isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: filename,
+    ));
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
+      throw Exception('Upload failed: ${streamed.statusCode}');
+    }
+    // response body: {"data":{"message":"/uploads/filename.jpg"}}
+    final decoded = jsonDecode(body);
+    final msg = (decoded['data']?['message'] ?? decoded['message'] ?? '').toString();
+    return msg;
+  }
+
   Future<ApiResponse<T>> send<T>(
     ApiRequest request, {
     ResponseDecoder<T>? decoder,

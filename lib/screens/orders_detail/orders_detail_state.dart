@@ -196,6 +196,16 @@ class OrdersDetailState
     );
   }
 
+  Future<String?> fetchInvoiceHtmlForSelectedOrder() async {
+    final current = state.selectedOrder;
+    if (current == null) return null;
+    try {
+      return await _checkoutRepository.fetchInvoiceHtml(current.orderId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> selectOrderByFilteredIndex(int index) async {
     final list = filteredOrders;
     if (index < 0 || index >= list.length) {

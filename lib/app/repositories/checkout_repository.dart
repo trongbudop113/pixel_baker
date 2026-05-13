@@ -14,6 +14,7 @@ abstract class CheckoutRepository {
   Future<OrderDetailModel> confirmBankTransfer(String orderId);
   Future<OrderDetailModel> cancelOrder(String orderId);
   Future<OrderDetailModel> requestRefund(String orderId);
+  Future<String> fetchInvoiceHtml(String orderId);
 }
 
 class ApiCheckoutRepository extends BaseApiRepository
@@ -195,6 +196,12 @@ class ApiCheckoutRepository extends BaseApiRepository
       ),
     );
     return response.data;
+  }
+
+  @override
+  Future<String> fetchInvoiceHtml(String orderId) async {
+    final detail = await getOrderDetail(orderId);
+    return detail.invoiceHtml ?? '';
   }
 
   Object? _unwrapItemPayload(Object? json) {

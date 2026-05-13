@@ -173,6 +173,7 @@ class _AdminWebLayout extends StatelessWidget {
           7 => _TestimonialsManagementSection(state: state),
           8 => _ContentsManagementSection(state: state),
           9 => _ProfitSummarySection(state: state),
+          10 => _ReviewsManagementSection(state: state),
           _ => _OverviewSection(state: state),
         };
         return Container(
@@ -1685,6 +1686,8 @@ class _AdminMobileLayout extends StatelessWidget {
                       _ContentsManagementSection(state: state),
                     ] else if (state.selectedSidebarIndex == 9) ...[
                       _ProfitSummarySection(state: state),
+                    ] else if (state.selectedSidebarIndex == 10) ...[
+                      _ReviewsManagementSection(state: state),
                     ] else ...[
                     AnimatedBuilder(
                       animation: state,
@@ -3512,6 +3515,146 @@ class _ProductCostReportTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ─── Reviews Management ───────────────────────────────────────────────────────
+
+class _ReviewsManagementSection extends StatelessWidget {
+  const _ReviewsManagementSection({required this.state});
+  final AdminState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Quản lý Reviews',
+      child: state.reviews.isEmpty
+          ? const _EmptyAdminState(message: 'Chưa có review nào.')
+          : Column(
+              children: state.reviews.map((review) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ReviewTile(
+                    review: review,
+                    onDelete: state.isUpdating
+                        ? null
+                        : () => _confirmDelete(context, state, review),
+                  ),
+                );
+              }).toList(growable: false),
+            ),
+    );
+  }
+
+  void _confirmDelete(
+    BuildContext context,
+    AdminState state,
+    AdminProductReviewModel review,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xóa review?'),
+        content: Text(
+          'Review của "${review.author}" cho "${review.productTitle}" sẽ bị xóa vĩnh viễn.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              state.deleteReview(review.productId, review.createdAt);
+            },
+            child: const Text('Xóa', style: TextStyle(color: AdminColors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewTile extends StatelessWidget {
+  const _ReviewTile({required this.review, this.onDelete});
+  final AdminProductReviewModel review;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final stars = '★' * review.rating.clamp(1, 5) +
+        '☆' * (5 - review.rating.clamp(1, 5));
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: _box(borderWidth: 1, radius: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        review.productTitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AdminColors.blue,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      stars,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AdminColors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${review.author} • ${_shortDate(review.createdAt)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AdminColors.textSoft,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  review.content,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AdminColors.textDark,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _MiniActionButton(
+            label: 'Xóa',
+            onTap: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _shortDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      return '${dt.day}/${dt.month}/${dt.year}';
+    } catch (_) {
+      return iso.length > 10 ? iso.substring(0, 10) : iso;
+    }
   }
 }
 

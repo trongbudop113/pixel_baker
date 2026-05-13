@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
 import logging
+import os
 import time
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import settings
@@ -79,3 +81,7 @@ async def request_logging_middleware(request: Request, call_next):
     return response
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+_uploads_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+os.makedirs(_uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=_uploads_dir), name="uploads")

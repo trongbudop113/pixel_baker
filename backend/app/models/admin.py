@@ -401,6 +401,15 @@ class AdminContentDocumentUpdateRequest(ApiModel):
     jsonContent: str
 
 
+class AdminProductReviewResponse(ApiModel):
+    productId: int
+    productTitle: str
+    author: str
+    content: str
+    rating: int
+    createdAt: str
+
+
 class AdminAlertResponse(ApiModel):
     title: str
     description: str

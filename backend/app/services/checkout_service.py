@@ -90,6 +90,27 @@ class CheckoutService:
         discount_amount = 0
         applied_voucher_code = None
 
+        # Check stock status for all products in cart
+        product_ids = list({item.productId for item in payload.items if item.productId})
+        out_of_stock = await self._admin_repository.check_products_stock(product_ids)
+        if out_of_stock:
+            names = ", ".join(p["title"] for p in out_of_stock)
+            return CheckoutValidationResponse(
+                canCheckout=False,
+                subtotal=subtotal,
+                deliveryFee=delivery_fee,
+                discountAmount=0,
+                total=subtotal + delivery_fee,
+                paymentMethod=payload.paymentMethod,
+                paymentStatus=self._initial_payment_status(payload.paymentMethod),
+                voucherCode=payload.voucherCode,
+                shortages=[],
+                message=f"Sản phẩm đã hết hàng: {names}. Vui lòng xoá khỏi giỏ và thử lại.",
+                bankTransferInfo=self._bank_transfer_info()
+                if payload.paymentMethod == PAYMENT_BANK_TRANSFER
+                else None,
+            )
+
         shortages = await self._admin_repository.validate_ingredients_for_order_items(
             [item.model_dump() for item in payload.items]
         )

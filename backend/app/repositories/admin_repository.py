@@ -48,6 +48,7 @@ from app.models.admin import (
     AdminVoucherResponse,
     AdminRevenueDayResponse,
     AdminRevenueSummaryResponse,
+    AdminProductReviewResponse,
 )
 from app.core.security import hash_password
 from app.models.contact import ContactPageResponse
@@ -752,6 +753,50 @@ class AdminRepository:
             )
             for document in documents
         ]
+
+    async def list_all_reviews(self) -> list[AdminProductReviewResponse]:
+        documents = await self._products.find({}, {"id": 1, "title": 1, "reviews": 1}).to_list(length=500)
+        result: list[AdminProductReviewResponse] = []
+        for doc in documents:
+            product_id = int(doc.get("id") or 0)
+            product_title = str(doc.get("title") or "")
+            for review in doc.get("reviews", []):
+                result.append(AdminProductReviewResponse(
+                    productId=product_id,
+                    productTitle=product_title,
+                    author=str(review.get("author") or ""),
+                    content=str(review.get("content") or ""),
+                    rating=int(review.get("rating") or 5),
+                    createdAt=str(review.get("createdAt") or ""),
+                ))
+        result.sort(key=lambda r: r.createdAt, reverse=True)
+        return result
+
+    async def delete_review(self, product_id: int, created_at: str) -> bool:
+        document = await self._products.find_one({"id": product_id})
+        if document is None:
+            return False
+        reviews = [r for r in document.get("reviews", []) if str(r.get("createdAt") or "") != created_at]
+        await self._products.update_one({"id": product_id}, {"$set": {"reviews": reviews}})
+        return True
+
+    async def check_products_stock(self, product_ids: list[int]) -> list[dict]:
+        """Return list of out-of-stock products from given product IDs."""
+        if not product_ids:
+            return []
+        documents = await self._products.find(
+            {"id": {"$in": product_ids}}
+        ).to_list(length=len(product_ids) + 10)
+        out_of_stock = []
+        for doc in documents:
+            stock = str(doc.get("stockStatus") or "").strip().lower()
+            if stock != "còn hàng":
+                out_of_stock.append({
+                    "productId": int(doc.get("id") or 0),
+                    "title": str(doc.get("title") or ""),
+                    "stockStatus": str(doc.get("stockStatus") or "Hết hàng"),
+                })
+        return out_of_stock
 
     async def list_product_cost_reports(self) -> list[AdminProductCostReportResponse]:
         product_documents = await self._products.find({}).sort("title", 1).to_list(length=500)

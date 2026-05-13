@@ -1386,6 +1386,44 @@ class AdminContentDocumentModel {
   }
 }
 
+class AdminProductReviewModel {
+  const AdminProductReviewModel({
+    required this.productId,
+    required this.productTitle,
+    required this.author,
+    required this.content,
+    required this.rating,
+    required this.createdAt,
+  });
+
+  final int productId;
+  final String productTitle;
+  final String author;
+  final String content;
+  final int rating;
+  final String createdAt;
+
+  factory AdminProductReviewModel.fromJson(Map<String, dynamic> json) {
+    return AdminProductReviewModel(
+      productId: (json['productId'] as num?)?.toInt() ?? 0,
+      productTitle: (json['productTitle'] ?? '').toString(),
+      author: (json['author'] ?? '').toString(),
+      content: (json['content'] ?? '').toString(),
+      rating: (json['rating'] as num?)?.toInt() ?? 5,
+      createdAt: (json['createdAt'] ?? '').toString(),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is AdminProductReviewModel &&
+      other.productId == productId &&
+      other.createdAt == createdAt;
+
+  @override
+  int get hashCode => Object.hash(productId, createdAt);
+}
+
 const defaultAdminDashboard = AdminDashboardModel(
   title: 'Dashboard Quản trị',
   notificationLabel: '0 thông báo',

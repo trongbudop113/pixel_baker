@@ -41,6 +41,9 @@ abstract class AdminRepository {
   Future<List<AdminInventoryTransactionModel>> fetchInventoryTransactions();
   Future<List<AdminProductCostReportModel>> fetchProductCostReports();
   Future<AdminRevenueSummaryModel> fetchRevenueSummary(String range);
+  Future<List<AdminProductReviewModel>> fetchReviews();
+  Future<void> deleteReview(int productId, String createdAt);
+  Future<String> uploadImage(List<int> bytes, String filename, String mimeType);
   Future<List<AdminIngredientExcelRow>> fetchIngredientExcelRows();
   Future<AdminBulkImportResultModel> importIngredientExcelRows(List<AdminIngredientExcelRow> rows);
   Future<AdminIngredientModel> fetchIngredient(String ingredientId);
@@ -532,6 +535,42 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       ),
     );
     return response.data;
+  }
+
+  @override
+  Future<String> uploadImage(List<int> bytes, String filename, String mimeType) async {
+    final url = await apiClient.uploadFile(
+      '/admin/upload-image',
+      bytes: bytes,
+      filename: filename,
+      mimeType: mimeType,
+    );
+    // Prepend base URL so the returned path becomes a full URL
+    final base = apiClient.config.baseUrl.replaceAll(RegExp(r'/api/v1$'), '');
+    return url.startsWith('http') ? url : '$base$url';
+  }
+
+  @override
+  Future<List<AdminProductReviewModel>> fetchReviews() async {
+    final response = await apiClient.get<List<AdminProductReviewModel>>(
+      '/admin/reviews',
+      requiresAuth: true,
+      decoder: (json) => readList(
+        _unwrapListPayload(json),
+        AdminProductReviewModel.fromJson,
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<void> deleteReview(int productId, String createdAt) async {
+    final encoded = Uri.encodeComponent(createdAt);
+    await apiClient.delete<void>(
+      '/admin/reviews/$productId/$encoded',
+      requiresAuth: true,
+      decoder: (_) {},
+    );
   }
 
   @override

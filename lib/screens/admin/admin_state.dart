@@ -29,6 +29,7 @@ class AdminViewState {
     this.inventoryTransactions = const [],
     this.recipes = const [],
     this.productCostReports = const [],
+    this.reviews = const [],
     this.revenueSummary = defaultRevenueSummary,
     this.revenueRange = '7d',
     this.isLoading = false,
@@ -57,6 +58,7 @@ class AdminViewState {
   final List<AdminInventoryTransactionModel> inventoryTransactions;
   final List<AdminRecipeModel> recipes;
   final List<AdminProductCostReportModel> productCostReports;
+  final List<AdminProductReviewModel> reviews;
   final AdminRevenueSummaryModel revenueSummary;
   final String revenueRange;
   final bool isLoading;
@@ -85,6 +87,7 @@ class AdminViewState {
     List<AdminInventoryTransactionModel>? inventoryTransactions,
     List<AdminRecipeModel>? recipes,
     List<AdminProductCostReportModel>? productCostReports,
+    List<AdminProductReviewModel>? reviews,
     AdminRevenueSummaryModel? revenueSummary,
     String? revenueRange,
     bool? isLoading,
@@ -115,6 +118,7 @@ class AdminViewState {
           inventoryTransactions ?? this.inventoryTransactions,
       recipes: recipes ?? this.recipes,
       productCostReports: productCostReports ?? this.productCostReports,
+      reviews: reviews ?? this.reviews,
       revenueSummary: revenueSummary ?? this.revenueSummary,
       revenueRange: revenueRange ?? this.revenueRange,
       isLoading: isLoading ?? this.isLoading,
@@ -151,6 +155,7 @@ class AdminViewState {
         ) &&
         _sameRecipes(other.recipes, recipes) &&
         _sameProductCostReports(other.productCostReports, productCostReports) &&
+        _sameReviews(other.reviews, reviews) &&
         other.revenueSummary == revenueSummary &&
         other.revenueRange == revenueRange &&
         other.isLoading == isLoading &&
@@ -181,6 +186,7 @@ class AdminViewState {
         Object.hashAll(inventoryTransactions),
         Object.hashAll(recipes),
         Object.hashAll(productCostReports),
+        Object.hashAll(reviews),
         revenueSummary,
         revenueRange,
         isLoading,
@@ -221,6 +227,7 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   List<AdminRecipeModel> get recipes => state.recipes;
   List<AdminProductCostReportModel> get productCostReports =>
       state.productCostReports;
+  List<AdminProductReviewModel> get reviews => state.reviews;
   AdminRevenueSummaryModel get revenueSummary => state.revenueSummary;
   String get revenueRange => state.revenueRange;
   bool get isLoading => state.isLoading;
@@ -294,6 +301,9 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     }
     if (canViewReports) {
       items.add(const AdminSidebarItem(index: 9, label: 'Doanh số'));
+    }
+    if (canViewReports) {
+      items.add(const AdminSidebarItem(index: 10, label: 'Reviews'));
     }
     return items;
   }
@@ -475,6 +485,14 @@ class AdminState extends ScreenController<AdminViewState, Never> {
             label: 'product-cost-reports',
           )
         : state.productCostReports;
+    final reviews = canViewReports
+        ? await _loadSection(
+            loader: _repository.fetchReviews,
+            fallback: state.reviews,
+            errors: errors,
+            label: 'reviews',
+          )
+        : state.reviews;
     final revenueSummary = canViewReports
         ? await _loadSection(
             loader: () => _repository.fetchRevenueSummary(state.revenueRange),
@@ -506,6 +524,7 @@ class AdminState extends ScreenController<AdminViewState, Never> {
           inventoryTransactions: inventoryTransactions,
           recipes: recipes,
           productCostReports: productCostReports,
+          reviews: reviews,
           revenueSummary: revenueSummary,
           isLoading: false,
           errorMessage: errors.isEmpty
@@ -877,6 +896,19 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     update((current) => current.copyWith(productCostReports: productCostReports));
   }
 
+  Future<void> deleteReview(int productId, String createdAt) async {
+    await _wrapUpdate(
+      action: () async {
+        await _repository.deleteReview(productId, createdAt);
+        final updated = state.reviews
+            .where((r) => !(r.productId == productId && r.createdAt == createdAt))
+            .toList(growable: false);
+        update((current) => current.copyWith(reviews: updated));
+      },
+      fallbackMessage: 'Không thể xóa review.',
+    );
+  }
+
   Future<void> refreshRevenueSummary({String? range}) async {
     final effectiveRange = range ?? state.revenueRange;
     if (range != null && range != state.revenueRange) {
@@ -1119,6 +1151,17 @@ bool _sameInventoryTransactions(
         a.createdAt != b.createdAt) {
       return false;
     }
+  }
+  return true;
+}
+
+bool _sameReviews(
+  List<AdminProductReviewModel> left,
+  List<AdminProductReviewModel> right,
+) {
+  if (left.length != right.length) return false;
+  for (var i = 0; i < left.length; i++) {
+    if (left[i] != right[i]) return false;
   }
   return true;
 }
