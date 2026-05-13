@@ -5,6 +5,7 @@ import 'package:universal_html/html.dart' as html;
 
 import '../../app/models/checkout_models.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 import 'orders_detail_state.dart';
 
 class OrdersDetailColors {
@@ -139,6 +140,8 @@ class _OrdersDetailWeb extends StatelessWidget {
               },
             ),
           ),
+          const SizedBox(height: 12),
+          const PixelFooter(),
         ],
       ),
     );
@@ -201,6 +204,8 @@ class _OrdersDetailMobile extends StatelessWidget {
                           onRequestRefund: state.requestRefundForSelectedOrder,
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      const PixelFooter(mobile: true),
                     ],
                   ),
                 );

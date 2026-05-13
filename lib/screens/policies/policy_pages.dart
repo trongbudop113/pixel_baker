@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 
 class PolicyColors {
   static const red = Color(0xFFE53935);
@@ -259,6 +260,8 @@ class _PolicyWeb extends StatelessWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    const PixelFooter(),
                   ],
                 ),
               ),
@@ -425,6 +428,8 @@ class _PolicyMobile extends StatelessWidget {
                   _notesCard(),
                   const SizedBox(height: 10),
                   _supportCard(context),
+                  const SizedBox(height: 12),
+                  const PixelFooter(mobile: true),
                 ],
               ),
             ),

@@ -6,6 +6,7 @@ import '../../app/routing/app_router.dart';
 import '../../app/services/app_services.dart';
 import '../../app/state/screen_controller.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 import 'profile_state.dart';
 import '../../theme/app_theme.dart';
 
@@ -92,32 +93,38 @@ class WebProfileLayout extends StatelessWidget {
             if (showTopHeader) const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
                   children: [
-                    Expanded(
-                      flex: 34,
-                      child: Column(
-                        children: [
-                          _WebPersonalCard(state: state),
-                          const SizedBox(height: 12),
-                          _WebAddressCard(state: state),
-                          const SizedBox(height: 12),
-                          _WebSecurityCard(state: state),
-                        ],
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 34,
+                          child: Column(
+                            children: [
+                              _WebPersonalCard(state: state),
+                              const SizedBox(height: 12),
+                              _WebAddressCard(state: state),
+                              const SizedBox(height: 12),
+                              _WebSecurityCard(state: state),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 66,
+                          child: Column(
+                            children: [
+                              _WebOrdersCard(state: state),
+                              const SizedBox(height: 12),
+                              const _WishlistEntryCard(),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 66,
-                      child: Column(
-                        children: [
-                          _WebOrdersCard(state: state),
-                          const SizedBox(height: 12),
-                          const _WishlistEntryCard(),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 12),
+                    const PixelFooter(),
                   ],
                 ),
               ),
@@ -494,6 +501,8 @@ class MobileProfileLayout extends StatelessWidget {
                     _mobileSecurity(context),
                     const SizedBox(height: 6),
                     _mobileBottomTabs(),
+                    const SizedBox(height: 12),
+                    const PixelFooter(mobile: true),
                   ],
                 ),
               ),

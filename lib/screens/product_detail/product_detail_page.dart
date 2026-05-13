@@ -8,6 +8,7 @@ import '../../app/models/menu_models.dart';
 import '../../app/routing/app_router.dart';
 import '../../app/services/app_services.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 import 'product_detail_state.dart';
 
 class ProductDetailColors {
@@ -143,6 +144,8 @@ class _WebProductDetail extends StatelessWidget {
                         _reviewsPanel(context),
                         const SizedBox(height: 14),
                         _relatedPanel(context, state),
+                        const SizedBox(height: 12),
+                        const PixelFooter(),
                       ],
                     ),
                   ),
@@ -968,6 +971,8 @@ class _MobileProductDetail extends StatelessWidget {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        const PixelFooter(mobile: true),
                       ],
                     ),
                   ),

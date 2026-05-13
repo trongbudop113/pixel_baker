@@ -5,6 +5,7 @@ import '../../app/models/voucher_models.dart';
 import '../../app/routing/app_router.dart';
 import '../../app/state/screen_controller.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 import 'voucher_state.dart';
 
 class VoucherColors {
@@ -122,6 +123,8 @@ class WebVoucherLayout extends StatelessWidget {
                           child: _voucher(index, voucher),
                         );
                       }),
+                      const SizedBox(height: 12),
+                      const PixelFooter(),
                     ],
                   ),
                 ),
@@ -293,6 +296,8 @@ class MobileVoucherLayout extends StatelessWidget {
                       final voucher = state.vouchers[index ~/ 2];
                       return _card(index ~/ 2, voucher);
                     }),
+                    const SizedBox(height: 12),
+                    const PixelFooter(mobile: true),
                   ],
                 ),
               ),

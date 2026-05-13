@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app/models/order_models.dart';
 import '../../app/models/ui_accent.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 import 'orders_info_state.dart';
 
 class OrdersInfoColors {
@@ -84,6 +85,8 @@ class _OrdersInfoWeb extends StatelessWidget {
               _statusPanel(),
               const SizedBox(height: 12),
               _faqPanel(),
+              const SizedBox(height: 12),
+              const PixelFooter(),
             ],
           ),
         ),
@@ -296,6 +299,8 @@ class _OrdersInfoMobile extends StatelessWidget {
                       child: _mtxt('Xem SOP chi tiết', Colors.white, 11,
                           FontWeight.w700),
                     ),
+                    const SizedBox(height: 12),
+                    const PixelFooter(mobile: true),
                   ],
                 ),
               ),

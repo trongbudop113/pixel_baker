@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/models/contact_models.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 import 'contact_state.dart';
 
 class ContactColors {
@@ -139,6 +140,8 @@ class WebContactLayout extends StatelessWidget {
                             Expanded(child: _rightInfo(page.infoCards)),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        const PixelFooter(),
                       ],
                     ),
                   ),
@@ -515,6 +518,8 @@ class MobileContactLayout extends StatelessWidget {
                         ..._buildInfoCards(page.infoCards),
                         const SizedBox(height: 8),
                         _bottomNav(page.bottomNavLabels),
+                        const SizedBox(height: 12),
+                        const PixelFooter(mobile: true),
                       ],
                     ),
                   ),
