@@ -7,6 +7,7 @@ import '../../app/models/checkout_models.dart';
 import '../../app/routing/app_router.dart';
 import '../../app/services/app_services.dart';
 import '../../app/state/screen_controller.dart';
+import '../shared/pixel_footer.dart';
 import 'checkout_state.dart';
 
 class CheckoutColors {
@@ -274,11 +275,11 @@ class WebCheckoutLayout extends StatelessWidget {
                       _submitBanner(),
                     ],
                     const SizedBox(height: 20),
-                    _webFooter(),
                   ],
                   ),
                 ),
               ),
+              const PixelFooter(label: 'PIXEL BAKERY | THANH TOÁN'),
             ],
           ),
         ),
@@ -1075,11 +1076,11 @@ class MobileCheckoutLayout extends StatelessWidget {
                       const SizedBox(height: 10),
                       _mobilePolicy(),
                       const SizedBox(height: 10),
-                      _mobileFooter(),
                     ],
                   ),
                 ),
               ),
+              const PixelFooter(label: 'PIXEL BAKERY | THANH TOÁN', mobile: true),
             ],
           ),
         ),

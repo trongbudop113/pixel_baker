@@ -141,7 +141,14 @@ class _OrdersDetailWeb extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const PixelFooter(),
+          AnimatedBuilder(
+            animation: state,
+            builder: (context, _) => PixelFooter(
+              label: state.selectedOrder != null
+                  ? 'PIXEL BAKERY | ĐƠN ${state.selectedOrder!.orderId}'
+                  : 'PIXEL BAKERY | ĐƠN HÀNG',
+            ),
+          ),
         ],
       ),
     );
@@ -204,13 +211,17 @@ class _OrdersDetailMobile extends StatelessWidget {
                           onRequestRefund: state.requestRefundForSelectedOrder,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      const PixelFooter(mobile: true),
                     ],
                   ),
                 );
               },
             ),
+          ),
+          PixelFooter(
+            mobile: true,
+            label: state.selectedOrder != null
+                ? 'PIXEL BAKERY | ĐƠN ${state.selectedOrder!.orderId}'
+                : 'PIXEL BAKERY | ĐƠN HÀNG',
           ),
         ],
       ),

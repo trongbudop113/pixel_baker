@@ -8,6 +8,7 @@ import '../../app/state/screen_controller.dart';
 import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
 import '../shared/back_to_top_button.dart';
+import '../shared/pixel_footer.dart';
 import '../shared/shimmer_box.dart';
 import 'menu_state.dart';
 
@@ -166,8 +167,8 @@ class WebMenuLayout extends StatelessWidget {
                           _combo(),
                           const SizedBox(height: 10),
                           _faq(),
-                          const SizedBox(height: 10),
-                          _footer(),
+                          const SizedBox(height: 12),
+                          const PixelFooter(label: 'PIXEL BAKERY | THỰC ĐƠN'),
                         ],
                       ),
                     ),
@@ -1155,6 +1156,8 @@ class MobileMenuLayout extends StatelessWidget {
                               );
                             },
                           ),
+                          const SizedBox(height: 12),
+                          const PixelFooter(label: 'PIXEL BAKERY | THỰC ĐƠN', mobile: true),
                         ],
                       ),
                     ),

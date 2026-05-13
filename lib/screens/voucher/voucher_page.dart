@@ -123,12 +123,11 @@ class WebVoucherLayout extends StatelessWidget {
                           child: _voucher(index, voucher),
                         );
                       }),
-                      const SizedBox(height: 12),
-                      const PixelFooter(),
                     ],
                   ),
                 ),
               ),
+              const PixelFooter(label: 'PIXEL BAKERY | VOUCHER'),
             ],
           ),
         ),
@@ -296,12 +295,11 @@ class MobileVoucherLayout extends StatelessWidget {
                       final voucher = state.vouchers[index ~/ 2];
                       return _card(index ~/ 2, voucher);
                     }),
-                    const SizedBox(height: 12),
-                    const PixelFooter(mobile: true),
                   ],
                 ),
               ),
             ),
+            const PixelFooter(label: 'PIXEL BAKERY | VOUCHER', mobile: true),
           ],
         ),
       ),

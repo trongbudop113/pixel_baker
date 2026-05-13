@@ -144,11 +144,12 @@ class _WebProductDetail extends StatelessWidget {
                         _reviewsPanel(context),
                         const SizedBox(height: 14),
                         _relatedPanel(context, state),
-                        const SizedBox(height: 12),
-                        const PixelFooter(),
                       ],
                     ),
                   ),
+                ),
+                PixelFooter(
+                  label: 'PIXEL BAKERY | ${state.product!.title.toUpperCase()}',
                 ),
               ],
             ),
@@ -971,11 +972,13 @@ class _MobileProductDetail extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        const PixelFooter(mobile: true),
                       ],
                     ),
                   ),
+                ),
+                PixelFooter(
+                  mobile: true,
+                  label: 'PIXEL BAKERY | ${state.product!.title.toUpperCase()}',
                 ),
               ],
             ),
@@ -984,6 +987,7 @@ class _MobileProductDetail extends StatelessWidget {
       },
     );
   }
+
 
   Widget _mobileCard({required Widget child}) => Container(
         width: double.infinity,
