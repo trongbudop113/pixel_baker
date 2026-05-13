@@ -6,6 +6,8 @@ import '../../app/services/app_services.dart';
 import '../../app/state/screen_controller.dart';
 import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
+import '../shared/back_to_top_button.dart';
+import '../shared/shimmer_box.dart';
 import 'home_state.dart';
 
 class AppColors {
@@ -77,20 +79,22 @@ class _ResponsiveHomeScreenState extends State<ResponsiveHomeScreen> {
       listener: _handleHomeNavigation,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 900;
-          return isMobile
-              ? HomeMobileLayout(
-                  state: _homeState,
-                  showTopHeader: widget.showTopHeader,
-                  scrollController: _mobileScrollController,
-                  testimonialController: _testimonialController,
-                )
-              : HomeWebLayout(
-                  state: _homeState,
-                  showTopHeader: widget.showTopHeader,
-                  scrollController: _webScrollController,
-                  testimonialController: _testimonialController,
-                );
+          final width = constraints.maxWidth;
+          if (width >= 900) {
+            return HomeWebLayout(
+              state: _homeState,
+              showTopHeader: widget.showTopHeader,
+              scrollController: _webScrollController,
+              testimonialController: _testimonialController,
+            );
+          }
+          return HomeMobileLayout(
+            state: _homeState,
+            showTopHeader: widget.showTopHeader,
+            scrollController: _mobileScrollController,
+            testimonialController: _testimonialController,
+            isTablet: width >= 600,
+          );
         },
       ),
     );
@@ -155,7 +159,9 @@ class HomeWebLayout extends StatelessWidget {
             if (showTopHeader) _header(context),
             if (showTopHeader) const SizedBox(height: 20),
             Expanded(
-              child: SingleChildScrollView(
+              child: Stack(
+                children: [
+              SingleChildScrollView(
                 controller: scrollController,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -213,6 +219,9 @@ class HomeWebLayout extends StatelessWidget {
                     _footer(context),
                   ],
                 ),
+              ),
+              BackToTopButton(scrollController: scrollController),
+                ],
               ),
             ),
           ],
@@ -1123,18 +1132,20 @@ class HomeMobileLayout extends StatelessWidget {
   final bool showTopHeader;
   final ScrollController scrollController;
   final TextEditingController testimonialController;
+  final bool isTablet;
   const HomeMobileLayout({
     super.key,
     required this.state,
     required this.scrollController,
     required this.testimonialController,
     this.showTopHeader = true,
+    this.isTablet = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 390,
+      width: isTablet ? 900 : 390,
       height: double.infinity,
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -1147,7 +1158,9 @@ class HomeMobileLayout extends StatelessWidget {
             if (showTopHeader) _header(context),
             if (showTopHeader) const SizedBox(height: 12),
             Expanded(
-              child: SingleChildScrollView(
+              child: Stack(
+                children: [
+              SingleChildScrollView(
                 controller: scrollController,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1200,6 +1213,9 @@ class HomeMobileLayout extends StatelessWidget {
                     _footer(context),
                   ],
                 ),
+              ),
+              BackToTopButton(scrollController: scrollController),
+                ],
               ),
             ),
           ],
@@ -1330,11 +1346,34 @@ class HomeMobileLayout extends StatelessWidget {
         animation: state,
         builder: (context, _) {
           if (state.isLoading) {
-            return const _HomeProductSkeleton(mobile: true);
+            return _HomeProductSkeleton(mobile: !isTablet);
           }
-          final products = state.pageResponse.featuredProducts.take(2).toList(growable: false);
+          final count = isTablet ? 4 : 2;
+          final products = state.pageResponse.featuredProducts.take(count).toList(growable: false);
           if (products.isEmpty) {
             return const SizedBox.shrink();
+          }
+          if (isTablet) {
+            // 2-column grid for tablet
+            final rows = <Widget>[];
+            for (var i = 0; i < products.length; i += 2) {
+              final rowItems = products.skip(i).take(2).toList();
+              rows.add(Row(children: List.generate(rowItems.length * 2 - 1, (idx) {
+                if (idx.isOdd) return const SizedBox(width: 10);
+                final p = rowItems[idx ~/ 2];
+                return Expanded(child: _productLite(context, p,
+                  idx.isEven ? const Color(0xFFEAF3FF) : const Color(0xFFF1FAF1),
+                  onTap: (ctx) => ctx.go('${AppRoutePaths.productDetail}?id=${p.productId}'),
+                  onAddToCart: () => _addFeaturedProductToCart(context, p),
+                ));
+              })));
+              if (i + 2 < products.length) rows.add(const SizedBox(height: 8));
+            }
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _txt('BÁNH BÁN CHẠY', AppColors.blue, 15, FontWeight.w800),
+              const SizedBox(height: 8),
+              ...rows,
+            ]);
           }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1369,7 +1408,7 @@ class HomeMobileLayout extends StatelessWidget {
             onTap: () => context.goNamed(AppRouteNames.story),
             child: Container(
               padding: const EdgeInsets.all(10),
-              decoration: _boxDec(),
+              decoration: _boxDec(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1453,7 +1492,7 @@ class HomeMobileLayout extends StatelessWidget {
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: _boxDec(),
+                decoration: _boxDec(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1504,7 +1543,7 @@ class HomeMobileLayout extends StatelessWidget {
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: _boxDec(),
+                decoration: _boxDec(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1598,9 +1637,9 @@ class HomeMobileLayout extends StatelessWidget {
         },
       );
 
-  Widget _faq() => Container(
+  Widget _faq() => Builder(builder: (ctx) => Container(
         padding: const EdgeInsets.all(10),
-        decoration: _boxDec(),
+        decoration: _boxDec(ctx),
         child: AnimatedBuilder(
           animation: state,
           builder: (context, _) {
@@ -1718,10 +1757,10 @@ class HomeMobileLayout extends StatelessWidget {
         child: _txt(message, AppColors.gray, 12, FontWeight.w600),
       );
 
-  Widget _tile(String title, String desc, Color color) => Container(
+  Widget _tile(String title, String desc, Color color) => Builder(builder: (ctx) => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(10),
-        decoration: _boxDec(),
+        decoration: _boxDec(ctx),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1986,11 +2025,14 @@ class HomeMobileLayout extends StatelessWidget {
         child: const Icon(Icons.person, size: 12, color: AppColors.blue),
       );
 
-  BoxDecoration _boxDec() => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.gray, width: 2),
-      );
+  BoxDecoration _boxDec([BuildContext? ctx]) {
+    final bg = ctx != null ? Theme.of(ctx).cardColor : Colors.white;
+    return BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: AppColors.gray, width: 2),
+    );
+  }
 
   Widget _txt(String text, Color color, double size, FontWeight weight,
           [double? lineHeight]) =>
@@ -2047,40 +2089,13 @@ class _HomeProductSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: mobile ? 140 : 130,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7EBF3),
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
+            ShimmerBox(width: double.infinity, height: mobile ? 140 : 130, borderRadius: 6),
             const SizedBox(height: 10),
-            Container(
-              width: mobile ? 150 : 110,
-              height: 14,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7EBF3),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
+            ShimmerBox(width: mobile ? 150 : 110, height: 14, borderRadius: 999),
             const SizedBox(height: 10),
-            Container(
-              width: mobile ? 110 : 90,
-              height: mobile ? 24 : 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7EBF3),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
+            ShimmerBox(width: mobile ? 110 : 90, height: mobile ? 24 : 28, borderRadius: 999),
             const SizedBox(height: 8),
-            Container(
-              width: 92,
-              height: 22,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7EBF3),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
+            const ShimmerBox(width: 92, height: 22, borderRadius: 999),
           ],
         ),
       );

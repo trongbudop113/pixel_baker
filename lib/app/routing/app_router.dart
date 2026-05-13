@@ -75,6 +75,22 @@ class AppRoutePaths {
   static const adminIngredientForm = '/admin/ingredient-form';
 }
 
+/// Helper: fade transition page (200ms)
+CustomTransitionPage<void> _fadePage(
+  GoRouterState state,
+  Widget child, {
+  Duration duration = const Duration(milliseconds: 200),
+}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: duration,
+    reverseTransitionDuration: duration,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        FadeTransition(opacity: animation, child: child),
+  );
+}
+
 class AppRouter {
   static const BoxConstraints pageWidthConstraints = BoxConstraints(
     maxWidth: 1440,
@@ -137,23 +153,17 @@ class AppRouter {
           GoRoute(
             path: AppRoutePaths.home,
             name: AppRouteNames.home,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveHomeScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveHomeScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.checkout,
             name: AppRouteNames.checkout,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveCheckoutScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveCheckoutScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.menu,
             name: AppRouteNames.menu,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveMenuScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveMenuScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.productDetail,
@@ -165,128 +175,95 @@ class AppRouter {
               return null;
             },
             pageBuilder: (context, state) {
-              final idParam = state.uri.queryParameters['id'];
-              final id = int.tryParse(idParam ?? '');
-              final autoOpenMooncakeBox =
-                  state.uri.queryParameters['box'] == '1';
-              return NoTransitionPage(
-                child: ResponsiveProductDetailScreen(
-                  productId: id!,
-                  showTopHeader: false,
-                  autoOpenMooncakeBox: autoOpenMooncakeBox,
-                ),
-              );
+              final id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+              final autoOpenMooncakeBox = state.uri.queryParameters['box'] == '1';
+              return _fadePage(state, ResponsiveProductDetailScreen(
+                productId: id!,
+                showTopHeader: false,
+                autoOpenMooncakeBox: autoOpenMooncakeBox,
+              ));
             },
           ),
           GoRoute(
             path: AppRoutePaths.profile,
             name: AppRouteNames.profile,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveProfileScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveProfileScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.voucher,
             name: AppRouteNames.voucher,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveVoucherScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveVoucherScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.story,
             name: AppRouteNames.story,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveStoryScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveStoryScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.contact,
             name: AppRouteNames.contact,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveContactScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveContactScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.deliveryPolicy,
             name: AppRouteNames.deliveryPolicy,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveDeliveryPolicyScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveDeliveryPolicyScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.paymentPolicy,
             name: AppRouteNames.paymentPolicy,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsivePaymentPolicyScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsivePaymentPolicyScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.login,
             name: AppRouteNames.login,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveLoginScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveLoginScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.register,
             name: AppRouteNames.register,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveRegisterScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveRegisterScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.wishlist,
             name: AppRouteNames.wishlist,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveWishlistScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveWishlistScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.forgotPassword,
             name: AppRouteNames.forgotPassword,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveForgotPasswordScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveForgotPasswordScreen(showTopHeader: false)),
           ),
           GoRoute(
             path: AppRoutePaths.resetPassword,
             name: AppRouteNames.resetPassword,
-            pageBuilder: (context, state) => NoTransitionPage(
-              child: ResponsiveResetPasswordScreen(
-                showTopHeader: false,
-                initialToken: state.uri.queryParameters['token'],
-              ),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, ResponsiveResetPasswordScreen(
+              showTopHeader: false,
+              initialToken: state.uri.queryParameters['token'],
+            )),
           ),
           GoRoute(
             path: AppRoutePaths.admin,
             name: AppRouteNames.admin,
             pageBuilder: (context, state) {
-              final sidebarIndex =
-                  int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 0;
-              return NoTransitionPage(
-                child: ResponsiveAdminScreen(
-                  showTopHeader: false,
-                  initialSidebarIndex: sidebarIndex,
-                ),
-              );
+              final sidebarIndex = int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 0;
+              return _fadePage(state, ResponsiveAdminScreen(
+                showTopHeader: false,
+                initialSidebarIndex: sidebarIndex,
+              ));
             },
           ),
           GoRoute(
             path: AppRoutePaths.adminProductForm,
             name: AppRouteNames.adminProductForm,
             pageBuilder: (context, state) {
-              final productId =
-                  int.tryParse(state.uri.queryParameters['id'] ?? '');
-              final returnSidebarIndex =
-                  int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 2;
-              return NoTransitionPage(
-                child: ResponsiveAdminProductFormScreen(
-                  showTopHeader: false,
-                  productId: productId,
-                  returnSidebarIndex: returnSidebarIndex,
-                ),
-              );
+              final productId = int.tryParse(state.uri.queryParameters['id'] ?? '');
+              final returnSidebarIndex = int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 2;
+              return _fadePage(state, ResponsiveAdminProductFormScreen(
+                showTopHeader: false,
+                productId: productId,
+                returnSidebarIndex: returnSidebarIndex,
+              ));
             },
           ),
           GoRoute(
@@ -294,15 +271,12 @@ class AppRouter {
             name: AppRouteNames.adminCustomerForm,
             pageBuilder: (context, state) {
               final customerId = state.uri.queryParameters['id'] ?? '';
-              final returnSidebarIndex =
-                  int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 3;
-              return NoTransitionPage(
-                child: ResponsiveAdminCustomerFormScreen(
-                  showTopHeader: false,
-                  customerId: customerId,
-                  returnSidebarIndex: returnSidebarIndex,
-                ),
-              );
+              final returnSidebarIndex = int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 3;
+              return _fadePage(state, ResponsiveAdminCustomerFormScreen(
+                showTopHeader: false,
+                customerId: customerId,
+                returnSidebarIndex: returnSidebarIndex,
+              ));
             },
           ),
           GoRoute(
@@ -310,15 +284,12 @@ class AppRouter {
             name: AppRouteNames.adminRecipeForm,
             pageBuilder: (context, state) {
               final recipeId = state.uri.queryParameters['id'];
-              final returnSidebarIndex =
-                  int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 5;
-              return NoTransitionPage(
-                child: ResponsiveAdminRecipeFormScreen(
-                  showTopHeader: false,
-                  recipeId: recipeId,
-                  returnSidebarIndex: returnSidebarIndex,
-                ),
-              );
+              final returnSidebarIndex = int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 5;
+              return _fadePage(state, ResponsiveAdminRecipeFormScreen(
+                showTopHeader: false,
+                recipeId: recipeId,
+                returnSidebarIndex: returnSidebarIndex,
+              ));
             },
           ),
           GoRoute(
@@ -326,33 +297,26 @@ class AppRouter {
             name: AppRouteNames.adminIngredientForm,
             pageBuilder: (context, state) {
               final ingredientId = state.uri.queryParameters['id'];
-              final returnSidebarIndex =
-                  int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 4;
-              return NoTransitionPage(
-                child: ResponsiveAdminIngredientFormScreen(
-                  showTopHeader: false,
-                  ingredientId: ingredientId,
-                  returnSidebarIndex: returnSidebarIndex,
-                ),
-              );
+              final returnSidebarIndex = int.tryParse(state.uri.queryParameters['sidebar'] ?? '') ?? 4;
+              return _fadePage(state, ResponsiveAdminIngredientFormScreen(
+                showTopHeader: false,
+                ingredientId: ingredientId,
+                returnSidebarIndex: returnSidebarIndex,
+              ));
             },
           ),
           GoRoute(
             path: AppRoutePaths.ordersDetail,
             name: AppRouteNames.ordersDetail,
-            pageBuilder: (context, state) => NoTransitionPage(
-              child: ResponsiveOrdersDetailScreen(
-                showTopHeader: false,
-                orderId: state.uri.queryParameters['id'],
-              ),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, ResponsiveOrdersDetailScreen(
+              showTopHeader: false,
+              orderId: state.uri.queryParameters['id'],
+            )),
           ),
           GoRoute(
             path: AppRoutePaths.ordersInfo,
             name: AppRouteNames.ordersInfo,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ResponsiveOrdersInfoScreen(showTopHeader: false),
-            ),
+            pageBuilder: (context, state) => _fadePage(state, const ResponsiveOrdersInfoScreen(showTopHeader: false)),
           ),
         ],
       ),
@@ -374,11 +338,24 @@ class AppRouter {
   );
 }
 
-class _MainShellScaffold extends StatelessWidget {
+class _MainShellScaffold extends StatefulWidget {
   const _MainShellScaffold({required this.state, required this.child});
 
   final GoRouterState state;
   final Widget child;
+
+  @override
+  State<_MainShellScaffold> createState() => _MainShellScaffoldState();
+}
+
+class _MainShellScaffoldState extends State<_MainShellScaffold> {
+  bool _scrolled = false;
+
+  void _onScrollNotification(bool scrolled) {
+    if (scrolled != _scrolled) {
+      setState(() => _scrolled = scrolled);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -389,7 +366,7 @@ class _MainShellScaffold extends StatelessWidget {
         AppServices.instance.cartSession,
       ]),
       builder: (context, _) {
-        final path = state.uri.path;
+        final path = widget.state.uri.path;
         final isMobile = MediaQuery.of(context).size.width < 900;
         final isMenu = path == AppRoutePaths.menu;
         final authConfig = AppServices.instance.authSession.authConfig;
@@ -406,7 +383,14 @@ class _MainShellScaffold extends StatelessWidget {
               constraints: AppRouter.pageWidthConstraints,
               child: Column(
                 children: [
-                  Padding(
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      boxShadow: _scrolled
+                          ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))]
+                          : [],
+                    ),
                     padding:
                         EdgeInsets.only(top: isMobile ? 12 : 24, bottom: 10),
                     child: PixelHeaderBar(
@@ -438,7 +422,17 @@ class _MainShellScaffold extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Expanded(child: child),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        _onScrollNotification(
+                          notification.metrics.pixels > 10,
+                        );
+                        return false;
+                      },
+                      child: widget.child,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -449,7 +443,7 @@ class _MainShellScaffold extends StatelessWidget {
   }
 
   void _applySeo() {
-    final path = state.uri.path;
+    final path = widget.state.uri.path;
     final config = switch (path) {
       AppRoutePaths.menu => (
           'Pixel Bakery | Thực Đơn',

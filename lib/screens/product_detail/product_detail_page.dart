@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:universal_html/html.dart' as html;
 
 import '../../app/models/menu_models.dart';
 import '../../app/routing/app_router.dart';
@@ -215,6 +218,12 @@ class _WebProductDetail extends StatelessWidget {
                   30,
                   FontWeight.w900,
                 ),
+              ),
+              IconButton(
+                onPressed: () => _shareProduct(context, product.id, product.title),
+                icon: const Icon(Icons.share_rounded),
+                tooltip: 'Chia sẻ sản phẩm',
+                color: ProductDetailColors.blue,
               ),
               AnimatedBuilder(
                 animation: AppServices.instance.wishlistSession,
@@ -803,6 +812,12 @@ class _MobileProductDetail extends StatelessWidget {
                                   Expanded(
                                     child: _mTxt(product.title, ProductDetailColors.red,
                                         22, FontWeight.w900),
+                                  ),
+                                  IconButton(
+                                    onPressed: () => _shareProduct(context, product.id, product.title),
+                                    icon: const Icon(Icons.share_rounded, size: 20),
+                                    tooltip: 'Chia sẻ',
+                                    color: ProductDetailColors.blue,
                                   ),
                                   AnimatedBuilder(
                                     animation: AppServices.instance.wishlistSession,
@@ -1707,4 +1722,31 @@ class _RelatedCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Share helper ─────────────────────────────────────────────────────────────
+
+void _shareProduct(BuildContext context, int productId, String title) {
+  final url = '${Uri.base.origin}${Uri.base.path}#${AppRoutePaths.productDetail}?id=$productId';
+
+  if (kIsWeb) {
+    try {
+      // Try Web Share API first (mobile browsers)
+      final nav = html.window.navigator;
+      // ignore: avoid_dynamic_calls
+      (nav as dynamic).share({'title': title, 'url': url});
+      return;
+    } catch (_) {
+      // Web Share API not supported — fall through to clipboard
+    }
+  }
+
+  Clipboard.setData(ClipboardData(text: url));
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: const Text('Đã sao chép link sản phẩm'),
+      duration: const Duration(seconds: 2),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
 }

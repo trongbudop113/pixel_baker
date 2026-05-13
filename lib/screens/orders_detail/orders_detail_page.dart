@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:universal_html/html.dart' as html;
 
 import '../../app/models/checkout_models.dart';
@@ -393,6 +394,22 @@ class _OrderDetailPanel extends StatelessWidget {
                 ),
               ),
             ),
+            Builder(builder: (ctx) => IconButton(
+              icon: const Icon(Icons.copy_rounded, size: 16),
+              tooltip: 'Sao chép mã đơn',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: detail!.orderId));
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text('Đã sao chép mã đơn hàng'),
+                    duration: Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            )),
             if (detail!.invoiceHtml != null && detail!.invoiceHtml!.trim().isNotEmpty)
               TextButton(
                 onPressed: () => _printInvoice(detail!.invoiceHtml!),

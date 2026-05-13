@@ -7,6 +7,7 @@ import '../../app/services/app_services.dart';
 import '../../app/state/screen_controller.dart';
 import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
+import '../shared/shimmer_box.dart';
 import 'menu_state.dart';
 
 class MenuColors {
@@ -28,6 +29,7 @@ class ResponsiveMenuScreen extends StatefulWidget {
 class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
   late final MenuState _menuState;
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String? _lastCategoryQuery;
   Timer? _searchDebounce;
   Timer? _autoRefreshTimer;
@@ -70,6 +72,7 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
     _autoRefreshTimer?.cancel();
     _menuState.clearMooncakeBoxPurchase();
     _searchController.dispose();
+    _scrollController.dispose();
     _menuState.dispose();
     super.dispose();
   }
@@ -78,18 +81,24 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 900;
-        return isMobile
-            ? MobileMenuLayout(
-                state: _menuState,
-                searchController: _searchController,
-                onSearchChanged: _onSearchChanged,
-                showTopHeader: widget.showTopHeader)
-            : WebMenuLayout(
-                state: _menuState,
-                searchController: _searchController,
-                onSearchChanged: _onSearchChanged,
-                showTopHeader: widget.showTopHeader);
+        final width = constraints.maxWidth;
+        final isTablet = width >= 600 && width < 900;
+        final isMobile = width < 600;
+        if (isMobile || isTablet) {
+          return MobileMenuLayout(
+              state: _menuState,
+              searchController: _searchController,
+              scrollController: _scrollController,
+              onSearchChanged: _onSearchChanged,
+              isTablet: isTablet,
+              showTopHeader: widget.showTopHeader);
+        }
+        return WebMenuLayout(
+            state: _menuState,
+            searchController: _searchController,
+            scrollController: _scrollController,
+            onSearchChanged: _onSearchChanged,
+            showTopHeader: widget.showTopHeader);
       },
     );
   }
@@ -98,12 +107,14 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
 class WebMenuLayout extends StatelessWidget {
   final MenuState state;
   final TextEditingController searchController;
+  final ScrollController scrollController;
   final void Function(String) onSearchChanged;
   final bool showTopHeader;
   const WebMenuLayout(
       {super.key,
       required this.state,
       required this.searchController,
+      required this.scrollController,
       required this.onSearchChanged,
       this.showTopHeader = true});
 
@@ -130,7 +141,10 @@ class WebMenuLayout extends StatelessWidget {
                         rightLabel: 'thực đơn', showBack: true, showBrand: false),
                   if (showTopHeader) const SizedBox(height: 10),
                   Expanded(
-                    child: SingleChildScrollView(
+                    child: Stack(
+                      children: [
+                    SingleChildScrollView(
+                      controller: scrollController,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -155,6 +169,9 @@ class WebMenuLayout extends StatelessWidget {
                           _footer(),
                         ],
                       ),
+                    ),
+                      BackToTopButton(scrollController: scrollController),
+                      ],
                     ),
                   ),
                 ],
@@ -197,7 +214,7 @@ class WebMenuLayout extends StatelessWidget {
           builder: (context, intro, _) => Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: _boxDec(),
+            decoration: _boxDec(context),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -210,9 +227,9 @@ class WebMenuLayout extends StatelessWidget {
         ),
       );
 
-  Widget _filters() => Container(
+  Widget _filters() => Builder(builder: (ctx) => Container(
         padding: const EdgeInsets.all(10),
-        decoration: _boxDec(),
+        decoration: _boxDec(ctx),
         child: ControllerSelector<MenuState, MenuViewState>(
           controller: state,
           selector: (controller) => controller.state,
@@ -244,7 +261,7 @@ class WebMenuLayout extends StatelessWidget {
         builder: (context, menuState, _) => Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFDCE4EF)),
           ),
@@ -253,13 +270,11 @@ class WebMenuLayout extends StatelessWidget {
             children: [
               Expanded(
                 flex: 3,
-                child: TextField(
+                child: _AutocompleteSearch(
                   controller: searchController,
                   onChanged: onSearchChanged,
-                  decoration: _storefrontFieldDecoration(
-                    hintText: 'Tìm bánh, danh mục, hương vị...',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                  ),
+                  products: state.products,
+                  hintText: 'Tìm bánh, danh mục, hương vị...',
                 ),
               ),
               const SizedBox(width: 12),
@@ -483,7 +498,7 @@ class WebMenuLayout extends StatelessWidget {
         builder: (context, faqs, _) => Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          decoration: _boxDec(),
+          decoration: _boxDec(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -508,16 +523,19 @@ class WebMenuLayout extends StatelessWidget {
         builder: (context, tagline, _) => Container(
           height: 34,
           alignment: Alignment.center,
-          decoration: _boxDec(),
+          decoration: _boxDec(context),
           child: _txt(tagline, MenuColors.gray, 9, FontWeight.w600),
         ),
       );
 
-  BoxDecoration _boxDec() => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: MenuColors.gray, width: 2),
-      );
+  BoxDecoration _boxDec([BuildContext? ctx]) {
+    final bg = ctx != null ? Theme.of(ctx).cardColor : Colors.white;
+    return BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: MenuColors.gray, width: 2),
+    );
+  }
 
   Widget _txt(String text, Color color, double size, FontWeight weight) => Text(
         text,
@@ -871,6 +889,146 @@ TextStyle _storefrontDropdownTextStyle() {
   );
 }
 
+// ─── Search Autocomplete ──────────────────────────────────────────────────────
+
+class _AutocompleteSearch extends StatefulWidget {
+  const _AutocompleteSearch({
+    required this.controller,
+    required this.onChanged,
+    required this.products,
+    this.hintText = 'Tìm kiếm...',
+  });
+
+  final TextEditingController controller;
+  final void Function(String) onChanged;
+  final List<MenuProduct> products;
+  final String hintText;
+
+  @override
+  State<_AutocompleteSearch> createState() => _AutocompleteSearchState();
+}
+
+class _AutocompleteSearchState extends State<_AutocompleteSearch> {
+  final FocusNode _focusNode = FocusNode();
+  OverlayEntry? _overlay;
+  final LayerLink _layerLink = LayerLink();
+  List<MenuProduct> _suggestions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) _removeOverlay();
+    });
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    widget.onChanged(value);
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.isEmpty) {
+      _removeOverlay();
+      return;
+    }
+    final matches = widget.products
+        .where((p) =>
+            p.title.toLowerCase().contains(trimmed) ||
+            p.category.toLowerCase().contains(trimmed))
+        .take(6)
+        .toList(growable: false);
+    if (matches.isEmpty) {
+      _removeOverlay();
+      return;
+    }
+    setState(() => _suggestions = matches);
+    _showOverlay();
+  }
+
+  void _select(MenuProduct product) {
+    widget.controller.text = product.title;
+    widget.onChanged(product.title);
+    _removeOverlay();
+    _focusNode.unfocus();
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    final overlay = Overlay.of(context);
+    _overlay = OverlayEntry(
+      builder: (_) => Positioned(
+        width: context.findRenderObject() != null
+            ? (context.findRenderObject() as RenderBox).size.width
+            : 260,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 48),
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: _suggestions.map((p) {
+                return InkWell(
+                  onTap: () => _select(p),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search_rounded, size: 14, color: MenuColors.gray),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            p.title,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          p.category,
+                          style: const TextStyle(fontSize: 11, color: MenuColors.gray),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(growable: false),
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(_overlay!);
+  }
+
+  void _removeOverlay() {
+    _overlay?.remove();
+    _overlay = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextField(
+        controller: widget.controller,
+        focusNode: _focusNode,
+        onChanged: _onChanged,
+        decoration: _storefrontFieldDecoration(
+          hintText: widget.hintText,
+          prefixIcon: const Icon(Icons.search_rounded),
+        ),
+      ),
+    );
+  }
+}
+
 class _StorefrontActionButton extends StatelessWidget {
   const _StorefrontActionButton({
     required this.label,
@@ -913,14 +1071,18 @@ class _StorefrontActionButton extends StatelessWidget {
 class MobileMenuLayout extends StatelessWidget {
   final MenuState state;
   final TextEditingController searchController;
+  final ScrollController scrollController;
   final void Function(String) onSearchChanged;
   final bool showTopHeader;
+  final bool isTablet;
   const MobileMenuLayout(
       {super.key,
       required this.state,
       required this.searchController,
+      required this.scrollController,
       required this.onSearchChanged,
-      this.showTopHeader = true});
+      this.showTopHeader = true,
+      this.isTablet = false});
 
   @override
   Widget build(BuildContext context) {
@@ -945,7 +1107,10 @@ class MobileMenuLayout extends StatelessWidget {
                         rightLabel: 'thực đơn', showBack: true, showBrand: false),
                   if (showTopHeader) const SizedBox(height: 10),
                   Expanded(
-                    child: SingleChildScrollView(
+                    child: Stack(
+                      children: [
+                    SingleChildScrollView(
+                      controller: scrollController,
                       child: Column(
                         children: [
                           const SizedBox(height: 12),
@@ -978,39 +1143,23 @@ class MobileMenuLayout extends StatelessWidget {
                                             message: 'Không tìm thấy sản phẩm phù hợp.',
                                           ),
                                       ]
-                                    : List.generate(items.length * 2 - 1, (index) {
+                                    : isTablet
+                                        ? _buildTabletGrid(context, items)
+                                        : List.generate(items.length * 2 - 1, (index) {
                                         if (index.isOdd) {
                                           return const SizedBox(height: 10);
                                         }
                                         final item = items[index ~/ 2];
-                                        return _MenuItemCard(
-                                          productId: item.id,
-                                          title: item.title,
-                                          price: item.price,
-                                          imageUrl: item.images.isEmpty ? null : item.images.first,
-                                          averageRating: item.averageRating,
-                                          reviewCount: item.reviewCount,
-                                          tone: item.category == 'Cookie'
-                                              ? const Color(0xFFFFF1F1)
-                                              : const Color(0xFFEAF3FF),
-                                          accent: item.category == 'Cookie'
-                                              ? MenuColors.red
-                                              : MenuColors.blue,
-                                          isMooncake: item.mooncakeConfig != null,
-                                          isAddingToBox: state.isMooncakeBoxMode &&
-                                              item.mooncakeConfig != null,
-                                          isFavorite: AppServices.instance.wishlistSession.contains(item.id),
-                                          compact: true,
-                                          onTap: () => _openDetail(context, item),
-                                          onAddToCart: () => _addToCart(context, item),
-                                          onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
-                                        );
+                                        return _buildMobileCard(context, item);
                                       }),
                               );
                             },
                           ),
                         ],
                       ),
+                    ),
+                      BackToTopButton(scrollController: scrollController),
+                      ],
                     ),
                   ),
                 ],
@@ -1065,6 +1214,41 @@ class MobileMenuLayout extends StatelessWidget {
     );
   }
 
+  Widget _buildMobileCard(BuildContext context, MenuProduct item) {
+    return _MenuItemCard(
+      productId: item.id,
+      title: item.title,
+      price: item.price,
+      imageUrl: item.images.isEmpty ? null : item.images.first,
+      averageRating: item.averageRating,
+      reviewCount: item.reviewCount,
+      tone: item.category == 'Cookie' ? const Color(0xFFFFF1F1) : const Color(0xFFEAF3FF),
+      accent: item.category == 'Cookie' ? MenuColors.red : MenuColors.blue,
+      isMooncake: item.mooncakeConfig != null,
+      isAddingToBox: state.isMooncakeBoxMode && item.mooncakeConfig != null,
+      isFavorite: AppServices.instance.wishlistSession.contains(item.id),
+      compact: true,
+      onTap: () => _openDetail(context, item),
+      onAddToCart: () => _addToCart(context, item),
+      onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
+    );
+  }
+
+  Widget _buildTabletGrid(BuildContext context, List<MenuProduct> items) {
+    final rows = <Widget>[];
+    for (var i = 0; i < items.length; i += 2) {
+      final rowItems = items.skip(i).take(2).toList();
+      rows.add(Row(
+        children: List.generate(rowItems.length * 2 - 1, (index) {
+          if (index.isOdd) return const SizedBox(width: 10);
+          return Expanded(child: _buildMobileCard(context, rowItems[index ~/ 2]));
+        }),
+      ));
+      if (i + 2 < items.length) rows.add(const SizedBox(height: 10));
+    }
+    return Column(children: rows);
+  }
+
   Widget _mobileSearchAndSort() => ControllerSelector<MenuState, MenuViewState>(
         controller: state,
         selector: (controller) => controller.state,
@@ -1077,13 +1261,11 @@ class MobileMenuLayout extends StatelessWidget {
           ),
           child: Column(
           children: [
-            TextField(
+            _AutocompleteSearch(
               controller: searchController,
               onChanged: onSearchChanged,
-              decoration: _storefrontFieldDecoration(
-                hintText: 'Tìm sản phẩm...',
-                prefixIcon: const Icon(Icons.search_rounded),
-              ),
+              products: state.products,
+              hintText: 'Tìm sản phẩm...',
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -1453,7 +1635,7 @@ class _MenuItemCard extends StatelessWidget {
           width: width,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: MenuColors.gray, width: 2),
           ),
@@ -1487,7 +1669,7 @@ class _MenuItemCard extends StatelessWidget {
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           shape: BoxShape.circle,
                           border: Border.all(color: MenuColors.gray, width: 2),
                         ),
@@ -1863,25 +2045,13 @@ class _MenuGridSkeleton extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Container(
-                    height: mobile ? 120 : 150,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFECEFF3),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
+                  ShimmerBox(width: double.infinity, height: mobile ? 120 : 150, borderRadius: 6),
                   const SizedBox(height: 10),
-                  Container(height: 16, color: const Color(0xFFECEFF3)),
+                  const ShimmerBox(width: double.infinity, height: 16),
                   const SizedBox(height: 8),
-                  Container(height: 14, width: 100, color: const Color(0xFFECEFF3)),
+                  const ShimmerBox(width: 100, height: 14),
                   const Spacer(),
-                  Container(
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFECEFF3),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
+                  const ShimmerBox(width: double.infinity, height: 36, borderRadius: 6),
                 ],
               ),
             ),
