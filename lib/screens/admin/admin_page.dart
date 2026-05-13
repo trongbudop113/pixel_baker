@@ -1070,19 +1070,128 @@ class _ProfitSummarySection extends StatelessWidget {
 
   final AdminState state;
 
+  static const _ranges = [
+    ('today', 'Hôm nay'),
+    ('yesterday', 'Hôm qua'),
+    ('7d', '7 ngày'),
+    ('30d', '30 ngày'),
+    ('this_month', 'Tháng này'),
+    ('last_month', 'Tháng trước'),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final summaries = state.dashboard.tabSummaries.length >= 5
-        ? [state.dashboard.tabSummaries[4]]
-        : const <AdminTabSummaryModel>[];
+    final summary = state.revenueSummary;
+    final selectedRange = state.revenueRange;
+
     return _SectionCard(
       title: 'Doanh số',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (state.productCostReports.isEmpty)
-            const _EmptyAdminState(
-              message: 'Chưa có dữ liệu cost sản phẩm.',
+          // ── Filter chips ──
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: _ranges.map((r) {
+              final (key, label) = r;
+              final active = key == selectedRange;
+              return GestureDetector(
+                onTap: () => state.refreshRevenueSummary(range: key),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: active ? AdminColors.blue : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: active ? AdminColors.blue : AdminColors.borderSoft,
+                    ),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: active ? Colors.white : AdminColors.textSoft,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(growable: false),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Summary KPI cards ──
+          LayoutBuilder(builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 480;
+            final cards = [
+              _RevenueKpiCard(
+                label: 'Tổng doanh thu',
+                value: _formatCurrency(summary.totalRevenue),
+                color: AdminColors.blue,
+              ),
+              _RevenueKpiCard(
+                label: 'Số đơn hàng',
+                value: '${summary.totalOrders}',
+                color: AdminColors.green,
+              ),
+              _RevenueKpiCard(
+                label: 'Giá trị TB / đơn',
+                value: summary.totalOrders > 0
+                    ? _formatCurrency(summary.avgOrderValue)
+                    : '—',
+                color: AdminColors.orange,
+              ),
+            ];
+            if (isNarrow) {
+              return Column(
+                children: cards
+                    .map((c) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: SizedBox(width: double.infinity, child: c),
+                        ))
+                    .toList(growable: false),
+              );
+            }
+            return Row(
+              children: cards
+                  .expand((c) => [Expanded(child: c), const SizedBox(width: 8)])
+                  .take(cards.length * 2 - 1)
+                  .toList(growable: false),
+            );
+          }),
+          const SizedBox(height: 20),
+
+          // ── Bar chart ──
+          if (summary.days.isEmpty)
+            Container(
+              height: 140,
+              alignment: Alignment.center,
+              child: const Text(
+                'Chưa có dữ liệu trong khoảng thời gian này.',
+                style: TextStyle(color: AdminColors.textSoft, fontSize: 13),
+              ),
             )
+          else
+            _RevenueBarChart(days: summary.days),
+
+          const SizedBox(height: 24),
+
+          // ── Cost report per product ──
+          const Divider(color: AdminColors.line),
+          const SizedBox(height: 12),
+          const Text(
+            'Biên lợi nhuận theo sản phẩm',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: AdminColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (state.productCostReports.isEmpty)
+            const _EmptyAdminState(message: 'Chưa có dữ liệu cost sản phẩm.')
           else
             Column(
               children: state.productCostReports.take(10).map((item) {
@@ -1092,18 +1201,139 @@ class _ProfitSummarySection extends StatelessWidget {
                 );
               }).toList(growable: false),
             ),
-          if (summaries.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            ...summaries
-                .map((summary) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _TabCard.fromModel(summary),
-                    ))
-                .toList(growable: false),
-          ],
         ],
       ),
     );
+  }
+}
+
+class _RevenueKpiCard extends StatelessWidget {
+  const _RevenueKpiCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RevenueBarChart extends StatelessWidget {
+  const _RevenueBarChart({required this.days});
+
+  final List<AdminRevenueDayModel> days;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxRevenue = days.fold<int>(0, (m, d) => d.revenue > m ? d.revenue : m);
+
+    return SizedBox(
+      height: 160,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final count = days.length;
+        // bar + gap per item
+        const gap = 4.0;
+        final barWidth = ((availableWidth - gap * (count - 1)) / count).clamp(4.0, 40.0);
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: List.generate(count, (i) {
+            final day = days[i];
+            final ratio = maxRevenue > 0 ? day.revenue / maxRevenue : 0.0;
+            final barHeight = (ratio * 120).clamp(2.0, 120.0);
+            final isEmpty = day.revenue == 0;
+
+            // Show label every N days to avoid clutter
+            final labelEvery = count <= 7 ? 1 : count <= 14 ? 2 : count <= 31 ? 5 : 7;
+            final showLabel = i % labelEvery == 0 || i == count - 1;
+
+            return Padding(
+              padding: EdgeInsets.only(right: i < count - 1 ? gap : 0),
+              child: SizedBox(
+                width: barWidth,
+                height: 160,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Tooltip(
+                      message: '${day.date}\n${_formatCurrency(day.revenue)}\n${day.orderCount} đơn',
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: barWidth,
+                        height: barHeight,
+                        decoration: BoxDecoration(
+                          color: isEmpty
+                              ? AdminColors.line
+                              : AdminColors.blue.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (showLabel)
+                      Text(
+                        _shortDate(day.date),
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: AdminColors.textSoft,
+                        ),
+                        overflow: TextOverflow.visible,
+                        softWrap: false,
+                      )
+                    else
+                      const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          }),
+        );
+      }),
+    );
+  }
+
+  String _shortDate(String date) {
+    // date format: "2026-05-13" → "13/5"
+    final parts = date.split('-');
+    if (parts.length == 3) return '${int.tryParse(parts[2]) ?? parts[2]}/${int.tryParse(parts[1]) ?? parts[1]}';
+    return date;
   }
 }
 

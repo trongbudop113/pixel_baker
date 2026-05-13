@@ -24,6 +24,7 @@ from app.models.admin import (
     AdminOrderExcelRow,
     AdminOrderAdvanceCheckResponse,
     AdminProductCostReportResponse,
+    AdminRevenueSummaryResponse,
     AdminRecipeExcelImportRequest,
     AdminRecipeExcelRow,
     AdminRecipeCopyRequest,
@@ -404,6 +405,18 @@ async def list_admin_product_cost_reports(
     repository: AdminRepository = Depends(get_admin_repository),
 ) -> list[AdminProductCostReportResponse]:
     return await repository.list_product_cost_reports()
+
+
+@router.get("/revenue-summary", response_model=AdminRevenueSummaryResponse)
+async def get_admin_revenue_summary(
+    range: str = "7d",
+    _: UserResponse = Depends(require_admin_permission("reports:view")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> AdminRevenueSummaryResponse:
+    valid_ranges = {"today", "yesterday", "7d", "30d", "this_month", "last_month"}
+    if range not in valid_ranges:
+        range = "7d"
+    return await repository.get_revenue_summary(range)
 
 
 @router.get("/ingredients/excel-rows", response_model=list[AdminIngredientExcelRow])

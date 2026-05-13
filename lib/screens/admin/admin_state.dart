@@ -29,6 +29,8 @@ class AdminViewState {
     this.inventoryTransactions = const [],
     this.recipes = const [],
     this.productCostReports = const [],
+    this.revenueSummary = defaultRevenueSummary,
+    this.revenueRange = '7d',
     this.isLoading = false,
     this.isUpdating = false,
     this.errorMessage,
@@ -55,6 +57,8 @@ class AdminViewState {
   final List<AdminInventoryTransactionModel> inventoryTransactions;
   final List<AdminRecipeModel> recipes;
   final List<AdminProductCostReportModel> productCostReports;
+  final AdminRevenueSummaryModel revenueSummary;
+  final String revenueRange;
   final bool isLoading;
   final bool isUpdating;
   final String? errorMessage;
@@ -81,6 +85,8 @@ class AdminViewState {
     List<AdminInventoryTransactionModel>? inventoryTransactions,
     List<AdminRecipeModel>? recipes,
     List<AdminProductCostReportModel>? productCostReports,
+    AdminRevenueSummaryModel? revenueSummary,
+    String? revenueRange,
     bool? isLoading,
     bool? isUpdating,
     String? errorMessage,
@@ -109,6 +115,8 @@ class AdminViewState {
           inventoryTransactions ?? this.inventoryTransactions,
       recipes: recipes ?? this.recipes,
       productCostReports: productCostReports ?? this.productCostReports,
+      revenueSummary: revenueSummary ?? this.revenueSummary,
+      revenueRange: revenueRange ?? this.revenueRange,
       isLoading: isLoading ?? this.isLoading,
       isUpdating: isUpdating ?? this.isUpdating,
       errorMessage:
@@ -143,6 +151,8 @@ class AdminViewState {
         ) &&
         _sameRecipes(other.recipes, recipes) &&
         _sameProductCostReports(other.productCostReports, productCostReports) &&
+        other.revenueSummary == revenueSummary &&
+        other.revenueRange == revenueRange &&
         other.isLoading == isLoading &&
         other.isUpdating == isUpdating &&
         other.errorMessage == errorMessage &&
@@ -171,6 +181,8 @@ class AdminViewState {
         Object.hashAll(inventoryTransactions),
         Object.hashAll(recipes),
         Object.hashAll(productCostReports),
+        revenueSummary,
+        revenueRange,
         isLoading,
         isUpdating,
         errorMessage,
@@ -209,6 +221,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   List<AdminRecipeModel> get recipes => state.recipes;
   List<AdminProductCostReportModel> get productCostReports =>
       state.productCostReports;
+  AdminRevenueSummaryModel get revenueSummary => state.revenueSummary;
+  String get revenueRange => state.revenueRange;
   bool get isLoading => state.isLoading;
   bool get isUpdating => state.isUpdating;
   String? get errorMessage => state.errorMessage;
@@ -461,6 +475,14 @@ class AdminState extends ScreenController<AdminViewState, Never> {
             label: 'product-cost-reports',
           )
         : state.productCostReports;
+    final revenueSummary = canViewReports
+        ? await _loadSection(
+            loader: () => _repository.fetchRevenueSummary(state.revenueRange),
+            fallback: state.revenueSummary,
+            errors: errors,
+            label: 'revenue-summary',
+          )
+        : state.revenueSummary;
 
     if (errors.length >= 12) {
       _hasLoaded = false;
@@ -484,6 +506,7 @@ class AdminState extends ScreenController<AdminViewState, Never> {
           inventoryTransactions: inventoryTransactions,
           recipes: recipes,
           productCostReports: productCostReports,
+          revenueSummary: revenueSummary,
           isLoading: false,
           errorMessage: errors.isEmpty
               ? null
@@ -852,6 +875,19 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   Future<void> _refreshCostReportsOnly() async {
     final productCostReports = await _repository.fetchProductCostReports();
     update((current) => current.copyWith(productCostReports: productCostReports));
+  }
+
+  Future<void> refreshRevenueSummary({String? range}) async {
+    final effectiveRange = range ?? state.revenueRange;
+    if (range != null && range != state.revenueRange) {
+      update((current) => current.copyWith(revenueRange: range));
+    }
+    try {
+      final summary = await _repository.fetchRevenueSummary(effectiveRange);
+      update((current) => current.copyWith(revenueSummary: summary));
+    } catch (_) {
+      // silent fail — keep existing data
+    }
   }
 
   Future<void> _wrapUpdate({

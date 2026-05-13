@@ -40,6 +40,7 @@ abstract class AdminRepository {
   Future<List<AdminIngredientModel>> fetchIngredients();
   Future<List<AdminInventoryTransactionModel>> fetchInventoryTransactions();
   Future<List<AdminProductCostReportModel>> fetchProductCostReports();
+  Future<AdminRevenueSummaryModel> fetchRevenueSummary(String range);
   Future<List<AdminIngredientExcelRow>> fetchIngredientExcelRows();
   Future<AdminBulkImportResultModel> importIngredientExcelRows(List<AdminIngredientExcelRow> rows);
   Future<AdminIngredientModel> fetchIngredient(String ingredientId);
@@ -514,6 +515,20 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       decoder: (json) => readList(
         _unwrapListPayload(json),
         AdminProductCostReportModel.fromJson,
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<AdminRevenueSummaryModel> fetchRevenueSummary(String range) async {
+    final response = await apiClient.get<AdminRevenueSummaryModel>(
+      '/admin/revenue-summary',
+      requiresAuth: true,
+      queryParameters: {'range': range},
+      decoder: (json) => readItem(
+        _unwrapItemPayload(json),
+        AdminRevenueSummaryModel.fromJson,
       ),
     );
     return response.data;

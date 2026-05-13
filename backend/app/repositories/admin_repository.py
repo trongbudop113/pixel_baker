@@ -46,6 +46,8 @@ from app.models.admin import (
     AdminTabSummaryResponse,
     AdminVoucherExcelRow,
     AdminVoucherResponse,
+    AdminRevenueDayResponse,
+    AdminRevenueSummaryResponse,
 )
 from app.core.security import hash_password
 from app.models.contact import ContactPageResponse
@@ -781,6 +783,93 @@ class AdminRepository:
                 )
             )
         return reports
+
+    async def get_revenue_summary(self, range_type: str) -> AdminRevenueSummaryResponse:
+        from collections import defaultdict
+        now = datetime.now(timezone.utc)
+
+        if range_type == "today":
+            start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+            end = now
+        elif range_type == "yesterday":
+            yesterday = now - timedelta(days=1)
+            start = datetime(yesterday.year, yesterday.month, yesterday.day, tzinfo=timezone.utc)
+            end = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+        elif range_type == "7d":
+            start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) - timedelta(days=6)
+            end = now
+        elif range_type == "30d":
+            start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) - timedelta(days=29)
+            end = now
+        elif range_type == "this_month":
+            start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+            end = now
+        elif range_type == "last_month":
+            first_of_this_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+            last_month_end = first_of_this_month
+            last_month_start = datetime(
+                first_of_this_month.year if first_of_this_month.month > 1 else first_of_this_month.year - 1,
+                first_of_this_month.month - 1 if first_of_this_month.month > 1 else 12,
+                1, tzinfo=timezone.utc,
+            )
+            start = last_month_start
+            end = last_month_end
+        else:
+            start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) - timedelta(days=6)
+            end = now
+
+        valid_statuses = {"paid", "processing", "delivered", "completed"}
+        documents = await self._orders.find({}).to_list(length=5000)
+
+        daily_revenue: dict[str, int] = defaultdict(int)
+        daily_orders: dict[str, int] = defaultdict(int)
+        total_revenue = 0
+        total_orders = 0
+
+        for doc in documents:
+            status = str(doc.get("status") or "").strip().lower()
+            if status not in valid_statuses:
+                continue
+            created_at = self._parse_datetime(doc.get("createdAt"))
+            if created_at is None:
+                continue
+            if not (start <= created_at < end):
+                continue
+            date_key = created_at.strftime("%Y-%m-%d")
+            amount = int(doc.get("total") or 0)
+            daily_revenue[date_key] += amount
+            daily_orders[date_key] += 1
+            total_revenue += amount
+            total_orders += 1
+
+        # Build day list covering the full range
+        days: list[AdminRevenueDayResponse] = []
+        if range_type in ("today", "yesterday"):
+            date_key = start.strftime("%Y-%m-%d")
+            days.append(AdminRevenueDayResponse(
+                date=date_key,
+                revenue=daily_revenue.get(date_key, 0),
+                orderCount=daily_orders.get(date_key, 0),
+            ))
+        else:
+            current = start
+            while current < end:
+                date_key = current.strftime("%Y-%m-%d")
+                days.append(AdminRevenueDayResponse(
+                    date=date_key,
+                    revenue=daily_revenue.get(date_key, 0),
+                    orderCount=daily_orders.get(date_key, 0),
+                ))
+                current += timedelta(days=1)
+
+        avg_order_value = (total_revenue // total_orders) if total_orders > 0 else 0
+        return AdminRevenueSummaryResponse(
+            range=range_type,
+            totalRevenue=total_revenue,
+            totalOrders=total_orders,
+            avgOrderValue=avg_order_value,
+            days=days,
+        )
 
     async def list_ingredient_excel_rows(self) -> list[AdminIngredientExcelRow]:
         documents = await self._ingredients.find({}).sort("name", 1).to_list(length=1000)

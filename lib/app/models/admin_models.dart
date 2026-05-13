@@ -1133,6 +1133,74 @@ class AdminProductCostReportModel {
   }
 }
 
+class AdminRevenueDayModel {
+  const AdminRevenueDayModel({
+    required this.date,
+    required this.revenue,
+    required this.orderCount,
+  });
+
+  final String date;
+  final int revenue;
+  final int orderCount;
+
+  factory AdminRevenueDayModel.fromJson(Map<String, dynamic> json) {
+    return AdminRevenueDayModel(
+      date: (json['date'] ?? '').toString(),
+      revenue: (json['revenue'] as num?)?.toInt() ?? 0,
+      orderCount: (json['orderCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class AdminRevenueSummaryModel {
+  const AdminRevenueSummaryModel({
+    required this.range,
+    required this.totalRevenue,
+    required this.totalOrders,
+    required this.avgOrderValue,
+    required this.days,
+  });
+
+  final String range;
+  final int totalRevenue;
+  final int totalOrders;
+  final int avgOrderValue;
+  final List<AdminRevenueDayModel> days;
+
+  factory AdminRevenueSummaryModel.fromJson(Map<String, dynamic> json) {
+    return AdminRevenueSummaryModel(
+      range: (json['range'] ?? '7d').toString(),
+      totalRevenue: (json['totalRevenue'] as num?)?.toInt() ?? 0,
+      totalOrders: (json['totalOrders'] as num?)?.toInt() ?? 0,
+      avgOrderValue: (json['avgOrderValue'] as num?)?.toInt() ?? 0,
+      days: ((json['days'] as List?) ?? const [])
+          .map((e) => AdminRevenueDayModel.fromJson(e as Map<String, dynamic>))
+          .toList(growable: false),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is AdminRevenueSummaryModel &&
+      other.range == range &&
+      other.totalRevenue == totalRevenue &&
+      other.totalOrders == totalOrders &&
+      other.avgOrderValue == avgOrderValue &&
+      other.days.length == days.length;
+
+  @override
+  int get hashCode => Object.hash(range, totalRevenue, totalOrders, avgOrderValue, days.length);
+}
+
+const defaultRevenueSummary = AdminRevenueSummaryModel(
+  range: '7d',
+  totalRevenue: 0,
+  totalOrders: 0,
+  avgOrderValue: 0,
+  days: [],
+);
+
 class AdminProductDraft {
   const AdminProductDraft({
     required this.title,

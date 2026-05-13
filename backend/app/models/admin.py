@@ -277,6 +277,20 @@ class AdminProductCostReportResponse(ApiModel):
     grossMarginPercent: float
 
 
+class AdminRevenueDayResponse(ApiModel):
+    date: str
+    revenue: int
+    orderCount: int
+
+
+class AdminRevenueSummaryResponse(ApiModel):
+    range: str
+    totalRevenue: int
+    totalOrders: int
+    avgOrderValue: int
+    days: List[AdminRevenueDayResponse]
+
+
 class AdminProductExcelImportRequest(ApiModel):
     items: List[AdminProductExcelRow]
 
