@@ -50,14 +50,14 @@ class _BackToTopButtonState extends State<BackToTopButton> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: _visible ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 250),
-      child: IgnorePointer(
-        ignoring: !_visible,
-        child: Positioned(
-          right: 16,
-          bottom: 24,
+    return Positioned(
+      right: 16,
+      bottom: 24,
+      child: AnimatedOpacity(
+        opacity: _visible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 250),
+        child: IgnorePointer(
+          ignoring: !_visible,
           child: GestureDetector(
             onTap: _scrollToTop,
             child: Container(

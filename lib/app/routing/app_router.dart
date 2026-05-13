@@ -82,7 +82,7 @@ CustomTransitionPage<void> _fadePage(
   Duration duration = const Duration(milliseconds: 200),
 }) {
   return CustomTransitionPage<void>(
-    key: state.pageKey,
+    key: ValueKey(state.uri.toString()),
     child: child,
     transitionDuration: duration,
     reverseTransitionDuration: duration,

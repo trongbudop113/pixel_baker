@@ -7,6 +7,7 @@ import '../../app/services/app_services.dart';
 import '../../app/state/screen_controller.dart';
 import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
+import '../shared/back_to_top_button.dart';
 import '../shared/shimmer_box.dart';
 import 'menu_state.dart';
 
@@ -253,7 +254,7 @@ class WebMenuLayout extends StatelessWidget {
             }),
           ),
         ),
-      );
+      ));
 
   Widget _searchAndSort() => ControllerSelector<MenuState, MenuViewState>(
         controller: state,

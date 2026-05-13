@@ -1702,7 +1702,7 @@ class HomeMobileLayout extends StatelessWidget {
             );
           },
         ),
-      );
+      ));
 
   Widget _footer(BuildContext context) => AnimatedBuilder(
         animation: state,
@@ -1769,7 +1769,7 @@ class HomeMobileLayout extends StatelessWidget {
             _txt(desc, AppColors.gray, 12, FontWeight.w500),
           ],
         ),
-      );
+      ));
 
   Widget _productLite(
     BuildContext context,
