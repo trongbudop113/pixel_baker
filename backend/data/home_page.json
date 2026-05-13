@@ -10,7 +10,7 @@
     },
     "secondaryAction": {
       "label": "ĐẶT NGAY",
-      "routeName": "ordersInfo",
+      "routeName": "checkout",
       "routePath": null,
       "queryParameters": {}
     }
