@@ -1146,12 +1146,11 @@ class MobileMenuLayout extends StatelessWidget {
                                       ]
                                     : isTablet
                                         ? _buildTabletGrid(context, items)
-                                        : List.generate(items.length * 2 - 1, (index) {
+                                        : List<Widget>.generate(items.length * 2 - 1, (index) {
                                         if (index.isOdd) {
                                           return const SizedBox(height: 10);
                                         }
-                                        final item = items[index ~/ 2];
-                                        return _buildMobileCard(context, item);
+                                        return _buildMobileCard(context, items[index ~/ 2]);
                                       }),
                               );
                             },
@@ -1235,19 +1234,19 @@ class MobileMenuLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildTabletGrid(BuildContext context, List<MenuProduct> items) {
+  List<Widget> _buildTabletGrid(BuildContext context, List<MenuProduct> items) {
     final rows = <Widget>[];
     for (var i = 0; i < items.length; i += 2) {
       final rowItems = items.skip(i).take(2).toList();
       rows.add(Row(
-        children: List.generate(rowItems.length * 2 - 1, (index) {
+        children: List<Widget>.generate(rowItems.length * 2 - 1, (index) {
           if (index.isOdd) return const SizedBox(width: 10);
           return Expanded(child: _buildMobileCard(context, rowItems[index ~/ 2]));
         }),
       ));
       if (i + 2 < items.length) rows.add(const SizedBox(height: 10));
     }
-    return Column(children: rows);
+    return rows;
   }
 
   Widget _mobileSearchAndSort() => ControllerSelector<MenuState, MenuViewState>(
