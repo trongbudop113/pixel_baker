@@ -1,8 +1,11 @@
+import 'dart:async';
 import '../models/menu_models.dart';
 import '../network/base_api_repository.dart';
 
 abstract class MenuRepository {
   Future<MenuPageResponse> fetchMenuPage();
+
+  Future<MenuPageResponse> forceRefreshMenuPage();
 
   Future<List<MenuProduct>> fetchProducts();
 
@@ -15,15 +18,28 @@ abstract class MenuRepository {
   MenuProduct? findCachedProductById(int id);
 }
 
+const _kCacheTtl = Duration(minutes: 5);
+
 class ApiMenuRepository extends BaseApiRepository implements MenuRepository {
   ApiMenuRepository(super.apiClient);
 
   MenuPageResponse? _cachedMenuPage;
   List<MenuProduct>? _cachedProducts;
+  DateTime? _lastFetchedAt;
+
+  bool get _isCacheStale =>
+      _lastFetchedAt == null ||
+      DateTime.now().difference(_lastFetchedAt!) > _kCacheTtl;
+
+  void _invalidateCache() {
+    _cachedMenuPage = null;
+    _cachedProducts = null;
+    _lastFetchedAt = null;
+  }
 
   @override
   Future<MenuPageResponse> fetchMenuPage() async {
-    if (_cachedMenuPage != null) {
+    if (_cachedMenuPage != null && !_isCacheStale) {
       return _cachedMenuPage!;
     }
 
@@ -127,8 +143,15 @@ class ApiMenuRepository extends BaseApiRepository implements MenuRepository {
     return json;
   }
 
+  @override
+  Future<MenuPageResponse> forceRefreshMenuPage() async {
+    _invalidateCache();
+    return fetchMenuPage();
+  }
+
   MenuPageResponse _cacheMenuPage(MenuPageResponse response) {
     _cachedMenuPage = response;
+    _lastFetchedAt = DateTime.now();
     _cacheProducts(response.products);
     return response;
   }

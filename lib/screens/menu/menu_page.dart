@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/models/cart_models.dart';
@@ -28,6 +29,11 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
   late final MenuState _menuState;
   final TextEditingController _searchController = TextEditingController();
   String? _lastCategoryQuery;
+  Timer? _searchDebounce;
+  Timer? _autoRefreshTimer;
+
+  static const _kDebounceDelay = Duration(milliseconds: 300);
+  static const _kAutoRefreshInterval = Duration(minutes: 5);
 
   @override
   void initState() {
@@ -37,6 +43,16 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
       wishlistSession: AppServices.instance.wishlistSession,
     );
     _menuState.loadMenuPage();
+    _autoRefreshTimer = Timer.periodic(_kAutoRefreshInterval, (_) {
+      _menuState.forceRefresh();
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(_kDebounceDelay, () {
+      _menuState.setSearchQuery(value);
+    });
   }
 
   @override
@@ -50,6 +66,8 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _autoRefreshTimer?.cancel();
     _menuState.clearMooncakeBoxPurchase();
     _searchController.dispose();
     _menuState.dispose();
@@ -65,10 +83,12 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
             ? MobileMenuLayout(
                 state: _menuState,
                 searchController: _searchController,
+                onSearchChanged: _onSearchChanged,
                 showTopHeader: widget.showTopHeader)
             : WebMenuLayout(
                 state: _menuState,
                 searchController: _searchController,
+                onSearchChanged: _onSearchChanged,
                 showTopHeader: widget.showTopHeader);
       },
     );
@@ -78,11 +98,13 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
 class WebMenuLayout extends StatelessWidget {
   final MenuState state;
   final TextEditingController searchController;
+  final void Function(String) onSearchChanged;
   final bool showTopHeader;
   const WebMenuLayout(
       {super.key,
       required this.state,
       required this.searchController,
+      required this.onSearchChanged,
       this.showTopHeader = true});
 
   @override
@@ -233,7 +255,7 @@ class WebMenuLayout extends StatelessWidget {
                 flex: 3,
                 child: TextField(
                   controller: searchController,
-                  onChanged: state.setSearchQuery,
+                  onChanged: onSearchChanged,
                   decoration: _storefrontFieldDecoration(
                     hintText: 'Tìm bánh, danh mục, hương vị...',
                     prefixIcon: const Icon(Icons.search_rounded),
@@ -405,8 +427,10 @@ class WebMenuLayout extends StatelessWidget {
                       isMooncake: item.mooncakeConfig != null,
                       isAddingToBox:
                           state.isMooncakeBoxMode && item.mooncakeConfig != null,
+                      isFavorite: AppServices.instance.wishlistSession.contains(item.id),
                       onTap: () => _openDetail(context, item),
                       onAddToCart: () => _addToCart(context, item),
+                      onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
                     ),
                   );
                 }),
@@ -889,11 +913,13 @@ class _StorefrontActionButton extends StatelessWidget {
 class MobileMenuLayout extends StatelessWidget {
   final MenuState state;
   final TextEditingController searchController;
+  final void Function(String) onSearchChanged;
   final bool showTopHeader;
   const MobileMenuLayout(
       {super.key,
       required this.state,
       required this.searchController,
+      required this.onSearchChanged,
       this.showTopHeader = true});
 
   @override
@@ -973,9 +999,11 @@ class MobileMenuLayout extends StatelessWidget {
                                           isMooncake: item.mooncakeConfig != null,
                                           isAddingToBox: state.isMooncakeBoxMode &&
                                               item.mooncakeConfig != null,
+                                          isFavorite: AppServices.instance.wishlistSession.contains(item.id),
                                           compact: true,
                                           onTap: () => _openDetail(context, item),
                                           onAddToCart: () => _addToCart(context, item),
+                                          onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
                                         );
                                       }),
                               );
@@ -1051,7 +1079,7 @@ class MobileMenuLayout extends StatelessWidget {
           children: [
             TextField(
               controller: searchController,
-              onChanged: state.setSearchQuery,
+              onChanged: onSearchChanged,
               decoration: _storefrontFieldDecoration(
                 hintText: 'Tìm sản phẩm...',
                 prefixIcon: const Icon(Icons.search_rounded),
@@ -1392,8 +1420,10 @@ class _MenuItemCard extends StatelessWidget {
   final bool compact;
   final bool isMooncake;
   final bool isAddingToBox;
+  final bool isFavorite;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
+  final VoidCallback? onToggleFavorite;
 
   const _MenuItemCard({
     required this.productId,
@@ -1407,139 +1437,132 @@ class _MenuItemCard extends StatelessWidget {
     this.compact = false,
     this.isMooncake = false,
     this.isAddingToBox = false,
+    this.isFavorite = false,
     this.onTap,
     this.onAddToCart,
+    this.onToggleFavorite,
   });
 
   @override
   Widget build(BuildContext context) {
     final width = compact ? double.infinity : 376.0;
-    return AnimatedBuilder(
-      animation: AppServices.instance.wishlistSession,
-      builder: (context, _) {
-        final isFavorite =
-            AppServices.instance.wishlistSession.contains(productId);
-        return GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: width,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: MenuColors.gray, width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      height: compact ? 120 : 150,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: tone,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: MenuColors.gray, width: 2),
-                        image: imageUrl == null
-                            ? null
-                            : DecorationImage(
-                                image: NetworkImage(imageUrl!),
-                                fit: BoxFit.cover,
-                              ),
-                      ),
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: width,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: MenuColors.gray, width: 2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    height: compact ? 120 : 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: tone,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: MenuColors.gray, width: 2),
+                      image: imageUrl == null
+                          ? null
+                          : DecorationImage(
+                              image: NetworkImage(imageUrl!),
+                              fit: BoxFit.cover,
+                              onError: (_, __) {},
+                            ),
                     ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: GestureDetector(
-                        onTap: () =>
-                            AppServices.instance.wishlistSession.toggle(productId),
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: MenuColors.gray, width: 2),
-                          ),
-                          child: Icon(
-                            isFavorite ? Icons.favorite : Icons.favorite_border,
-                            size: 18,
-                            color: isFavorite ? MenuColors.red : MenuColors.blue,
-                          ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: onToggleFavorite,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: MenuColors.gray, width: 2),
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          size: 18,
+                          color: isFavorite ? MenuColors.red : MenuColors.blue,
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(title,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(title,
+                  style: TextStyle(
+                      color: accent,
+                      fontSize: compact ? 14 : 16,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.star, size: compact ? 14 : 16, color: Colors.amber.shade700),
+                  const SizedBox(width: 4),
+                  Text(
+                    averageRating <= 0 ? 'Mới' : averageRating.toStringAsFixed(1),
                     style: TextStyle(
-                        color: accent,
-                        fontSize: compact ? 14 : 16,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.star, size: compact ? 14 : 16, color: Colors.amber.shade700),
-                    const SizedBox(width: 4),
-                    Text(
-                      averageRating <= 0 ? 'Mới' : averageRating.toStringAsFixed(1),
-                      style: TextStyle(
-                        color: MenuColors.blue,
-                        fontSize: compact ? 11 : 12,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      color: MenuColors.blue,
+                      fontSize: compact ? 11 : 12,
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '($reviewCount)',
-                      style: TextStyle(
-                        color: MenuColors.gray,
-                        fontSize: compact ? 11 : 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(price,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '($reviewCount)',
                     style: TextStyle(
-                        color: MenuColors.green,
-                        fontSize: compact ? 18 : 22,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: onAddToCart,
-                  child: Container(
-                    width: double.infinity,
-                    height: compact ? 34 : 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isAddingToBox ? const Color(0xFF8E44AD) : MenuColors.red,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: MenuColors.gray, width: 2),
+                      color: MenuColors.gray,
+                      fontSize: compact ? 11 : 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: Text(
-                      isAddingToBox
-                          ? 'Thêm vào hộp'
-                          : isMooncake
-                              ? 'Thêm vào giỏ'
-                              : 'Thêm vào giỏ',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: compact ? 11 : 12,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(price,
+                  style: TextStyle(
+                      color: MenuColors.green,
+                      fontSize: compact ? 18 : 22,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: onAddToCart,
+                child: Container(
+                  width: double.infinity,
+                  height: compact ? 34 : 38,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isAddingToBox ? const Color(0xFF8E44AD) : MenuColors.red,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: MenuColors.gray, width: 2),
+                  ),
+                  child: Text(
+                    isAddingToBox ? 'Thêm vào hộp' : 'Thêm vào giỏ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: compact ? 11 : 12,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

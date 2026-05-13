@@ -180,6 +180,10 @@ class MenuState extends ScreenController<MenuViewState, Never> {
   final MenuRepository _repository;
   final WishlistSession _wishlistSession;
 
+  // Memoize filteredProducts — recompute only when state changes
+  List<MenuProduct>? _filteredCache;
+  MenuViewState? _filteredCacheKey;
+
   int get selectedFilterIndex => state.selectedFilterIndex;
   String? get focusedCategory => state.focusedCategory;
   bool get isLoading => state.isLoading;
@@ -237,6 +241,15 @@ class MenuState extends ScreenController<MenuViewState, Never> {
   }
 
   List<MenuProduct> get filteredProducts {
+    if (_filteredCache != null && _filteredCacheKey == state) {
+      return _filteredCache!;
+    }
+    _filteredCacheKey = state;
+    _filteredCache = _computeFilteredProducts();
+    return _filteredCache!;
+  }
+
+  List<MenuProduct> _computeFilteredProducts() {
     final selectedCategory = _selectedCategoryValue();
     List<MenuProduct> list;
     if (selectedCategory == null || selectedCategory == 'all') {
@@ -413,6 +426,27 @@ class MenuState extends ScreenController<MenuViewState, Never> {
           errorMessage: error.toString(),
         ),
       );
+    }
+  }
+
+  Future<void> forceRefresh() async {
+    if (state.isLoading) return;
+    update((current) => current.copyWith(isLoading: true, clearErrorMessage: true));
+    try {
+      final pageResponse = await _repository.forceRefreshMenuPage();
+      update(
+        (current) => current.copyWith(
+          pageResponse: pageResponse,
+          selectedFilterIndex: _safeFilterIndex(
+            current.selectedFilterIndex,
+            pageResponse.filters.length,
+          ),
+          isLoading: false,
+          clearErrorMessage: true,
+        ),
+      );
+    } catch (error) {
+      update((current) => current.copyWith(isLoading: false, errorMessage: error.toString()));
     }
   }
 
