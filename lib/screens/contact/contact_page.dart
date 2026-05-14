@@ -473,27 +473,32 @@ class MobileContactLayout extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        _mobileTop(page),
+                        // Hero title (đồng bộ với web)
+                        _box(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _txt(page.heroTitle, ContactColors.blue, 18, FontWeight.w900),
+                              const SizedBox(height: 2),
+                              _txt(page.heroDescription, ContactColors.gray, 11, FontWeight.w500),
+                            ],
+                          ),
+                        ),
                         if (state.errorMessage != null) ...[
                           const SizedBox(height: 8),
                           _box(child: _statusText(state.errorMessage!)),
                         ],
                         if (state.submitMessage != null) ...[
                           const SizedBox(height: 8),
-                          _box(
-                            child: _statusText(
-                              state.submitMessage!,
-                              isSuccess: state.isSubmitSuccess,
-                            ),
-                          ),
+                          _box(child: _statusText(state.submitMessage!, isSuccess: state.isSubmitSuccess)),
                         ],
                         const SizedBox(height: 8),
+                        // Form (đồng bộ với web _leftForm)
                         _box(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _txt(page.formTitle, ContactColors.blue, 18,
-                                  FontWeight.w800),
+                              _txt(page.formTitle, ContactColors.blue, 16, FontWeight.w800),
                               ..._buildFormFields(page.fields),
                               const SizedBox(height: 8),
                               GestureDetector(
@@ -505,23 +510,21 @@ class MobileContactLayout extends StatelessWidget {
                                           phone: phoneController.text,
                                           message: messageController.text,
                                         ),
-                                child: _btn(
-                                  state.isSubmitting
-                                      ? 'Đang gửi...'
-                                      : page.submitLabel,
-                                ),
+                                child: _btn(state.isSubmitting ? 'Đang gửi...' : page.submitLabel),
                               ),
                             ],
                           ),
                         ),
+                        // Info cards (đồng bộ với web _rightInfo)
                         ..._buildInfoCards(page.infoCards),
                         const SizedBox(height: 8),
                         _bottomNav(page.bottomNavLabels),
+                        const SizedBox(height: 8),
+                        const PixelFooter(label: 'PIXEL BAKERY | LIÊN HỆ', mobile: true),
                       ],
                     ),
                   ),
                 ),
-                const PixelFooter(label: 'PIXEL BAKERY | LIÊN HỆ', mobile: true),
               ],
             ),
           ),
