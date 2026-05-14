@@ -48,6 +48,8 @@ class _ResponsiveProductDetailScreenState
       productId: widget.productId,
     );
     detailState.load();
+    // Track recently viewed
+    AppServices.instance.recentlyViewedSession.add(widget.productId);
   }
 
   @override

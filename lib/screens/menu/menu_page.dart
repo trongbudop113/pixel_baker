@@ -168,6 +168,7 @@ class WebMenuLayout extends StatelessWidget {
                             _mooncakeBoxToolbar(context),
                           ],
                           const SizedBox(height: 8),
+                          _recentlyViewed(context),
                           _menuGrid(),
                           const SizedBox(height: 10),
                           _combo(),
@@ -255,12 +256,18 @@ class WebMenuLayout extends StatelessWidget {
               }
               final filter = menuState.pageResponse.filters[index ~/ 2];
               final filterIndex = index ~/ 2;
+              // Count products in this filter category
+              final filterCat = filter.category;
+              final productCount = filterCat == null || filterCat == 'all'
+                  ? state.products.length
+                  : state.products.where((p) => state.mapCategory(p.category) == state.mapCategory(filterCat)).length;
               return Expanded(
                 child: GestureDetector(
                   onTap: () => _selectFilter(context, filterIndex, filter),
                   child: _FilterChip(
                     label: filter.label,
                     selected: menuState.selectedFilterIndex == filterIndex,
+                    count: productCount,
                   ),
                 ),
               );
@@ -367,6 +374,73 @@ class WebMenuLayout extends StatelessWidget {
             ],
           ),
         ),
+      );
+
+  Widget _recentlyViewed(BuildContext context) => ValueListenableBuilder<List<int>>(
+        valueListenable: AppServices.instance.recentlyViewedSession,
+        builder: (context, ids, _) {
+          if (ids.isEmpty) return const SizedBox.shrink();
+          final products = ids
+              .map((id) => state.products.where((p) => p.id == id).firstOrNull)
+              .whereType<MenuProduct>()
+              .take(5)
+              .toList(growable: false);
+          if (products.isEmpty) return const SizedBox.shrink();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.history_rounded, size: 14, color: MenuColors.blue),
+                    const SizedBox(width: 4),
+                    _txt('Đã xem gần đây', MenuColors.blue, 13, FontWeight.w800),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: products.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final p = products[i];
+                    return GestureDetector(
+                      onTap: () => context.go('${AppRoutePaths.productDetail}?id=${p.id}'),
+                      child: Container(
+                        width: 88,
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: MenuColors.gray, width: 1.5),
+                        ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(5),
+                                child: p.images.isEmpty
+                                    ? Container(color: const Color(0xFFEAF3FF))
+                                    : Image.network(p.images.first, fit: BoxFit.cover, width: double.infinity,
+                                        errorBuilder: (_, __, ___) => Container(color: const Color(0xFFEAF3FF))),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(p.title, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          );
+        },
       );
 
   Widget _sectionTitle() => ControllerSelector<MenuState, String>(
@@ -609,10 +683,25 @@ class WebMenuLayout extends StatelessWidget {
       return;
     }
     AppServices.instance.cartSession.addProduct(item);
+    final cartCount = AppServices.instance.cartSession.itemCount;
+    final combo = state.pageResponse.combo;
+    // Gợi ý combo khi giỏ có ≥ 2 sản phẩm
+    final showComboHint = cartCount >= 2 && combo.title.isNotEmpty;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Đã thêm ${item.title} vào giỏ hàng'),
-        duration: const Duration(seconds: 2),
+        content: showComboHint
+            ? Row(children: [
+                Expanded(child: Text('Đã thêm ${item.title} vào giỏ 🛒')),
+                TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    context.go('${AppRoutePaths.menu}?category=combo');
+                  },
+                  child: const Text('Xem combo', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.w800)),
+                ),
+              ])
+            : Text('Đã thêm ${item.title} vào giỏ hàng'),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -842,13 +931,15 @@ class WebMenuLayout extends StatelessWidget {
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool selected;
+  final int? count;
 
-  const _FilterChip({required this.label, this.selected = false});
+  const _FilterChip({required this.label, this.selected = false, this.count});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: selected ? const Color(0xFFEAF3FF) : const Color(0xFFFCFDFF),
@@ -858,13 +949,27 @@ class _FilterChip extends StatelessWidget {
           width: selected ? 1.8 : 1.2,
         ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: selected ? MenuColors.blue : const Color(0xFF374151),
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: selected ? MenuColors.blue : const Color(0xFF374151),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          if (count != null)
+            Text(
+              '$count SP',
+              style: TextStyle(
+                color: selected ? MenuColors.blue.withOpacity(0.7) : const Color(0xFF8A8A8A),
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+        ],
       ),
     );
   }

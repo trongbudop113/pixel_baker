@@ -174,6 +174,7 @@ class _AdminWebLayout extends StatelessWidget {
           8 => _ContentsManagementSection(state: state),
           9 => _ProfitSummarySection(state: state),
           10 => _ReviewsManagementSection(state: state),
+          11 => _SmartAnalyticsSection(state: state),
           _ => _OverviewSection(state: state),
         };
         return Container(
@@ -1688,6 +1689,8 @@ class _AdminMobileLayout extends StatelessWidget {
                       _ProfitSummarySection(state: state),
                     ] else if (state.selectedSidebarIndex == 10) ...[
                       _ReviewsManagementSection(state: state),
+                    ] else if (state.selectedSidebarIndex == 11) ...[
+                      _SmartAnalyticsSection(state: state),
                     ] else ...[
                     AnimatedBuilder(
                       animation: state,
@@ -3736,6 +3739,255 @@ class _InlineMessage extends StatelessWidget {
           fontWeight: FontWeight.w700,
         ),
       ),
+    );
+  }
+}
+
+// ─── Smart Analytics ──────────────────────────────────────────────────────────
+
+class _SmartAnalyticsSection extends StatelessWidget {
+  const _SmartAnalyticsSection({required this.state});
+  final AdminState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SectionCard(
+          title: 'Top sản phẩm bán chạy',
+          child: _BestSellersList(items: state.bestSellers),
+        ),
+        const SizedBox(height: 14),
+        _SectionCard(
+          title: 'Phân loại khách hàng',
+          child: _CustomerSegmentsSummary(items: state.customerSegments),
+        ),
+        const SizedBox(height: 14),
+        _SectionCard(
+          title: 'Dự báo doanh thu',
+          child: _RevenueForecastSummary(forecast: state.revenueForecast),
+        ),
+      ],
+    );
+  }
+}
+
+class _BestSellersList extends StatelessWidget {
+  const _BestSellersList({required this.items});
+  final List<AdminBestSellerModel> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text('Chưa có dữ liệu bán hàng.', style: TextStyle(color: AdminColors.textSoft)),
+      );
+    }
+    final maxSold = items.fold(0, (m, i) => i.totalSold > m ? i.totalSold : m);
+    return Column(
+      children: List.generate(items.length, (index) {
+        final item = items[index];
+        final barFraction = maxSold > 0 ? item.totalSold / maxSold : 0.0;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: index == 0
+                        ? AdminColors.orange
+                        : index == 1
+                            ? AdminColors.blue
+                            : AdminColors.textSoft,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  item.title,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: barFraction.toDouble(),
+                    backgroundColor: const Color(0xFFE5E7EB),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AdminColors.green),
+                    minHeight: 8,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${item.totalSold} cái',
+                style: const TextStyle(fontSize: 11, color: AdminColors.textSoft),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 80,
+                child: Text(
+                  _formatCurrency(item.revenue),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AdminColors.green),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _CustomerSegmentsSummary extends StatelessWidget {
+  const _CustomerSegmentsSummary({required this.items});
+  final List<AdminCustomerSegmentModel> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text('Chưa có dữ liệu khách hàng.', style: TextStyle(color: AdminColors.textSoft)),
+      );
+    }
+    final counts = <String, int>{};
+    for (final item in items) {
+      counts[item.segment] = (counts[item.segment] ?? 0) + 1;
+    }
+    final segmentOrder = ['VIP', 'Thường xuyên', 'Mới', 'Tiềm năng'];
+    final segmentColors = {
+      'VIP': AdminColors.orange,
+      'Thường xuyên': AdminColors.blue,
+      'Mới': AdminColors.green,
+      'Tiềm năng': AdminColors.gray,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: segmentOrder.where((s) => counts.containsKey(s)).map((seg) {
+            final color = segmentColors[seg] ?? AdminColors.gray;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: color, width: 1),
+              ),
+              child: Text(
+                '${counts[seg]} $seg',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+              ),
+            );
+          }).toList(growable: false),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Tổng: ${items.length} khách hàng',
+          style: const TextStyle(fontSize: 11, color: AdminColors.textSoft),
+        ),
+      ],
+    );
+  }
+}
+
+class _RevenueForecastSummary extends StatelessWidget {
+  const _RevenueForecastSummary({required this.forecast});
+  final AdminRevenueForecastModel forecast;
+
+  @override
+  Widget build(BuildContext context) {
+    if (forecast.forecast.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text('Chưa có dữ liệu dự báo.', style: TextStyle(color: AdminColors.textSoft)),
+      );
+    }
+    final trendIcon = forecast.trend == 'up' ? '↑' : forecast.trend == 'down' ? '↓' : '→';
+    final trendColor = forecast.trend == 'up'
+        ? AdminColors.green
+        : forecast.trend == 'down'
+            ? AdminColors.red
+            : AdminColors.gray;
+    final totalForecast = forecast.totalForecastRevenue;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Xu hướng: ',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              '$trendIcon ${forecast.trend == 'up' ? 'Tăng' : forecast.trend == 'down' ? 'Giảm' : 'Ổn định'}',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: trendColor),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '(${forecast.dailyGrowth > 0 ? '+' : ''}${forecast.dailyGrowth.toStringAsFixed(1)}%/ngày)',
+              style: TextStyle(fontSize: 11, color: trendColor),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Text(
+              'Dự báo 7 ngày tới: ',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              _formatCurrency(totalForecast),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: AdminColors.blue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...forecast.forecast.map((day) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 90,
+                  child: Text(
+                    day.date,
+                    style: const TextStyle(fontSize: 11, color: AdminColors.textSoft),
+                  ),
+                ),
+                Text(
+                  _formatCurrency(day.predicted),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 }

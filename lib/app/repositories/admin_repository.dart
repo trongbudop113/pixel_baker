@@ -64,6 +64,9 @@ abstract class AdminRepository {
     int quantityDelta = 0,
     int? lowStockThreshold,
   });
+  Future<List<AdminBestSellerModel>> fetchBestSellers({int limit = 10});
+  Future<List<AdminCustomerSegmentModel>> fetchCustomerSegments();
+  Future<AdminRevenueForecastModel> fetchRevenueForecast();
 }
 
 class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
@@ -766,6 +769,46 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
         if (lowStockThreshold != null) 'lowStockThreshold': lowStockThreshold,
       },
       decoder: (json) => readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<List<AdminBestSellerModel>> fetchBestSellers({int limit = 10}) async {
+    final response = await apiClient.get<List<AdminBestSellerModel>>(
+      '/admin/analytics/best-sellers',
+      requiresAuth: true,
+      queryParameters: {'limit': limit},
+      decoder: (json) => readList(
+        _unwrapListPayload(json),
+        AdminBestSellerModel.fromJson,
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<List<AdminCustomerSegmentModel>> fetchCustomerSegments() async {
+    final response = await apiClient.get<List<AdminCustomerSegmentModel>>(
+      '/admin/analytics/customer-segments',
+      requiresAuth: true,
+      decoder: (json) => readList(
+        _unwrapListPayload(json),
+        AdminCustomerSegmentModel.fromJson,
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<AdminRevenueForecastModel> fetchRevenueForecast() async {
+    final response = await apiClient.get<AdminRevenueForecastModel>(
+      '/admin/analytics/revenue-forecast',
+      requiresAuth: true,
+      decoder: (json) => readItem(
+        _unwrapItemPayload(json),
+        AdminRevenueForecastModel.fromJson,
+      ),
     );
     return response.data;
   }

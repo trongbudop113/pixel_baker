@@ -278,11 +278,37 @@ class MenuState extends ScreenController<MenuViewState, Never> {
           .split(RegExp(r'\s+'))
           .where((item) => item.trim().isNotEmpty)
           .toList(growable: false);
-      list = list.where((item) {
+
+      // Score each product: exact match > fuzzy match
+      final scored = <({MenuProduct product, int score})>[];
+      for (final item in list) {
         final haystack =
             '${item.title} ${item.category} ${item.description}'.toLowerCase();
-        return searchTerms.every(haystack.contains);
-      }).toList(growable: false);
+        // Exact: all terms present
+        if (searchTerms.every(haystack.contains)) {
+          scored.add((product: item, score: 100));
+          continue;
+        }
+        // Fuzzy: any term is close (edit distance ≤ 2 for terms ≥ 4 chars)
+        bool fuzzyMatch = false;
+        for (final term in searchTerms) {
+          if (term.length < 4) {
+            if (haystack.contains(term)) { fuzzyMatch = true; break; }
+          } else {
+            final words = haystack.split(RegExp(r'\s+'));
+            for (final word in words) {
+              if (_editDistance(term, word.length > term.length + 2 ? word.substring(0, term.length + 2) : word) <= 2) {
+                fuzzyMatch = true;
+                break;
+              }
+            }
+          }
+          if (fuzzyMatch) break;
+        }
+        if (fuzzyMatch) scored.add((product: item, score: 50));
+      }
+      scored.sort((a, b) => b.score.compareTo(a.score));
+      list = scored.map((e) => e.product).toList(growable: false);
     }
 
     if (minimumRating > 0) {
@@ -580,6 +606,8 @@ class MenuState extends ScreenController<MenuViewState, Never> {
         ));
   }
 
+  String mapCategory(String? value) => _mapCategory(value);
+
   String _mapCategory(String? value) {
     final v = (value ?? '').toLowerCase();
     if (v.isEmpty || v == 'all') return 'all';
@@ -611,6 +639,26 @@ class MenuState extends ScreenController<MenuViewState, Never> {
     }
     return '${buffer.toString()}đ';
   }
+}
+
+/// Levenshtein edit distance (max 2 = typo tolerance)
+int _editDistance(String a, String b) {
+  if (a == b) return 0;
+  if (a.isEmpty) return b.length;
+  if (b.isEmpty) return a.length;
+  final dp = List.generate(a.length + 1, (i) => List.filled(b.length + 1, 0));
+  for (var i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (var j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (var i = 1; i <= a.length; i++) {
+    for (var j = 1; j <= b.length; j++) {
+      if (a[i - 1] == b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + [dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]].reduce((v, e) => v < e ? v : e);
+      }
+    }
+  }
+  return dp[a.length][b.length];
 }
 
 bool _listEquals<T>(List<T> a, List<T> b) {

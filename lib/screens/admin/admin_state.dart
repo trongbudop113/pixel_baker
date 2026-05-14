@@ -32,6 +32,9 @@ class AdminViewState {
     this.reviews = const [],
     this.revenueSummary = defaultRevenueSummary,
     this.revenueRange = '7d',
+    this.bestSellers = const [],
+    this.customerSegments = const [],
+    this.revenueForecast = defaultRevenueForecast,
     this.isLoading = false,
     this.isUpdating = false,
     this.errorMessage,
@@ -61,6 +64,9 @@ class AdminViewState {
   final List<AdminProductReviewModel> reviews;
   final AdminRevenueSummaryModel revenueSummary;
   final String revenueRange;
+  final List<AdminBestSellerModel> bestSellers;
+  final List<AdminCustomerSegmentModel> customerSegments;
+  final AdminRevenueForecastModel revenueForecast;
   final bool isLoading;
   final bool isUpdating;
   final String? errorMessage;
@@ -90,6 +96,9 @@ class AdminViewState {
     List<AdminProductReviewModel>? reviews,
     AdminRevenueSummaryModel? revenueSummary,
     String? revenueRange,
+    List<AdminBestSellerModel>? bestSellers,
+    List<AdminCustomerSegmentModel>? customerSegments,
+    AdminRevenueForecastModel? revenueForecast,
     bool? isLoading,
     bool? isUpdating,
     String? errorMessage,
@@ -121,6 +130,9 @@ class AdminViewState {
       reviews: reviews ?? this.reviews,
       revenueSummary: revenueSummary ?? this.revenueSummary,
       revenueRange: revenueRange ?? this.revenueRange,
+      bestSellers: bestSellers ?? this.bestSellers,
+      customerSegments: customerSegments ?? this.customerSegments,
+      revenueForecast: revenueForecast ?? this.revenueForecast,
       isLoading: isLoading ?? this.isLoading,
       isUpdating: isUpdating ?? this.isUpdating,
       errorMessage:
@@ -158,6 +170,9 @@ class AdminViewState {
         _sameReviews(other.reviews, reviews) &&
         other.revenueSummary == revenueSummary &&
         other.revenueRange == revenueRange &&
+        other.bestSellers.length == bestSellers.length &&
+        other.customerSegments.length == customerSegments.length &&
+        other.revenueForecast == revenueForecast &&
         other.isLoading == isLoading &&
         other.isUpdating == isUpdating &&
         other.errorMessage == errorMessage &&
@@ -189,6 +204,9 @@ class AdminViewState {
         Object.hashAll(reviews),
         revenueSummary,
         revenueRange,
+        bestSellers.length,
+        customerSegments.length,
+        revenueForecast,
         isLoading,
         isUpdating,
         errorMessage,
@@ -230,6 +248,9 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   List<AdminProductReviewModel> get reviews => state.reviews;
   AdminRevenueSummaryModel get revenueSummary => state.revenueSummary;
   String get revenueRange => state.revenueRange;
+  List<AdminBestSellerModel> get bestSellers => state.bestSellers;
+  List<AdminCustomerSegmentModel> get customerSegments => state.customerSegments;
+  AdminRevenueForecastModel get revenueForecast => state.revenueForecast;
   bool get isLoading => state.isLoading;
   bool get isUpdating => state.isUpdating;
   String? get errorMessage => state.errorMessage;
@@ -304,6 +325,9 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     }
     if (canViewReports) {
       items.add(const AdminSidebarItem(index: 10, label: 'Reviews'));
+    }
+    if (canViewReports) {
+      items.add(const AdminSidebarItem(index: 11, label: 'Smart Analytics'));
     }
     return items;
   }
@@ -501,6 +525,30 @@ class AdminState extends ScreenController<AdminViewState, Never> {
             label: 'revenue-summary',
           )
         : state.revenueSummary;
+    final bestSellers = canViewReports
+        ? await _loadSection(
+            loader: _repository.fetchBestSellers,
+            fallback: state.bestSellers,
+            errors: errors,
+            label: 'best-sellers',
+          )
+        : state.bestSellers;
+    final customerSegments = canViewReports
+        ? await _loadSection(
+            loader: _repository.fetchCustomerSegments,
+            fallback: state.customerSegments,
+            errors: errors,
+            label: 'customer-segments',
+          )
+        : state.customerSegments;
+    final revenueForecast = canViewReports
+        ? await _loadSection(
+            loader: _repository.fetchRevenueForecast,
+            fallback: state.revenueForecast,
+            errors: errors,
+            label: 'revenue-forecast',
+          )
+        : state.revenueForecast;
 
     if (errors.length >= 12) {
       _hasLoaded = false;
@@ -526,6 +574,9 @@ class AdminState extends ScreenController<AdminViewState, Never> {
           productCostReports: productCostReports,
           reviews: reviews,
           revenueSummary: revenueSummary,
+          bestSellers: bestSellers,
+          customerSegments: customerSegments,
+          revenueForecast: revenueForecast,
           isLoading: false,
           errorMessage: errors.isEmpty
               ? null

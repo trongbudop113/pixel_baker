@@ -1201,6 +1201,142 @@ const defaultRevenueSummary = AdminRevenueSummaryModel(
   days: [],
 );
 
+class AdminBestSellerModel {
+  const AdminBestSellerModel({
+    required this.productId,
+    required this.title,
+    required this.totalSold,
+    required this.revenue,
+  });
+
+  final int productId;
+  final String title;
+  final int totalSold;
+  final int revenue;
+
+  factory AdminBestSellerModel.fromJson(Map<String, dynamic> json) {
+    return AdminBestSellerModel(
+      productId: (json['productId'] as num?)?.toInt() ?? 0,
+      title: (json['title'] ?? '').toString(),
+      totalSold: (json['totalSold'] as num?)?.toInt() ?? 0,
+      revenue: (json['revenue'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class AdminCustomerSegmentModel {
+  const AdminCustomerSegmentModel({
+    required this.userId,
+    required this.name,
+    required this.email,
+    required this.segment,
+    required this.orderCount,
+    required this.totalSpend,
+  });
+
+  final String userId;
+  final String name;
+  final String email;
+  final String segment;
+  final int orderCount;
+  final int totalSpend;
+
+  factory AdminCustomerSegmentModel.fromJson(Map<String, dynamic> json) {
+    return AdminCustomerSegmentModel(
+      userId: (json['userId'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      segment: (json['segment'] ?? '').toString(),
+      orderCount: (json['orderCount'] as num?)?.toInt() ?? 0,
+      totalSpend: (json['totalSpend'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class AdminRevenueForecastHistoricalDay {
+  const AdminRevenueForecastHistoricalDay({
+    required this.date,
+    required this.revenue,
+  });
+
+  final String date;
+  final int revenue;
+
+  factory AdminRevenueForecastHistoricalDay.fromJson(Map<String, dynamic> json) {
+    return AdminRevenueForecastHistoricalDay(
+      date: (json['date'] ?? '').toString(),
+      revenue: (json['revenue'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class AdminForecastDayModel {
+  const AdminForecastDayModel({
+    required this.date,
+    required this.predicted,
+  });
+
+  final String date;
+  final int predicted;
+
+  factory AdminForecastDayModel.fromJson(Map<String, dynamic> json) {
+    return AdminForecastDayModel(
+      date: (json['date'] ?? '').toString(),
+      predicted: (json['predicted'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class AdminRevenueForecastModel {
+  const AdminRevenueForecastModel({
+    required this.historical,
+    required this.forecast,
+    required this.trend,
+    required this.dailyGrowth,
+  });
+
+  final List<AdminRevenueForecastHistoricalDay> historical;
+  final List<AdminForecastDayModel> forecast;
+  final String trend;
+  final double dailyGrowth;
+
+  factory AdminRevenueForecastModel.fromJson(Map<String, dynamic> json) {
+    return AdminRevenueForecastModel(
+      historical: ((json['historical'] as List?) ?? const [])
+          .map((e) => AdminRevenueForecastHistoricalDay.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ))
+          .toList(growable: false),
+      forecast: ((json['forecast'] as List?) ?? const [])
+          .map((e) => AdminForecastDayModel.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ))
+          .toList(growable: false),
+      trend: (json['trend'] ?? 'flat').toString(),
+      dailyGrowth: (json['dailyGrowth'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  int get totalForecastRevenue => forecast.fold(0, (sum, d) => sum + d.predicted);
+
+  @override
+  bool operator ==(Object other) =>
+      other is AdminRevenueForecastModel &&
+      other.trend == trend &&
+      other.dailyGrowth == dailyGrowth &&
+      other.forecast.length == forecast.length;
+
+  @override
+  int get hashCode => Object.hash(trend, dailyGrowth, forecast.length);
+}
+
+const defaultRevenueForecast = AdminRevenueForecastModel(
+  historical: [],
+  forecast: [],
+  trend: 'flat',
+  dailyGrowth: 0,
+);
+
 class AdminProductDraft {
   const AdminProductDraft({
     required this.title,

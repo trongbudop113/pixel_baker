@@ -937,6 +937,116 @@ class AdminRepository:
             days=days,
         )
 
+    async def get_best_sellers(self, limit: int = 10) -> list:
+        """Count product occurrences across all completed/delivered orders."""
+        orders = await self._orders.find(
+            {"status": {"$in": ["completed", "delivered", "processing", "paid"]}}
+        ).to_list(length=5000)
+        counts: dict[int, dict] = {}
+        for order in orders:
+            for item in order.get("items", []):
+                pid = int(item.get("productId") or 0)
+                if pid <= 0:
+                    continue
+                if pid not in counts:
+                    counts[pid] = {"productId": pid, "title": item.get("title", ""), "totalSold": 0, "revenue": 0}
+                counts[pid]["totalSold"] += int(item.get("quantity") or 1)
+                counts[pid]["revenue"] += int(item.get("lineTotal") or 0)
+        result = sorted(counts.values(), key=lambda x: x["totalSold"], reverse=True)
+        return result[:limit]
+
+    async def get_customer_segments(self) -> list:
+        """Classify users as VIP/Regular/New/Potential based on order history."""
+        users = await self._users.find({"isAdmin": {"$ne": True}}).to_list(length=2000)
+        orders = await self._orders.find(
+            {"status": {"$nin": ["cancelled"]}}
+        ).to_list(length=10000)
+
+        orders_by_user: dict[str, list] = {}
+        for order in orders:
+            uid = str(order.get("userId") or "")
+            if uid:
+                orders_by_user.setdefault(uid, []).append(order)
+
+        segments = []
+        for user in users:
+            uid = str(user.get("id") or "")
+            user_orders = orders_by_user.get(uid, [])
+            order_count = len(user_orders)
+            total_spend = sum(int(o.get("total") or 0) for o in user_orders)
+
+            if order_count >= 5 or total_spend >= 2_000_000:
+                segment = "VIP"
+            elif order_count >= 2:
+                segment = "Thường xuyên"
+            elif order_count == 1:
+                segment = "Mới"
+            else:
+                segment = "Tiềm năng"
+
+            segments.append({
+                "userId": uid,
+                "name": str(user.get("fullName") or ""),
+                "email": str(user.get("email") or ""),
+                "segment": segment,
+                "orderCount": order_count,
+                "totalSpend": total_spend,
+            })
+
+        # Sort: VIP first, then by spend
+        order_map = {"VIP": 0, "Thường xuyên": 1, "Mới": 2, "Tiềm năng": 3}
+        segments.sort(key=lambda x: (order_map.get(x["segment"], 99), -x["totalSpend"]))
+        return segments
+
+    async def get_revenue_forecast(self) -> dict:
+        """Simple linear regression on last 30 days to forecast next 7 days."""
+        from datetime import datetime, timedelta, timezone
+        now = datetime.now(timezone.utc)
+        start = now - timedelta(days=30)
+
+        orders = await self._orders.find(
+            {"status": {"$in": ["completed", "delivered", "paid", "processing"]}}
+        ).to_list(length=5000)
+
+        daily: dict[str, int] = {}
+        for order in orders:
+            created = self._parse_datetime(order.get("createdAt"))
+            if created and created >= start:
+                key = created.strftime("%Y-%m-%d")
+                daily[key] = daily.get(key, 0) + int(order.get("total") or 0)
+
+        # Build 30-day series
+        series = []
+        for i in range(30):
+            day = (start + timedelta(days=i)).strftime("%Y-%m-%d")
+            series.append({"date": day, "revenue": daily.get(day, 0)})
+
+        # Linear regression: y = a + b*x
+        n = len(series)
+        x_vals = list(range(n))
+        y_vals = [s["revenue"] for s in series]
+        x_mean = sum(x_vals) / n
+        y_mean = sum(y_vals) / n
+        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_vals, y_vals))
+        denominator = sum((x - x_mean) ** 2 for x in x_vals)
+        b = numerator / denominator if denominator != 0 else 0
+        a = y_mean - b * x_mean
+
+        # Forecast next 7 days
+        forecast = []
+        for i in range(7):
+            future_x = n + i
+            future_date = (now + timedelta(days=i)).strftime("%Y-%m-%d")
+            predicted = max(0, int(a + b * future_x))
+            forecast.append({"date": future_date, "predicted": predicted})
+
+        return {
+            "historical": series,
+            "forecast": forecast,
+            "trend": "up" if b > 0 else ("down" if b < 0 else "flat"),
+            "dailyGrowth": round(b / y_mean * 100, 1) if y_mean > 0 else 0,
+        }
+
     async def list_ingredient_excel_rows(self) -> list[AdminIngredientExcelRow]:
         documents = await self._ingredients.find({}).sort("name", 1).to_list(length=1000)
         return [

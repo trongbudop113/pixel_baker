@@ -433,3 +433,36 @@ class AdminDashboardResponse(ApiModel):
     topTrendLabel: str
     topTrendValue: str
     tabSummaries: List[AdminTabSummaryResponse]
+
+
+class AdminBestSellerItem(ApiModel):
+    productId: int
+    title: str
+    totalSold: int
+    revenue: int
+
+
+class AdminCustomerSegmentItem(ApiModel):
+    userId: str
+    name: str
+    email: str
+    segment: str  # VIP, Thường xuyên, Mới, Tiềm năng
+    orderCount: int
+    totalSpend: int
+
+
+class AdminRevenueForecastDay(ApiModel):
+    date: str
+    revenue: int = 0
+
+
+class AdminForecastDay(ApiModel):
+    date: str
+    predicted: int
+
+
+class AdminRevenueForecastResponse(ApiModel):
+    historical: List[AdminRevenueForecastDay]
+    forecast: List[AdminForecastDay]
+    trend: str
+    dailyGrowth: float

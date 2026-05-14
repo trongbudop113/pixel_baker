@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile,
 
 from app.models.admin import AdminDashboardResponse
 from app.models.admin import (
+    AdminBestSellerItem,
     AdminBulkOrderStatusUpdateRequest,
     AdminBulkProductStockUpdateRequest,
     AdminBulkImportResult,
@@ -14,6 +15,7 @@ from app.models.admin import (
     AdminCustomerResponse,
     AdminCustomerExcelImportRequest,
     AdminCustomerExcelRow,
+    AdminCustomerSegmentItem,
     AdminCustomerUpdateRequest,
     AdminIngredientExcelImportRequest,
     AdminIngredientExcelRow,
@@ -26,6 +28,7 @@ from app.models.admin import (
     AdminOrderExcelRow,
     AdminOrderAdvanceCheckResponse,
     AdminProductCostReportResponse,
+    AdminRevenueForecastResponse,
     AdminRevenueSummaryResponse,
     AdminProductReviewResponse,
     AdminRecipeExcelImportRequest,
@@ -820,3 +823,31 @@ async def delete_admin_recipe(
             detail="Không tìm thấy công thức.",
         )
     return AdminActionResponse(message="Xóa công thức thành công.")
+
+
+@router.get("/analytics/best-sellers", response_model=list[AdminBestSellerItem])
+async def get_best_sellers(
+    limit: int = 10,
+    _: UserResponse = Depends(require_admin_permission("reports:view")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> list[AdminBestSellerItem]:
+    raw = await repository.get_best_sellers(limit=limit)
+    return [AdminBestSellerItem(**item) for item in raw]
+
+
+@router.get("/analytics/customer-segments", response_model=list[AdminCustomerSegmentItem])
+async def get_customer_segments(
+    _: UserResponse = Depends(require_admin_permission("reports:view")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> list[AdminCustomerSegmentItem]:
+    raw = await repository.get_customer_segments()
+    return [AdminCustomerSegmentItem(**item) for item in raw]
+
+
+@router.get("/analytics/revenue-forecast", response_model=AdminRevenueForecastResponse)
+async def get_revenue_forecast(
+    _: UserResponse = Depends(require_admin_permission("reports:view")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> AdminRevenueForecastResponse:
+    raw = await repository.get_revenue_forecast()
+    return AdminRevenueForecastResponse(**raw)

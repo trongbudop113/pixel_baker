@@ -14,6 +14,7 @@ import '../network/network_client.dart';
 import 'auth_session.dart';
 import 'cart_session.dart';
 import 'wishlist_session.dart';
+import 'recently_viewed_session.dart';
 
 class AppServices {
   AppServices._();
@@ -23,6 +24,7 @@ class AppServices {
   final AuthSession authSession = AuthSession();
   final CartSession cartSession = CartSession();
   final WishlistSession wishlistSession = WishlistSession();
+  final RecentlyViewedSession recentlyViewedSession = RecentlyViewedSession();
   late final ApiClient apiClient;
   late final AuthRepository authRepository;
   late final AdminRepository adminRepository;
@@ -43,6 +45,7 @@ class AppServices {
     await authSession.initialize();
     await cartSession.initialize();
     await wishlistSession.initialize();
+    await recentlyViewedSession.initialize();
 
     final config = ApiConfig.fromEnvironment();
     apiClient = ApiClient(
