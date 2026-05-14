@@ -456,6 +456,18 @@ class _OrderDetailPanel extends StatelessWidget {
           _InfoLine(label: 'Ghi chú', value: detail!.orderNote!),
         if (detail!.voucherCode != null && detail!.voucherCode!.isNotEmpty)
           _InfoLine(label: 'Voucher', value: detail!.voucherCode!),
+        if ((detail!.pointsUsed) > 0)
+          _InfoLine(
+            label: 'Dùng điểm',
+            value: '-${detail!.pointsUsed} điểm (-${_formatCurrency(detail!.pointsUsed * 1000)})',
+            valueColor: const Color(0xFFD97706),
+          ),
+        if ((detail!.pointsEarned) > 0)
+          _InfoLine(
+            label: 'Điểm tích lũy',
+            value: '+${detail!.pointsEarned} điểm',
+            valueColor: const Color(0xFF00A86B),
+          ),
         if (detail!.bankTransferInfo != null) ...[
           const SizedBox(height: 6),
           _InfoLine(label: 'Ngân hàng', value: detail!.bankTransferInfo!.bankName),
@@ -634,10 +646,11 @@ void _printInvoice(String htmlContent) {
 }
 
 class _InfoLine extends StatelessWidget {
-  const _InfoLine({required this.label, required this.value});
+  const _InfoLine({required this.label, required this.value, this.valueColor});
 
   final String label;
   final String value;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -655,7 +668,10 @@ class _InfoLine extends StatelessWidget {
               text: '$label: ',
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            TextSpan(text: value),
+            TextSpan(
+              text: value,
+              style: valueColor != null ? TextStyle(color: valueColor, fontWeight: FontWeight.w700) : null,
+            ),
           ],
         ),
       ),

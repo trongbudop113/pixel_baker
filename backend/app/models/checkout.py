@@ -38,8 +38,9 @@ class CheckoutRequest(ApiModel):
     voucherCode: Optional[str] = None
     customerUserId: Optional[str] = None
     orderNote: Optional[str] = None
-    deliveryDate: Optional[str] = None  # ISO date string e.g. "2026-05-20"
-    deliveryTimeSlot: Optional[str] = None  # e.g. "08:00-12:00"
+    deliveryDate: Optional[str] = None
+    deliveryTimeSlot: Optional[str] = None
+    pointsToUse: int = 0  # số điểm muốn dùng (1 điểm = 1,000đ)
 
 
 class CheckoutItemResponse(ApiModel):
@@ -103,6 +104,7 @@ class CheckoutValidationResponse(ApiModel):
     paymentMethod: str
     paymentStatus: str
     voucherCode: Optional[str] = None
+    pointsUsed: int = 0
     shortages: List[IngredientShortageResponse] = Field(default_factory=list)
     message: str
     bankTransferInfo: Optional[BankTransferInfoResponse] = None
@@ -185,6 +187,8 @@ class OrderDetailResponse(ApiModel):
     orderNote: Optional[str] = None
     deliveryDate: Optional[str] = None
     deliveryTimeSlot: Optional[str] = None
+    pointsUsed: int = 0
+    pointsEarned: int = 0
     createdAt: str
     items: List[OrderDetailItemResponse]
     timeline: List[OrderTimelineEntryResponse] = Field(default_factory=list)

@@ -490,6 +490,10 @@ class _WebCheckoutLayoutState extends State<WebCheckoutLayout> {
               ],
             ),
           ),
+          if (state.userPoints > 0) ...[
+            const SizedBox(height: 12),
+            _LoyaltyPointsCard(state: state),
+          ],
           if (state.bankTransferInfo != null) ...[
             const SizedBox(height: 12),
             _card(
@@ -1367,6 +1371,10 @@ class _MobileCheckoutLayoutState extends State<MobileCheckoutLayout> {
                           ],
                         ),
                       ),
+                      if (state.userPoints > 0) ...[
+                        const SizedBox(height: 10),
+                        _LoyaltyPointsCard(state: state, compact: true),
+                      ],
                       if (state.bankTransferInfo != null) ...[
                         const SizedBox(height: 10),
                         _mobileCard(
@@ -2125,6 +2133,105 @@ class CheckoutCustomerDropdown extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// ─── Loyalty Points Card ──────────────────────────────────────────────────────
+
+class _LoyaltyPointsCard extends StatefulWidget {
+  const _LoyaltyPointsCard({required this.state, this.compact = false});
+  final CheckoutState state;
+  final bool compact;
+  @override
+  State<_LoyaltyPointsCard> createState() => _LoyaltyPointsCardState();
+}
+
+class _LoyaltyPointsCardState extends State<_LoyaltyPointsCard> {
+  bool _usePoints = false;
+
+  void _toggle(bool v) {
+    setState(() => _usePoints = v);
+    widget.state.pointsToUse = v ? widget.state.userPoints : 0;
+  }
+
+  String _fmt(int amount) =>
+      '${amount.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => '.')}đ';
+
+  @override
+  Widget build(BuildContext context) {
+    final points = widget.state.userPoints;
+    final discount = _fmt(points * 1000);
+    if (widget.compact) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F8F8),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF8A8A8A), width: 2),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.star_rounded, color: Color(0xFF1E88E5), size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Bạn có $points điểm (≈ $discount)',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E88E5)),
+              ),
+            ),
+            Switch(
+              value: _usePoints,
+              onChanged: _toggle,
+              activeColor: const Color(0xFF1E88E5),
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F8),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF8A8A8A), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Điểm tích lũy', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E88E5))),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Bạn có $points điểm', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                    Text('Dùng hết = giảm $discount', style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32))),
+                  ],
+                ),
+              ),
+              Switch(value: _usePoints, onChanged: _toggle, activeColor: const Color(0xFF1E88E5)),
+            ],
+          ),
+          if (_usePoints) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(color: const Color(0xFFEAF3FF), borderRadius: BorderRadius.circular(6)),
+              child: Text(
+                'Áp dụng $points điểm → giảm $discount',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E88E5)),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

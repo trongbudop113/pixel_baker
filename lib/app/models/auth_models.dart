@@ -9,6 +9,7 @@ class AuthUser {
     this.role = 'customer',
     this.permissions = const [],
     this.isAdmin = false,
+    this.points = 0,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class AuthUser {
   final String role;
   final List<String> permissions;
   final bool isAdmin;
+  final int points;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
@@ -37,6 +39,7 @@ class AuthUser {
           .map((item) => item.toString())
           .toList(growable: false),
       isAdmin: json['isAdmin'] == true,
+      points: (json['points'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -51,6 +54,7 @@ class AuthUser {
       'role': role,
       'permissions': permissions,
       'isAdmin': isAdmin,
+      'points': points,
     };
   }
 
@@ -64,6 +68,7 @@ class AuthUser {
     String? role,
     List<String>? permissions,
     bool? isAdmin,
+    int? points,
     bool clearPhone = false,
     bool clearAddress = false,
   }) {
@@ -77,6 +82,7 @@ class AuthUser {
       role: role ?? this.role,
       permissions: permissions ?? this.permissions,
       isAdmin: isAdmin ?? this.isAdmin,
+      points: points ?? this.points,
     );
   }
 
@@ -110,7 +116,8 @@ class AuthUser {
         _samePermissions(other.addresses, addresses) &&
         other.role == role &&
         _samePermissions(other.permissions, permissions) &&
-        other.isAdmin == isAdmin;
+        other.isAdmin == isAdmin &&
+        other.points == points;
   }
 
   @override
@@ -124,6 +131,7 @@ class AuthUser {
         role,
         Object.hashAll(permissions),
         isAdmin,
+        points,
       );
 }
 

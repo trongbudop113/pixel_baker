@@ -236,6 +236,27 @@ class UserRepository:
             return None
         return _to_user_response(document)
 
+    async def add_points(self, user_id: str, points: int) -> int:
+        """Add points to user and return new total."""
+        if points <= 0:
+            return 0
+        await self._collection.update_one(
+            {"id": user_id},
+            {"$inc": {"points": points}},
+        )
+        document = await self._collection.find_one({"id": user_id}, {"points": 1})
+        return int((document or {}).get("points") or 0)
+
+    async def deduct_points(self, user_id: str, points: int) -> bool:
+        """Deduct points, only if user has enough. Returns success."""
+        if points <= 0:
+            return True
+        result = await self._collection.update_one(
+            {"id": user_id, "points": {"$gte": points}},
+            {"$inc": {"points": -points}},
+        )
+        return result.modified_count > 0
+
     async def collect_voucher(self, user_id: str, code: str) -> bool:
         result = await self._collection.update_one(
             {"id": user_id},
@@ -283,6 +304,7 @@ def _to_user_response(document: Dict[str, Any]) -> UserResponse:
         phone=document.get("phone"),
         address=document.get("address"),
         addresses=list(document.get("addresses") or []),
+        points=int(document.get("points") or 0),
         role=role,
         permissions=_permissions_for_role(role),
         isAdmin=bool(document.get("isAdmin", False)) or role in {UserRole.admin, UserRole.manager},

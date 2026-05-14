@@ -147,6 +147,9 @@ class CheckoutState extends ScreenController<CheckoutViewState, CheckoutEffect> 
   String? orderNote;
   String? deliveryDate;
   String? deliveryTimeSlot;
+  int pointsToUse = 0;
+
+  int get userPoints => AppServices.instance.authSession.currentUser?.points ?? 0;
 
   String get selectedPaymentMethod => state.selectedPaymentMethod;
   bool get isSubmitting => state.isSubmitting;
@@ -461,6 +464,7 @@ class CheckoutState extends ScreenController<CheckoutViewState, CheckoutEffect> 
           orderNote: orderNote?.trim().isEmpty == true ? null : orderNote?.trim(),
           deliveryDate: deliveryDate?.trim().isEmpty == true ? null : deliveryDate?.trim(),
           deliveryTimeSlot: deliveryTimeSlot,
+          pointsToUse: pointsToUse,
         ),
       );
       await cartSession.replaceAll(const []);

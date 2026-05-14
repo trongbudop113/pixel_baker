@@ -65,6 +65,7 @@ class UserResponse(ApiModel):
     phone: Optional[str] = None
     address: Optional[str] = None
     addresses: List[str] = []
+    points: int = 0
     role: UserRole = UserRole.customer
     permissions: List[str] = []
     isAdmin: bool = False

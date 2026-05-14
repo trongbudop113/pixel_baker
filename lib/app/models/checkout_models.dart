@@ -34,6 +34,7 @@ class CheckoutRequestModel {
     this.orderNote,
     this.deliveryDate,
     this.deliveryTimeSlot,
+    this.pointsToUse = 0,
   });
 
   final String paymentMethod;
@@ -44,6 +45,7 @@ class CheckoutRequestModel {
   final String? orderNote;
   final String? deliveryDate;
   final String? deliveryTimeSlot;
+  final int pointsToUse;
 
   Map<String, dynamic> toJson() {
     return {
@@ -54,6 +56,7 @@ class CheckoutRequestModel {
       'orderNote': orderNote,
       'deliveryDate': deliveryDate,
       'deliveryTimeSlot': deliveryTimeSlot,
+      'pointsToUse': pointsToUse,
       'items': items
           .map(
             (item) => {
@@ -163,6 +166,7 @@ class CheckoutValidationModel {
     this.shortages = const [],
     this.paymentGateway,
     this.paymentActionUrl,
+    this.pointsUsed = 0,
   });
 
   final bool canCheckout;
@@ -178,6 +182,7 @@ class CheckoutValidationModel {
   final List<IngredientShortageModel> shortages;
   final String? paymentGateway;
   final String? paymentActionUrl;
+  final int pointsUsed;
 
   factory CheckoutValidationModel.fromJson(Map<String, dynamic> json) {
     return CheckoutValidationModel(
@@ -202,6 +207,7 @@ class CheckoutValidationModel {
                 Map<String, dynamic>.from(item as Map),
               ))
           .toList(growable: false),
+      pointsUsed: (json['pointsUsed'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -494,6 +500,8 @@ class OrderDetailModel {
     this.orderNote,
     this.deliveryDate,
     this.deliveryTimeSlot,
+    this.pointsUsed = 0,
+    this.pointsEarned = 0,
   });
 
   final String orderId;
@@ -523,6 +531,8 @@ class OrderDetailModel {
   final String? orderNote;
   final String? deliveryDate;
   final String? deliveryTimeSlot;
+  final int pointsUsed;
+  final int pointsEarned;
 
   factory OrderDetailModel.fromJson(Map<String, dynamic> json) {
     return OrderDetailModel(

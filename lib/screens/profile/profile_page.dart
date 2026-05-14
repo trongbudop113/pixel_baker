@@ -115,6 +115,8 @@ class WebProfileLayout extends StatelessWidget {
                           flex: 66,
                           child: Column(
                             children: [
+                              _WebLoyaltyCard(state: state),
+                              const SizedBox(height: 12),
                               _WebOrdersCard(state: state),
                               const SizedBox(height: 12),
                               const _WishlistEntryCard(),
@@ -404,6 +406,66 @@ class _WebOrdersCard extends StatelessWidget {
   }
 }
 
+class _WebLoyaltyCard extends StatelessWidget {
+  const _WebLoyaltyCard({required this.state, this.compact = false});
+  final ProfileState state;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = state.user;
+    final points = user?.points ?? 0;
+    final moneyValue = _formatCurrency(points * 1000);
+    return _section(
+      title: 'Điểm tích lũy',
+      minHeight: compact ? 90 : 110,
+      child: Row(
+        children: [
+          Container(
+            width: compact ? 48 : 60,
+            height: compact ? 48 : 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF3FF),
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF1E88E5), width: 2),
+            ),
+            child: const Icon(Icons.star_rounded, color: Color(0xFF1E88E5)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$points điểm',
+                  style: TextStyle(
+                    fontSize: compact ? 20 : 26,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF1E88E5),
+                  ),
+                ),
+                Text(
+                  '≈ $moneyValue có thể giảm',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32), fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Kiếm 1 điểm / 10.000đ • 1 điểm = 1.000đ giảm',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF8A8A8A)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCurrency(int v) =>
+      '${v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => '.')}đ';
+}
+
 class _WishlistEntryCard extends StatelessWidget {
   const _WishlistEntryCard();
 
@@ -488,6 +550,8 @@ class MobileProfileLayout extends StatelessWidget {
                     _mobilePersonal(),
                     const SizedBox(height: 6),
                     _mobileAddress(context),
+                    const SizedBox(height: 6),
+                    _WebLoyaltyCard(state: state, compact: true),
                     const SizedBox(height: 6),
                     _mobileOrders(),
                     const SizedBox(height: 6),

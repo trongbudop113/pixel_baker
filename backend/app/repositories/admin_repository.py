@@ -301,6 +301,27 @@ class AdminRepository:
             {"$set": {"status": normalized, "timeline": next_timeline}},
         )
         document = await self._orders.find_one({"orderId": order_id})
+
+        # Award loyalty points when order is completed
+        if normalized == "completed":
+            prev_status = str(document.get("status") or "").lower() if document else ""
+            already_earned = int(document.get("pointsEarned") or 0) if document else 0
+            if already_earned == 0:
+                order_total = int(document.get("total") or 0) if document else 0
+                points_to_earn = order_total // 10_000
+                if points_to_earn > 0:
+                    user_id = str(document.get("userId") or "") if document else ""
+                    if user_id:
+                        await self._users.update_one(
+                            {"id": user_id},
+                            {"$inc": {"points": points_to_earn}},
+                        )
+                        await self._orders.update_one(
+                            {"orderId": order_id},
+                            {"$set": {"pointsEarned": points_to_earn}},
+                        )
+                        document = await self._orders.find_one({"orderId": order_id})
+
         return AdminOrderResponse(
             orderId=str(document.get("orderId") or ""),
             customerName=str(document.get("customerName") or ""),

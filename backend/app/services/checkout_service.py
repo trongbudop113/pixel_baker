@@ -46,6 +46,11 @@ PAYMENT_STATUS_CANCELLED = "cancelled"
 PAYMENT_STATUS_REFUND_PENDING = "refund_pending"
 PAYMENT_STATUS_REFUNDED = "refunded"
 
+# Loyalty points rules
+POINTS_PER_VND = 10_000        # spend 10,000đ → earn 1 point
+POINTS_REDEEM_RATE = 1_000     # 1 point = 1,000đ discount
+POINTS_MAX_REDEEM_RATIO = 0.3  # max 30% of subtotal can be paid by points
+
 
 class CheckoutService:
     def __init__(
@@ -145,7 +150,18 @@ class CheckoutService:
                 delivery_fee=delivery_fee,
             )
 
-        total = subtotal + delivery_fee - discount_amount
+        # Apply loyalty points
+        points_discount = 0
+        points_to_use = max(0, int(payload.pointsToUse or 0))
+        if points_to_use > 0:
+            user_points = int((await self._user_repository.get_user_by_id(target_user.id) or {}).get("points") or 0)
+            points_to_use = min(points_to_use, user_points)
+            max_discount = int(subtotal * POINTS_MAX_REDEEM_RATIO)
+            points_discount = min(points_to_use * POINTS_REDEEM_RATE, max_discount)
+            points_to_use = points_discount // POINTS_REDEEM_RATE
+            discount_amount += points_discount
+
+        total = max(0, subtotal + delivery_fee - discount_amount)
         return CheckoutValidationResponse(
             canCheckout=True,
             subtotal=subtotal,
@@ -155,6 +171,7 @@ class CheckoutService:
             paymentMethod=payload.paymentMethod,
             paymentStatus=self._initial_payment_status(payload.paymentMethod),
             voucherCode=applied_voucher_code,
+            pointsUsed=points_to_use,
             message=(
                 "Đơn hàng hợp lệ. Vui lòng chuyển khoản theo thông tin bên dưới."
                 if payload.paymentMethod == PAYMENT_BANK_TRANSFER
@@ -245,6 +262,8 @@ class CheckoutService:
                 "orderNote": payload.orderNote,
                 "deliveryDate": payload.deliveryDate,
                 "deliveryTimeSlot": payload.deliveryTimeSlot,
+                "pointsUsed": validation.pointsUsed,
+                "pointsEarned": 0,  # will be updated when order completes
                 "items": items,
                 "createdAt": created_at,
                 "timeline": [entry.model_dump() for entry in timeline],
@@ -253,6 +272,10 @@ class CheckoutService:
 
         if validation.voucherCode is not None:
             await self._user_repository.mark_voucher_used(target_user.id, validation.voucherCode)
+
+        # Deduct loyalty points if used
+        if validation.pointsUsed > 0:
+            await self._user_repository.deduct_points(target_user.id, validation.pointsUsed)
 
         if not user.isAdmin or target_user.id == user.id:
             await self._cart_repository.clear_cart(user.id)
@@ -773,6 +796,8 @@ class CheckoutService:
             orderNote=document.get("orderNote"),
             deliveryDate=document.get("deliveryDate"),
             deliveryTimeSlot=document.get("deliveryTimeSlot"),
+            pointsUsed=int(document.get("pointsUsed") or 0),
+            pointsEarned=int(document.get("pointsEarned") or 0),
             createdAt=(document.get("createdAt") or "").strip(),
             items=[
                 OrderDetailItemResponse(
