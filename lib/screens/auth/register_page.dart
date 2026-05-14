@@ -4,6 +4,7 @@ import '../../app/repositories/auth_page_repository.dart';
 import '../../app/state/screen_controller.dart';
 import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_footer.dart';
 import 'auth_state.dart';
 
 class AuthColors {
@@ -289,16 +290,7 @@ class _RegisterWebLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Container(
-                height: 52,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F8F8),
-                  border: Border.all(color: AuthColors.gray, width: 2),
-                ),
-                child: _hint(page.footerTagline, AuthColors.gray,
-                    size: 10, fw: FontWeight.w700),
-              ),
+              const PixelFooter(label: 'PIXEL BAKERY | ĐĂNG KÝ'),
             ],
           ),
         );
@@ -477,8 +469,7 @@ class _RegisterMobileLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              _hint(page.footerTagline, AuthColors.gray,
-                  size: 8, fw: FontWeight.w700),
+              const PixelFooter(label: 'PIXEL BAKERY | ĐĂNG KÝ', mobile: true),
             ],
           ),
         );
