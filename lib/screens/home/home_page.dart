@@ -7,6 +7,7 @@ import '../../app/state/screen_controller.dart';
 import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
 import '../shared/back_to_top_button.dart';
+import '../shared/pressable.dart';
 import '../shared/shimmer_box.dart';
 import 'home_state.dart';
 
@@ -1789,7 +1790,7 @@ class HomeMobileLayout extends StatelessWidget {
               .quantityForProduct(product.productId);
           final isFavorite = AppServices.instance.wishlistSession
               .contains(product.productId);
-          return GestureDetector(
+          return Pressable(
             onTap: onTap == null ? null : () => onTap(context),
             child: Container(
               width: double.infinity,

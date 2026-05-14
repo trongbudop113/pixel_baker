@@ -5,6 +5,7 @@ import 'package:universal_html/html.dart' as html;
 
 import '../../app/models/checkout_models.dart';
 import '../shared/app_header.dart';
+import '../shared/page_skeleton.dart';
 import '../shared/pixel_footer.dart';
 import 'orders_detail_state.dart';
 
@@ -95,7 +96,7 @@ class _OrdersDetailWeb extends StatelessWidget {
               animation: state,
               builder: (context, _) {
                 if (state.isLoading && state.filteredOrders.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const OrdersListSkeleton();
                 }
                 if (state.errorMessage != null && state.filteredOrders.isEmpty) {
                   return _CenteredMessage(
@@ -181,7 +182,7 @@ class _OrdersDetailMobile extends StatelessWidget {
               animation: state,
               builder: (context, _) {
                 if (state.isLoading && state.filteredOrders.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const OrdersListSkeleton(compact: true);
                 }
                 if (state.errorMessage != null && state.filteredOrders.isEmpty) {
                   return _CenteredMessage(

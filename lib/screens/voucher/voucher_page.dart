@@ -5,6 +5,7 @@ import '../../app/models/voucher_models.dart';
 import '../../app/routing/app_router.dart';
 import '../../app/state/screen_controller.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_empty_state.dart';
 import '../shared/pixel_footer.dart';
 import 'voucher_state.dart';
 
@@ -114,15 +115,22 @@ class WebVoucherLayout extends StatelessWidget {
                         _messageBanner(state.message!, state.isSuccess),
                       ],
                       const SizedBox(height: 12),
-                      ...List.generate(state.vouchers.length, (index) {
-                        final voucher = state.vouchers[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == state.vouchers.length - 1 ? 0 : 10,
-                          ),
-                          child: _voucher(index, voucher),
-                        );
-                      }),
+                      if (state.vouchers.isEmpty)
+                        const PixelEmptyState(
+                          icon: Icons.local_offer_outlined,
+                          title: 'Chưa có voucher nào',
+                          subtitle: 'Các voucher giảm giá sẽ hiển thị ở đây',
+                        )
+                      else
+                        ...List.generate(state.vouchers.length, (index) {
+                          final voucher = state.vouchers[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index == state.vouchers.length - 1 ? 0 : 10,
+                            ),
+                            child: _voucher(index, voucher),
+                          );
+                        }),
                     ],
                   ),
                 ),
@@ -290,11 +298,18 @@ class MobileVoucherLayout extends StatelessWidget {
                       _mobileMessageBanner(state.message!, state.isSuccess),
                     ],
                     const SizedBox(height: 10),
-                    ...List.generate(state.vouchers.length * 2 - 1, (index) {
-                      if (index.isOdd) return const SizedBox(height: 8);
-                      final voucher = state.vouchers[index ~/ 2];
-                      return _card(index ~/ 2, voucher);
-                    }),
+                    if (state.vouchers.isEmpty)
+                      const PixelEmptyState(
+                        icon: Icons.local_offer_outlined,
+                        title: 'Chưa có voucher nào',
+                        subtitle: 'Các voucher giảm giá sẽ hiển thị ở đây',
+                      )
+                    else
+                      ...List.generate(state.vouchers.length * 2 - 1, (index) {
+                        if (index.isOdd) return const SizedBox(height: 8);
+                        final voucher = state.vouchers[index ~/ 2];
+                        return _card(index ~/ 2, voucher);
+                      }),
                   ],
                 ),
               ),

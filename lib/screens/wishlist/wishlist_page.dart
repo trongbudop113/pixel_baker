@@ -6,6 +6,7 @@ import '../../app/routing/app_router.dart';
 import '../../app/services/app_services.dart';
 import '../menu/menu_state.dart';
 import '../shared/app_header.dart';
+import '../shared/pixel_empty_state.dart';
 
 class WishlistColors {
   static const red = Color(0xFFE53935);
@@ -119,15 +120,19 @@ class _WishlistWebLayout extends StatelessWidget {
                       );
                     }
                     if (AppServices.instance.wishlistSession.itemCount == 0) {
-                      return const _WishlistEmptyState(
-                        message:
-                            'Bạn chưa có sản phẩm yêu thích nào. Hãy nhấn tim ở trang chủ, menu hoặc chi tiết sản phẩm.',
+                      return PixelEmptyState(
+                        icon: Icons.favorite_border_rounded,
+                        title: 'Danh sách yêu thích trống',
+                        subtitle: 'Nhấn ♡ trên sản phẩm để lưu lại',
+                        actionLabel: 'Xem thực đơn',
+                        onAction: () => context.go('/menu'),
                       );
                     }
                     if (items.isEmpty) {
-                      return const _WishlistEmptyState(
-                        message:
-                            'Không tìm thấy sản phẩm yêu thích phù hợp với bộ lọc hiện tại.',
+                      return const PixelEmptyState(
+                        icon: Icons.search_off_rounded,
+                        title: 'Không tìm thấy sản phẩm',
+                        subtitle: 'Không tìm thấy sản phẩm yêu thích phù hợp với bộ lọc hiện tại.',
                       );
                     }
                     return Wrap(
@@ -465,15 +470,19 @@ class _WishlistMobileLayout extends StatelessWidget {
                           );
                         }
                         if (AppServices.instance.wishlistSession.itemCount == 0) {
-                          return const _WishlistEmptyState(
-                            message:
-                                'Bạn chưa lưu sản phẩm yêu thích nào.',
+                          return PixelEmptyState(
+                            icon: Icons.favorite_border_rounded,
+                            title: 'Danh sách yêu thích trống',
+                            subtitle: 'Nhấn ♡ trên sản phẩm để lưu lại',
+                            actionLabel: 'Xem thực đơn',
+                            onAction: () => context.go('/menu'),
                           );
                         }
                         if (items.isEmpty) {
-                          return const _WishlistEmptyState(
-                            message:
-                                'Không tìm thấy sản phẩm yêu thích phù hợp.',
+                          return const PixelEmptyState(
+                            icon: Icons.search_off_rounded,
+                            title: 'Không tìm thấy sản phẩm',
+                            subtitle: 'Không tìm thấy sản phẩm yêu thích phù hợp.',
                           );
                         }
                         return Column(

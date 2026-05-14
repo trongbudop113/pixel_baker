@@ -9,6 +9,7 @@ import '../../app/routing/app_router.dart';
 import '../shared/app_header.dart';
 import '../shared/back_to_top_button.dart';
 import '../shared/pixel_footer.dart';
+import '../shared/pressable.dart';
 import '../shared/shimmer_box.dart';
 import 'menu_state.dart';
 
@@ -1787,9 +1788,9 @@ class _MenuItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = compact ? double.infinity : 376.0;
-    return RepaintBoundary(
-      child: GestureDetector(
-        onTap: onTap,
+    return Pressable(
+      onTap: onTap,
+      child: RepaintBoundary(
         child: Container(
           width: width,
           padding: const EdgeInsets.all(12),
