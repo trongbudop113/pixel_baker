@@ -66,6 +66,7 @@ class MenuRepository:
         product_id: int,
         *,
         author: str,
+        user_id: Optional[str] = None,
         payload: MenuReviewCreateRequest,
     ) -> Optional[MenuProductDetailResponse]:
         document = await self._collection.find_one({"id": product_id})
@@ -80,8 +81,35 @@ class MenuRepository:
                 rating=max(1, min(5, int(payload.rating))),
                 mediaUrls=[item.strip() for item in payload.mediaUrls if item.strip()],
                 createdAt=datetime.now(timezone.utc).isoformat(),
+                userId=user_id,
             ).model_dump(),
         )
+        await self._collection.update_one({"id": product_id}, {"$set": {"reviews": reviews}})
+        return await self.get_product_by_id(product_id)
+
+    async def delete_own_review(self, product_id: int, created_at: str, user_id: str) -> Optional[MenuProductDetailResponse]:
+        document = await self._collection.find_one({"id": product_id})
+        if document is None:
+            return None
+        reviews = [r for r in document.get("reviews", [])
+                   if not (str(r.get("createdAt") or "") == created_at and str(r.get("userId") or "") == user_id)]
+        await self._collection.update_one({"id": product_id}, {"$set": {"reviews": reviews}})
+        return await self.get_product_by_id(product_id)
+
+    async def update_own_review(self, product_id: int, created_at: str, user_id: str, payload: MenuReviewCreateRequest) -> Optional[MenuProductDetailResponse]:
+        document = await self._collection.find_one({"id": product_id})
+        if document is None:
+            return None
+        reviews = list(document.get("reviews", []))
+        updated = False
+        for review in reviews:
+            if str(review.get("createdAt") or "") == created_at and str(review.get("userId") or "") == user_id:
+                review["content"] = payload.content.strip()
+                review["rating"] = max(1, min(5, int(payload.rating)))
+                updated = True
+                break
+        if not updated:
+            return None
         await self._collection.update_one({"id": product_id}, {"$set": {"reviews": reviews}})
         return await self.get_product_by_id(product_id)
 

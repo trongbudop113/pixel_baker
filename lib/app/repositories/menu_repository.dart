@@ -15,6 +15,10 @@ abstract class MenuRepository {
 
   Future<MenuProductDetail> submitReview(int productId, MenuReviewDraft draft);
 
+  Future<MenuProductDetail> deleteReview(int productId, String createdAt);
+
+  Future<MenuProductDetail> updateReview(int productId, String createdAt, MenuReviewDraft draft);
+
   MenuProduct? findCachedProductById(int id);
 }
 
@@ -118,6 +122,33 @@ class ApiMenuRepository extends BaseApiRepository implements MenuRepository {
         _unwrapItemPayload(json),
         MenuProductDetail.fromJson,
       ),
+    );
+    final detail = response.data;
+    _upsertCachedProduct(detail);
+    return detail;
+  }
+
+  @override
+  Future<MenuProductDetail> deleteReview(int productId, String createdAt) async {
+    final encoded = Uri.encodeComponent(createdAt);
+    final response = await apiClient.delete<MenuProductDetail>(
+      '/menu/products/$productId/reviews/$encoded',
+      requiresAuth: true,
+      decoder: (json) => readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
+    );
+    final detail = response.data;
+    _upsertCachedProduct(detail);
+    return detail;
+  }
+
+  @override
+  Future<MenuProductDetail> updateReview(int productId, String createdAt, MenuReviewDraft draft) async {
+    final encoded = Uri.encodeComponent(createdAt);
+    final response = await apiClient.patch<MenuProductDetail>(
+      '/menu/products/$productId/reviews/$encoded',
+      requiresAuth: true,
+      body: draft.toJson(),
+      decoder: (json) => readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
     );
     final detail = response.data;
     _upsertCachedProduct(detail);

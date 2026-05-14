@@ -177,6 +177,33 @@ class UserRepository:
             return None
         return _to_user_response(document)
 
+    async def add_address(self, user_id: str, address: str) -> Optional[UserResponse]:
+        await self._collection.update_one(
+            {"id": user_id},
+            {"$push": {"addresses": address.strip()}},
+        )
+        document = await self._collection.find_one({"id": user_id})
+        if document is None:
+            return None
+        return _to_user_response(document)
+
+    async def delete_address(self, user_id: str, address_index: int) -> Optional[UserResponse]:
+        document = await self._collection.find_one({"id": user_id})
+        if document is None:
+            return None
+        addresses: list = list(document.get("addresses") or [])
+        if address_index < 0 or address_index >= len(addresses):
+            return _to_user_response(document)
+        addresses.pop(address_index)
+        await self._collection.update_one(
+            {"id": user_id},
+            {"$set": {"addresses": addresses}},
+        )
+        document = await self._collection.find_one({"id": user_id})
+        if document is None:
+            return None
+        return _to_user_response(document)
+
     async def update_password(self, user_id: str, hashed_password: str) -> bool:
         result = await self._collection.update_one(
             {"id": user_id},
@@ -255,6 +282,7 @@ def _to_user_response(document: Dict[str, Any]) -> UserResponse:
         email=document["email"],
         phone=document.get("phone"),
         address=document.get("address"),
+        addresses=list(document.get("addresses") or []),
         role=role,
         permissions=_permissions_for_role(role),
         isAdmin=bool(document.get("isAdmin", False)) or role in {UserRole.admin, UserRole.manager},

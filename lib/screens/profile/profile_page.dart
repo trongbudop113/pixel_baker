@@ -210,15 +210,7 @@ class _WebAddressCard extends StatefulWidget {
 }
 
 class _WebAddressCardState extends State<_WebAddressCard> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(
-      text: widget.state.user?.address ?? '',
-    );
-  }
+  final TextEditingController _controller = TextEditingController();
 
   @override
   void dispose() {
@@ -231,42 +223,46 @@ class _WebAddressCardState extends State<_WebAddressCard> {
     return AnimatedBuilder(
       animation: widget.state,
       builder: (context, _) {
-        final user = widget.state.user;
-        final address = user?.address?.trim() ?? '';
-        if (_controller.text.trim().isEmpty && address.isNotEmpty) {
-          _controller.text = address;
-        }
-        final hasAddress = address.isNotEmpty;
+        final addresses = widget.state.user?.addresses ?? const [];
         return _section(
-          title: 'Địa chỉ mặc định',
+          title: 'Địa chỉ giao hàng',
           minHeight: 120,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (hasAddress)
-                Text(address, style: _lineStyle)
-              else
+              if (addresses.isEmpty)
                 const Text(
-                  'Bạn chưa có địa chỉ mặc định.',
+                  'Bạn chưa có địa chỉ giao hàng nào.',
                   style: TextStyle(
                     fontSize: 10,
                     height: 1.2,
                     color: ProfileColors.muted,
                     fontWeight: FontWeight.w600,
                   ),
-                ),
+                )
+              else
+                for (var i = 0; i < addresses.length; i++) ...[
+                  _AddressRow(
+                    address: addresses[i],
+                    onDelete: () => widget.state.deleteAddress(i),
+                  ),
+                  if (i < addresses.length - 1) const SizedBox(height: 6),
+                ],
               const SizedBox(height: 8),
               _ProfileTextField(
                 controller: _controller,
-                hintText: 'Nhập địa chỉ giao hàng',
+                hintText: 'Nhập địa chỉ mới',
                 maxLines: 2,
               ),
               const SizedBox(height: 8),
               _ActionButton(
-                label: hasAddress ? 'Cập nhật địa chỉ' : 'Thêm địa chỉ',
+                label: 'Thêm địa chỉ',
                 color: ProfileColors.blue,
                 isLoading: widget.state.isUpdatingAddress,
-                onTap: () => widget.state.updateAddress(_controller.text),
+                onTap: () {
+                  widget.state.addAddress(_controller.text);
+                  _controller.clear();
+                },
               ),
               if (widget.state.addressMessage != null) ...[
                 const SizedBox(height: 8),
@@ -716,15 +712,7 @@ class _MobileAddressCard extends StatefulWidget {
 }
 
 class _MobileAddressCardState extends State<_MobileAddressCard> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(
-      text: widget.state.user?.address ?? '',
-    );
-  }
+  final TextEditingController _controller = TextEditingController();
 
   @override
   void dispose() {
@@ -737,38 +725,46 @@ class _MobileAddressCardState extends State<_MobileAddressCard> {
     return AnimatedBuilder(
       animation: widget.state,
       builder: (context, _) {
-        final address = widget.state.user?.address?.trim() ?? '';
-        if (_controller.text.trim().isEmpty && address.isNotEmpty) {
-          _controller.text = address;
-        }
-        final hasAddress = address.isNotEmpty;
+        final addresses = widget.state.user?.addresses ?? const [];
         return _section(
-          title: 'Địa chỉ',
+          title: 'Địa chỉ giao hàng',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                hasAddress ? address : 'Bạn chưa có địa chỉ mặc định.',
-                style: TextStyle(
-                  fontSize: 10,
-                  height: 1.2,
-                  color: hasAddress ? ProfileColors.text : ProfileColors.muted,
-                  fontWeight: hasAddress ? FontWeight.w400 : FontWeight.w600,
-                ),
-              ),
+              if (addresses.isEmpty)
+                const Text(
+                  'Bạn chưa có địa chỉ giao hàng nào.',
+                  style: TextStyle(
+                    fontSize: 10,
+                    height: 1.2,
+                    color: ProfileColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              else
+                for (var i = 0; i < addresses.length; i++) ...[
+                  _AddressRow(
+                    address: addresses[i],
+                    onDelete: () => widget.state.deleteAddress(i),
+                  ),
+                  if (i < addresses.length - 1) const SizedBox(height: 6),
+                ],
               const SizedBox(height: 8),
               _ProfileTextField(
                 controller: _controller,
-                hintText: 'Nhập địa chỉ giao hàng',
+                hintText: 'Nhập địa chỉ mới',
                 maxLines: 2,
                 height: 56,
               ),
               const SizedBox(height: 8),
               _ActionButton(
-                label: hasAddress ? 'Cập nhật địa chỉ' : 'Thêm địa chỉ',
+                label: 'Thêm địa chỉ',
                 color: ProfileColors.blue,
                 isLoading: widget.state.isUpdatingAddress,
-                onTap: () => widget.state.updateAddress(_controller.text),
+                onTap: () {
+                  widget.state.addAddress(_controller.text);
+                  _controller.clear();
+                },
               ),
               if (widget.state.addressMessage != null) ...[
                 const SizedBox(height: 8),
@@ -888,6 +884,44 @@ class _MobileSecurityCardState extends State<_MobileSecurityCard> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AddressRow extends StatelessWidget {
+  const _AddressRow({required this.address, required this.onDelete});
+
+  final String address;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: _box(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              address,
+              style: const TextStyle(
+                fontSize: 10,
+                height: 1.3,
+                color: ProfileColors.text,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onDelete,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 6),
+              child: Icon(Icons.close, size: 14, color: ProfileColors.red),
+            ),
+          ),
+        ],
       ),
     );
   }

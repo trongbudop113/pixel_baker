@@ -406,6 +406,34 @@ class ProductDetailState
     );
   }
 
+  Future<bool> deleteReview(String createdAt) async {
+    update(
+      (current) => current.copyWith(
+        isLoading: true,
+        clearErrorMessage: true,
+      ),
+    );
+    try {
+      final detail = await _repository.deleteReview(_productId, createdAt);
+      update(
+        (current) => current.copyWith(
+          product: detail,
+          isLoading: false,
+          clearErrorMessage: true,
+        ),
+      );
+      return true;
+    } catch (error) {
+      update(
+        (current) => current.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+        ),
+      );
+      return false;
+    }
+  }
+
   Future<bool> submitReview(MenuReviewDraft draft) async {
     update(
       (current) => current.copyWith(

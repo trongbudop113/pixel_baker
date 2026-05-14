@@ -31,6 +31,9 @@ class CheckoutRequestModel {
     required this.items,
     this.voucherCode,
     this.customerUserId,
+    this.orderNote,
+    this.deliveryDate,
+    this.deliveryTimeSlot,
   });
 
   final String paymentMethod;
@@ -38,6 +41,9 @@ class CheckoutRequestModel {
   final List<CartItem> items;
   final String? voucherCode;
   final String? customerUserId;
+  final String? orderNote;
+  final String? deliveryDate;
+  final String? deliveryTimeSlot;
 
   Map<String, dynamic> toJson() {
     return {
@@ -45,6 +51,9 @@ class CheckoutRequestModel {
       'deliveryFee': deliveryFee,
       'voucherCode': voucherCode,
       'customerUserId': customerUserId,
+      'orderNote': orderNote,
+      'deliveryDate': deliveryDate,
+      'deliveryTimeSlot': deliveryTimeSlot,
       'items': items
           .map(
             (item) => {
@@ -327,6 +336,7 @@ class CheckoutResult {
 }
 
 class CartSyncResult {
+
   const CartSyncResult({
     required this.items,
     required this.itemCount,
@@ -481,6 +491,9 @@ class OrderDetailModel {
     this.canCancel = false,
     this.canConfirmTransfer = false,
     this.canRequestRefund = false,
+    this.orderNote,
+    this.deliveryDate,
+    this.deliveryTimeSlot,
   });
 
   final String orderId;
@@ -507,6 +520,9 @@ class OrderDetailModel {
   final bool canCancel;
   final bool canConfirmTransfer;
   final bool canRequestRefund;
+  final String? orderNote;
+  final String? deliveryDate;
+  final String? deliveryTimeSlot;
 
   factory OrderDetailModel.fromJson(Map<String, dynamic> json) {
     return OrderDetailModel(
@@ -546,6 +562,9 @@ class OrderDetailModel {
       canCancel: json['canCancel'] == true,
       canConfirmTransfer: json['canConfirmTransfer'] == true,
       canRequestRefund: json['canRequestRefund'] == true,
+      orderNote: json['orderNote']?.toString(),
+      deliveryDate: json['deliveryDate']?.toString(),
+      deliveryTimeSlot: json['deliveryTimeSlot']?.toString(),
     );
   }
 }

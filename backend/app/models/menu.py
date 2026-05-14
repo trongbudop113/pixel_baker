@@ -59,6 +59,7 @@ class MenuReviewItem(ApiModel):
     rating: int = 5
     mediaUrls: List[str] = []
     createdAt: Optional[str] = None
+    userId: Optional[str] = None
 
 
 class MenuReviewCreateRequest(ApiModel):

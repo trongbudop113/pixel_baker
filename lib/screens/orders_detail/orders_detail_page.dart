@@ -448,6 +448,12 @@ class _OrderDetailPanel extends StatelessWidget {
         _InfoLine(label: 'Email', value: detail!.customerEmail),
         _InfoLine(label: 'SĐT', value: detail!.customerPhone ?? '-'),
         _InfoLine(label: 'Địa chỉ', value: detail!.customerAddress ?? '-'),
+        if (detail!.deliveryDate != null && detail!.deliveryDate!.isNotEmpty)
+          _InfoLine(label: 'Ngày giao', value: detail!.deliveryDate!),
+        if (detail!.deliveryTimeSlot != null && detail!.deliveryTimeSlot!.isNotEmpty)
+          _InfoLine(label: 'Khung giờ', value: detail!.deliveryTimeSlot!),
+        if (detail!.orderNote != null && detail!.orderNote!.isNotEmpty)
+          _InfoLine(label: 'Ghi chú', value: detail!.orderNote!),
         if (detail!.voucherCode != null && detail!.voucherCode!.isNotEmpty)
           _InfoLine(label: 'Voucher', value: detail!.voucherCode!),
         if (detail!.bankTransferInfo != null) ...[

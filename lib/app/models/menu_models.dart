@@ -314,6 +314,7 @@ class MenuReviewItem {
     this.rating = 5,
     this.mediaUrls = const [],
     this.createdAt,
+    this.userId,
   });
 
   final String author;
@@ -321,6 +322,7 @@ class MenuReviewItem {
   final int rating;
   final List<String> mediaUrls;
   final String? createdAt;
+  final String? userId;
 
   factory MenuReviewItem.fromJson(Map<String, dynamic> json) {
     return MenuReviewItem(
@@ -331,6 +333,7 @@ class MenuReviewItem {
           .map((item) => item.toString())
           .toList(growable: false),
       createdAt: json['createdAt']?.toString(),
+      userId: json['userId']?.toString(),
     );
   }
 
@@ -341,6 +344,7 @@ class MenuReviewItem {
       'rating': rating,
       'mediaUrls': mediaUrls,
       'createdAt': createdAt,
+      'userId': userId,
     };
   }
 }

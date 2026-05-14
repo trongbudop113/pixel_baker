@@ -235,6 +235,80 @@ class ProfileState extends ScreenController<ProfileViewState, ProfileEffect> {
     }
   }
 
+  Future<void> addAddress(String rawAddress) async {
+    final address = rawAddress.trim();
+    if (address.length < 5) {
+      update((current) => current.copyWith(
+            addressMessage: 'Địa chỉ phải có ít nhất 5 ký tự.',
+            isAddressSuccess: false,
+          ));
+      return;
+    }
+    if (state.isUpdatingAddress) return;
+
+    update((current) => current.copyWith(
+          isUpdatingAddress: true,
+          clearAddressMessage: true,
+          isAddressSuccess: false,
+        ));
+
+    try {
+      final user = await _authRepository.addAddress(address);
+      update((current) => current.copyWith(
+            user: user,
+            isUpdatingAddress: false,
+            addressMessage: 'Đã thêm địa chỉ.',
+            isAddressSuccess: true,
+          ));
+    } on ApiException catch (error) {
+      _handleAuthError(error);
+      update((current) => current.copyWith(
+            isUpdatingAddress: false,
+            addressMessage: error.message,
+            isAddressSuccess: false,
+          ));
+    } catch (_) {
+      update((current) => current.copyWith(
+            isUpdatingAddress: false,
+            addressMessage: 'Không thể thêm địa chỉ.',
+            isAddressSuccess: false,
+          ));
+    }
+  }
+
+  Future<void> deleteAddress(int index) async {
+    if (state.isUpdatingAddress) return;
+
+    update((current) => current.copyWith(
+          isUpdatingAddress: true,
+          clearAddressMessage: true,
+          isAddressSuccess: false,
+        ));
+
+    try {
+      final user = await _authRepository.deleteAddress(index);
+      update((current) => current.copyWith(
+            user: user,
+            isUpdatingAddress: false,
+            addressMessage: 'Đã xóa địa chỉ.',
+            isAddressSuccess: true,
+          ));
+    } on ApiException catch (error) {
+      _handleAuthError(error);
+      update((current) => current.copyWith(
+            isUpdatingAddress: false,
+            addressMessage: error.message,
+            isAddressSuccess: false,
+          ));
+    } catch (_) {
+      update((current) => current.copyWith(
+            isUpdatingAddress: false,
+            addressMessage: 'Không thể xóa địa chỉ.',
+            isAddressSuccess: false,
+          ));
+    }
+  }
+
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,

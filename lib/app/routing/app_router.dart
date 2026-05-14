@@ -6,6 +6,7 @@ import 'package:pixel_bakery_home_web_flutter/screens/auth/register_page.dart';
 
 import '../services/app_services.dart';
 import '../services/seo_service.dart';
+import '../../screens/shared/not_found_page.dart';
 import '../../screens/admin/admin_page.dart';
 import '../../screens/admin/admin_customer_form_page.dart';
 import '../../screens/admin/admin_ingredient_form_page.dart';
@@ -23,6 +24,7 @@ import '../../screens/profile/profile_page.dart';
 import '../../screens/shared/app_header.dart';
 import '../../screens/story/story_page.dart';
 import '../../screens/voucher/voucher_page.dart';
+import '../../screens/compare/compare_page.dart';
 import '../../screens/wishlist/wishlist_page.dart';
 
 class AppRouteNames {
@@ -48,6 +50,7 @@ class AppRouteNames {
   static const adminCustomerForm = 'adminCustomerForm';
   static const adminRecipeForm = 'adminRecipeForm';
   static const adminIngredientForm = 'adminIngredientForm';
+  static const compare = 'compare';
 }
 
 class AppRoutePaths {
@@ -73,6 +76,7 @@ class AppRoutePaths {
   static const adminCustomerForm = '/admin/customer-form';
   static const adminRecipeForm = '/admin/recipe-form';
   static const adminIngredientForm = '/admin/ingredient-form';
+  static const compare = '/compare';
 }
 
 /// Helper: fade transition page (200ms)
@@ -230,6 +234,22 @@ class AppRouter {
             pageBuilder: (context, state) => _fadePage(state, const ResponsiveWishlistScreen(showTopHeader: false)),
           ),
           GoRoute(
+            path: AppRoutePaths.compare,
+            name: AppRouteNames.compare,
+            pageBuilder: (context, state) {
+              final idsParam = state.uri.queryParameters['ids'] ?? '';
+              final ids = idsParam
+                  .split(',')
+                  .map((s) => int.tryParse(s.trim()))
+                  .whereType<int>()
+                  .toList(growable: false);
+              return _fadePage(state, ResponsiveCompareScreen(
+                productIds: ids,
+                showTopHeader: false,
+              ));
+            },
+          ),
+          GoRoute(
             path: AppRoutePaths.forgotPassword,
             name: AppRouteNames.forgotPassword,
             pageBuilder: (context, state) => _fadePage(state, const ResponsiveForgotPasswordScreen(showTopHeader: false)),
@@ -321,20 +341,7 @@ class AppRouter {
         ],
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: pageWidthConstraints,
-          child: Center(
-            child: Text(
-              'Route not found: ${state.uri}',
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-        ),
-      ),
-    ),
+    errorBuilder: (context, state) => NotFoundPage(uri: state.uri.toString()),
   );
 }
 
@@ -409,6 +416,13 @@ class _MainShellScaffoldState extends State<_MainShellScaffold> {
                             ),
                             child: _profileIcon(isLogin: authConfig.isLogin),
                           ),
+                          if (authConfig.isLogin && authConfig.user?.isAdmin != true) ...[
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => context.goNamed(AppRouteNames.ordersDetail),
+                              child: _notificationBell(),
+                            ),
+                          ],
                           const SizedBox(width: 6),
                           GestureDetector(
                             onTap: () =>
@@ -473,6 +487,10 @@ class _MainShellScaffoldState extends State<_MainShellScaffold> {
           'Pixel Bakery | Yêu Thích',
           'Danh sách sản phẩm yêu thích để quay lại chọn bánh nhanh hơn.'
         ),
+      AppRoutePaths.compare => (
+          'Pixel Bakery | So Sánh Sản Phẩm',
+          'So sánh chi tiết các sản phẩm bánh ngọt tại Pixel Bakery.'
+        ),
       AppRoutePaths.checkout => (
           'Pixel Bakery | Thanh Toán',
           'Xác nhận đơn hàng và hoàn tất thanh toán tại Pixel Bakery.'
@@ -484,6 +502,21 @@ class _MainShellScaffoldState extends State<_MainShellScaffold> {
     };
     SeoService.instance.apply(title: config.$1, description: config.$2);
   }
+
+  Widget _notificationBell() => Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppHeaderColors.gray, width: 2),
+        ),
+        child: const Icon(
+          Icons.notifications_outlined,
+          size: 16,
+          color: AppHeaderColors.blue,
+        ),
+      );
 
   Widget _profileIcon({required bool isLogin}) => Container(
         width: 24,

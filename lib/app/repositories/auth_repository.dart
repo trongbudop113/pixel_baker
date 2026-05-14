@@ -14,6 +14,8 @@ abstract class AuthRepository {
     required String newPassword,
   });
   Future<AuthUser> updateAddress(String address);
+  Future<AuthUser> addAddress(String address);
+  Future<AuthUser> deleteAddress(int index);
   Future<String> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -60,6 +62,35 @@ class ApiAuthRepository extends BaseApiRepository implements AuthRepository {
       body: {
         'address': address,
       },
+      decoder: (json) => readItem(
+        _unwrapItemPayload(json),
+        AuthUser.fromJson,
+      ),
+    );
+    _session.updateUser(response.data);
+    return response.data;
+  }
+
+  @override
+  Future<AuthUser> addAddress(String address) async {
+    final response = await apiClient.post<AuthUser>(
+      '/auth/profile/addresses',
+      requiresAuth: true,
+      body: {'address': address},
+      decoder: (json) => readItem(
+        _unwrapItemPayload(json),
+        AuthUser.fromJson,
+      ),
+    );
+    _session.updateUser(response.data);
+    return response.data;
+  }
+
+  @override
+  Future<AuthUser> deleteAddress(int index) async {
+    final response = await apiClient.delete<AuthUser>(
+      '/auth/profile/addresses/$index',
+      requiresAuth: true,
       decoder: (json) => readItem(
         _unwrapItemPayload(json),
         AuthUser.fromJson,

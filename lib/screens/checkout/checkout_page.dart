@@ -162,6 +162,8 @@ class ResponsiveCheckoutScreen extends StatefulWidget {
 class _ResponsiveCheckoutScreenState extends State<ResponsiveCheckoutScreen> {
   final CheckoutState _state = CheckoutState();
   final TextEditingController _voucherController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
+  final TextEditingController _deliveryDateController = TextEditingController();
   final CheckoutCustomerDropdownController _customerDropdownController =
       CheckoutCustomerDropdownController();
 
@@ -171,6 +173,12 @@ class _ResponsiveCheckoutScreenState extends State<ResponsiveCheckoutScreen> {
     _state.initialize();
     _syncCustomerDropdown();
     _state.addListener(_syncCustomerDropdown);
+    _noteController.addListener(() {
+      _state.orderNote = _noteController.text;
+    });
+    _deliveryDateController.addListener(() {
+      _state.deliveryDate = _deliveryDateController.text;
+    });
   }
 
   void _syncCustomerDropdown() {
@@ -185,6 +193,8 @@ class _ResponsiveCheckoutScreenState extends State<ResponsiveCheckoutScreen> {
     _state.removeListener(_syncCustomerDropdown);
     _customerDropdownController.dispose();
     _voucherController.dispose();
+    _noteController.dispose();
+    _deliveryDateController.dispose();
     _state.dispose();
     super.dispose();
   }
@@ -213,11 +223,15 @@ class _ResponsiveCheckoutScreenState extends State<ResponsiveCheckoutScreen> {
               ? MobileCheckoutLayout(
                   state: _state,
                   voucherController: _voucherController,
+                  noteController: _noteController,
+                  deliveryDateController: _deliveryDateController,
                   customerDropdownController: _customerDropdownController,
                   showTopHeader: widget.showTopHeader)
               : WebCheckoutLayout(
                   state: _state,
                   voucherController: _voucherController,
+                  noteController: _noteController,
+                  deliveryDateController: _deliveryDateController,
                   customerDropdownController: _customerDropdownController,
                   showTopHeader: widget.showTopHeader);
         },
@@ -226,19 +240,36 @@ class _ResponsiveCheckoutScreenState extends State<ResponsiveCheckoutScreen> {
   }
 }
 
-class WebCheckoutLayout extends StatelessWidget {
+class WebCheckoutLayout extends StatefulWidget {
   const WebCheckoutLayout({
     super.key,
     required this.state,
     required this.voucherController,
+    required this.noteController,
+    required this.deliveryDateController,
     required this.customerDropdownController,
     this.showTopHeader = true,
   });
 
   final CheckoutState state;
   final TextEditingController voucherController;
+  final TextEditingController noteController;
+  final TextEditingController deliveryDateController;
   final CheckoutCustomerDropdownController customerDropdownController;
   final bool showTopHeader;
+
+  @override
+  State<WebCheckoutLayout> createState() => _WebCheckoutLayoutState();
+}
+
+class _WebCheckoutLayoutState extends State<WebCheckoutLayout> {
+  String? _selectedTimeSlot;
+
+  CheckoutState get state => widget.state;
+  TextEditingController get voucherController => widget.voucherController;
+  CheckoutCustomerDropdownController get customerDropdownController =>
+      widget.customerDropdownController;
+  bool get showTopHeader => widget.showTopHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -341,11 +372,7 @@ class WebCheckoutLayout extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                _labeledInput(
-                  'Địa chỉ nhận hàng',
-                  state.displayAddress,
-                  42,
-                ),
+                _addressField(state, 42, 14),
               ],
             ),
           ),
@@ -381,6 +408,60 @@ class WebCheckoutLayout extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _card(
+            title: 'Thông tin giao hàng',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _txt('Ghi chú đơn hàng', CheckoutColors.gray, 12, FontWeight.w700),
+                const SizedBox(height: 4),
+                _editableTextArea(
+                  controller: widget.noteController,
+                  hintText: 'Ghi chú cho người giao hàng...',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _txt('Ngày giao hàng', CheckoutColors.gray, 12, FontWeight.w700),
+                          const SizedBox(height: 4),
+                          _editableTextField(
+                            controller: widget.deliveryDateController,
+                            hintText: 'dd/mm/yyyy',
+                            height: 42,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _txt('Khung giờ', CheckoutColors.gray, 12, FontWeight.w700),
+                          const SizedBox(height: 4),
+                          _timeSlotDropdown(
+                            value: _selectedTimeSlot,
+                            height: 42,
+                            fontSize: 13,
+                            onChanged: (v) {
+                              setState(() => _selectedTimeSlot = v);
+                              state.deliveryTimeSlot = v;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -459,6 +540,56 @@ class WebCheckoutLayout extends StatelessWidget {
         ),
       );
 
+  Widget _addressField(CheckoutState state, double h, double fs) {
+    final addresses = state.userAddresses;
+    if (addresses.length <= 1) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _txt('Địa chỉ nhận hàng', CheckoutColors.gray, 12, FontWeight.w700),
+          const SizedBox(height: 4),
+          _simpleInput(state.displayAddress, h, fs, textColor: CheckoutColors.blue),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _txt('Địa chỉ nhận hàng', CheckoutColors.gray, 12, FontWeight.w700),
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          height: h,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          alignment: Alignment.centerLeft,
+          decoration: _plainBox(radius: 6),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              isExpanded: true,
+              value: state.selectedAddressIndex ?? 0,
+              items: addresses.asMap().entries.map((entry) {
+                return DropdownMenuItem<int>(
+                  value: entry.key,
+                  child: Text(
+                    entry.value,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: CheckoutColors.blue,
+                      fontSize: fs,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Noto Sans',
+                    ),
+                  ),
+                );
+              }).toList(growable: false),
+              onChanged: (index) => state.selectAddress(index),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _labeledInput(String label, String value, double h) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -508,6 +639,132 @@ class WebCheckoutLayout extends StatelessWidget {
             fontSize: fs,
             fontWeight: FontWeight.w600,
             fontFamily: 'Noto Sans',
+          ),
+        ),
+      );
+
+  Widget _editableTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required double height,
+  }) =>
+      Container(
+        width: double.infinity,
+        height: height,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.centerLeft,
+        decoration: _plainBox(radius: 6),
+        child: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: CheckoutColors.gray,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Noto Sans',
+            ),
+            filled: false,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            isCollapsed: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          style: const TextStyle(
+            color: CheckoutColors.blue,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Noto Sans',
+          ),
+        ),
+      );
+
+  Widget _editableTextArea({
+    required TextEditingController controller,
+    required String hintText,
+    int maxLines = 3,
+  }) =>
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: _plainBox(radius: 6),
+        child: TextField(
+          controller: controller,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: CheckoutColors.gray,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Noto Sans',
+            ),
+            filled: false,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            isCollapsed: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          style: const TextStyle(
+            color: CheckoutColors.blue,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Noto Sans',
+          ),
+        ),
+      );
+
+  Widget _timeSlotDropdown({
+    required String? value,
+    required double height,
+    required double fontSize,
+    required ValueChanged<String?> onChanged,
+  }) =>
+      Container(
+        width: double.infinity,
+        height: height,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: _plainBox(radius: 6),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: value,
+            hint: Text(
+              'Chọn khung giờ',
+              style: TextStyle(
+                color: CheckoutColors.gray,
+                fontSize: fontSize,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Noto Sans',
+              ),
+            ),
+            items: const [
+              '08:00 - 12:00',
+              '12:00 - 17:00',
+              '17:00 - 21:00',
+            ]
+                .map((slot) => DropdownMenuItem<String>(
+                      value: slot,
+                      child: Text(
+                        slot,
+                        style: TextStyle(
+                          color: CheckoutColors.blue,
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Noto Sans',
+                        ),
+                      ),
+                    ))
+                .toList(growable: false),
+            onChanged: onChanged,
           ),
         ),
       );
@@ -924,19 +1181,36 @@ class WebCheckoutLayout extends StatelessWidget {
   }
 }
 
-class MobileCheckoutLayout extends StatelessWidget {
+class MobileCheckoutLayout extends StatefulWidget {
   const MobileCheckoutLayout({
     super.key,
     required this.state,
     required this.voucherController,
+    required this.noteController,
+    required this.deliveryDateController,
     required this.customerDropdownController,
     this.showTopHeader = true,
   });
 
   final CheckoutState state;
   final TextEditingController voucherController;
+  final TextEditingController noteController;
+  final TextEditingController deliveryDateController;
   final CheckoutCustomerDropdownController customerDropdownController;
   final bool showTopHeader;
+
+  @override
+  State<MobileCheckoutLayout> createState() => _MobileCheckoutLayoutState();
+}
+
+class _MobileCheckoutLayoutState extends State<MobileCheckoutLayout> {
+  String? _selectedTimeSlot;
+
+  CheckoutState get state => widget.state;
+  TextEditingController get voucherController => widget.voucherController;
+  CheckoutCustomerDropdownController get customerDropdownController =>
+      widget.customerDropdownController;
+  bool get showTopHeader => widget.showTopHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -985,9 +1259,7 @@ class MobileCheckoutLayout extends StatelessWidget {
                               state.displayPhone,
                             ),
                             const SizedBox(height: 8),
-                            _mobileInput(
-                              state.displayAddress,
-                            ),
+                            _mobileAddressField(state),
                           ],
                         ),
                       ),
@@ -1026,6 +1298,41 @@ class MobileCheckoutLayout extends StatelessWidget {
                                 state.selectedPaymentMethod ==
                                     CheckoutPaymentMethod.bankTransfer,
                               ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _mobileCard(
+                        title: 'Thông tin giao hàng',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _txt('Ghi chú đơn hàng', CheckoutColors.gray, 11, FontWeight.w700),
+                            const SizedBox(height: 4),
+                            _mobileEditableTextArea(
+                              controller: widget.noteController,
+                              hintText: 'Ghi chú cho người giao hàng...',
+                              maxLines: 3,
+                            ),
+                            const SizedBox(height: 8),
+                            _txt('Ngày giao hàng', CheckoutColors.gray, 11, FontWeight.w700),
+                            const SizedBox(height: 4),
+                            _mobileEditableTextField(
+                              controller: widget.deliveryDateController,
+                              hintText: 'dd/mm/yyyy',
+                              height: 40,
+                            ),
+                            const SizedBox(height: 8),
+                            _txt('Khung giờ', CheckoutColors.gray, 11, FontWeight.w700),
+                            const SizedBox(height: 4),
+                            _mobileTimeSlotDropdown(
+                              value: _selectedTimeSlot,
+                              height: 40,
+                              onChanged: (v) {
+                                setState(() => _selectedTimeSlot = v);
+                                state.deliveryTimeSlot = v;
+                              },
                             ),
                           ],
                         ),
@@ -1126,6 +1433,45 @@ class MobileCheckoutLayout extends StatelessWidget {
         ),
       );
 
+  Widget _mobileAddressField(CheckoutState state) {
+    final addresses = state.userAddresses;
+    if (addresses.length <= 1) {
+      return _mobileInput(state.displayAddress);
+    }
+    return Container(
+      width: double.infinity,
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: CheckoutColors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: CheckoutColors.gray, width: 2),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          isExpanded: true,
+          value: state.selectedAddressIndex ?? 0,
+          items: addresses.asMap().entries.map((entry) {
+            return DropdownMenuItem<int>(
+              value: entry.key,
+              child: Text(
+                entry.value,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: CheckoutColors.blue,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Noto Sans',
+                ),
+              ),
+            );
+          }).toList(growable: false),
+          onChanged: (index) => state.selectAddress(index),
+        ),
+      ),
+    );
+  }
+
   Widget _mobileInput(String text) => Container(
         width: double.infinity,
         height: 40,
@@ -1169,6 +1515,137 @@ class MobileCheckoutLayout extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.w600,
             fontFamily: 'Noto Sans',
+          ),
+        ),
+      );
+
+  BoxDecoration _mobilePlainBox({double radius = 6}) => BoxDecoration(
+        color: CheckoutColors.white,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: CheckoutColors.gray, width: 2),
+      );
+
+  Widget _mobileEditableTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required double height,
+  }) =>
+      Container(
+        width: double.infinity,
+        height: height,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.centerLeft,
+        decoration: _mobilePlainBox(),
+        child: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: CheckoutColors.gray,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Noto Sans',
+            ),
+            filled: false,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            isCollapsed: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          style: const TextStyle(
+            color: CheckoutColors.blue,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Noto Sans',
+          ),
+        ),
+      );
+
+  Widget _mobileEditableTextArea({
+    required TextEditingController controller,
+    required String hintText,
+    int maxLines = 3,
+  }) =>
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: _mobilePlainBox(),
+        child: TextField(
+          controller: controller,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: CheckoutColors.gray,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Noto Sans',
+            ),
+            filled: false,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            isCollapsed: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          style: const TextStyle(
+            color: CheckoutColors.blue,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Noto Sans',
+          ),
+        ),
+      );
+
+  Widget _mobileTimeSlotDropdown({
+    required String? value,
+    required double height,
+    required ValueChanged<String?> onChanged,
+  }) =>
+      Container(
+        width: double.infinity,
+        height: height,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: _mobilePlainBox(),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: value,
+            hint: const Text(
+              'Chọn khung giờ',
+              style: TextStyle(
+                color: CheckoutColors.gray,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Noto Sans',
+              ),
+            ),
+            items: const [
+              '08:00 - 12:00',
+              '12:00 - 17:00',
+              '17:00 - 21:00',
+            ]
+                .map((slot) => DropdownMenuItem<String>(
+                      value: slot,
+                      child: Text(
+                        slot,
+                        style: const TextStyle(
+                          color: CheckoutColors.blue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Noto Sans',
+                        ),
+                      ),
+                    ))
+                .toList(growable: false),
+            onChanged: onChanged,
           ),
         ),
       );

@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
 from app.models.auth import (
+    AddAddressRequest,
     AuthPageResponse,
     AuthResponse,
     ChangePasswordRequest,
@@ -132,3 +133,29 @@ async def logout(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> MessageResponse:
     return await auth_service.logout(user.id)
+
+
+@router.post("/profile/addresses", response_model=UserResponse)
+async def add_address(
+    payload: AddAddressRequest,
+    user: UserResponse = Depends(_require_current_user),
+    repository: UserRepository = Depends(get_user_repository),
+) -> UserResponse:
+    result = await repository.add_address(user.id, payload.address)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    return result
+
+
+@router.delete("/profile/addresses/{index}", response_model=UserResponse)
+async def delete_address(
+    index: int,
+    user: UserResponse = Depends(_require_current_user),
+    repository: UserRepository = Depends(get_user_repository),
+) -> UserResponse:
+    if index < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid index.")
+    result = await repository.delete_address(user.id, index)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    return result

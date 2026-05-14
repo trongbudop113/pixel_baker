@@ -447,7 +447,7 @@ class _WebProductDetail extends StatelessWidget {
                 final review = state.product!.reviews[index ~/ 2];
                 final accent =
                     index == 0 ? ProductDetailColors.red : ProductDetailColors.blue;
-                return _review(review, accent);
+                return _review(context, state, review, accent);
               }),
           ],
         ),
@@ -487,53 +487,67 @@ class _WebProductDetail extends StatelessWidget {
         ),
       );
 
-  Widget _review(MenuReviewItem review, Color accent) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ProductDetailColors.gray, width: 2),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _txt(review.author, accent, 14, FontWeight.w800),
-                const SizedBox(width: 8),
-                ...List.generate(
-                  5,
-                  (index) => Icon(
-                    index < review.rating ? Icons.star : Icons.star_border,
-                    size: 14,
-                    color: Colors.amber.shade700,
-                  ),
+  Widget _review(BuildContext context, ProductDetailState s, MenuReviewItem review, Color accent) {
+    final currentUserId = AppServices.instance.authSession.currentUser?.id;
+    final isOwn = currentUserId != null && review.userId == currentUserId;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: ProductDetailColors.gray, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _txt(review.author, accent, 14, FontWeight.w800),
+              const SizedBox(width: 8),
+              ...List.generate(
+                5,
+                (index) => Icon(
+                  index < review.rating ? Icons.star : Icons.star_border,
+                  size: 14,
+                  color: Colors.amber.shade700,
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            _txt('“${review.content}”', ProductDetailColors.gray, 13, FontWeight.w500),
-            if (review.mediaUrls.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: review.mediaUrls.map((url) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Image.network(
-                      url,
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                }).toList(growable: false),
               ),
+              const Spacer(),
+              if (isOwn)
+                IconButton(
+                  onPressed: () => _confirmDeleteReview(context, s, review),
+                  icon: const Icon(Icons.delete_outline, size: 14),
+                  color: ProductDetailColors.gray,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Xóa đánh giá',
+                ),
             ],
+          ),
+          const SizedBox(height: 4),
+          _txt('”${review.content}”', ProductDetailColors.gray, 13, FontWeight.w500),
+          if (review.mediaUrls.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: review.mediaUrls.map((url) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.network(
+                    url,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                  ),
+                );
+              }).toList(growable: false),
+            ),
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 
   Widget _line(String k, String v) => Row(
         children: [
@@ -962,7 +976,7 @@ class _MobileProductDetail extends StatelessWidget {
                                 ...product.reviews.take(2).map(
                                   (item) => Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    child: _review(item, ProductDetailColors.blue),
+                                    child: _review(context, state, item, ProductDetailColors.blue),
                                   ),
                                 ),
                               _ctaMini(
@@ -1144,35 +1158,49 @@ class _MobileProductDetail extends StatelessWidget {
         style: TextStyle(color: color, fontSize: size, fontWeight: fw),
       );
 
-  Widget _review(MenuReviewItem review, Color accent) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ProductDetailColors.gray, width: 2),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _mTxt(review.author, accent, 13, FontWeight.w800),
-                const SizedBox(width: 8),
-                ...List.generate(
-                  5,
-                  (index) => Icon(
-                    index < review.rating ? Icons.star : Icons.star_border,
-                    size: 14,
-                    color: Colors.amber.shade700,
-                  ),
+  Widget _review(BuildContext context, ProductDetailState s, MenuReviewItem review, Color accent) {
+    final currentUserId = AppServices.instance.authSession.currentUser?.id;
+    final isOwn = currentUserId != null && review.userId == currentUserId;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: ProductDetailColors.gray, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _mTxt(review.author, accent, 13, FontWeight.w800),
+              const SizedBox(width: 8),
+              ...List.generate(
+                5,
+                (index) => Icon(
+                  index < review.rating ? Icons.star : Icons.star_border,
+                  size: 14,
+                  color: Colors.amber.shade700,
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            _mTxt('“${review.content}”', ProductDetailColors.gray, 12, FontWeight.w500),
-          ],
-        ),
-      );
+              ),
+              const Spacer(),
+              if (isOwn)
+                IconButton(
+                  onPressed: () => _confirmDeleteReview(context, s, review),
+                  icon: const Icon(Icons.delete_outline, size: 14),
+                  color: ProductDetailColors.gray,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Xóa đánh giá',
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          _mTxt('”${review.content}”', ProductDetailColors.gray, 12, FontWeight.w500),
+        ],
+      ),
+    );
+  }
 
   Widget _ratingChip(double rating, int reviewCount) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1501,6 +1529,47 @@ class _ProductDetailLoading extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _confirmDeleteReview(
+  BuildContext context,
+  ProductDetailState state,
+  MenuReviewItem review,
+) async {
+  final createdAt = review.createdAt;
+  if (createdAt == null) return;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Xóa đánh giá'),
+      content: const Text('Bạn có chắc muốn xóa đánh giá này không?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: ProductDetailColors.red,
+          ),
+          child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  final success = await state.deleteReview(createdAt);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        success
+            ? 'Đã xóa đánh giá.'
+            : (state.errorMessage ?? 'Không thể xóa đánh giá.'),
+      ),
+    ),
+  );
 }
 
 Future<void> _openReviewDialog(

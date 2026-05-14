@@ -23,6 +23,7 @@ class CheckoutViewState {
     this.previewTotal = 0,
     this.availableCustomers = const [],
     this.selectedCustomerId,
+    this.selectedAddressIndex,
     this.validation,
   });
 
@@ -38,6 +39,7 @@ class CheckoutViewState {
   final int previewTotal;
   final List<AdminCustomerModel> availableCustomers;
   final String? selectedCustomerId;
+  final int? selectedAddressIndex;
   final CheckoutValidationModel? validation;
 
   CheckoutViewState copyWith({
@@ -53,10 +55,12 @@ class CheckoutViewState {
     int? previewTotal,
     List<AdminCustomerModel>? availableCustomers,
     String? selectedCustomerId,
+    int? selectedAddressIndex,
     CheckoutValidationModel? validation,
     bool clearSubmitMessage = false,
     bool clearAppliedVoucher = false,
     bool clearSelectedCustomer = false,
+    bool clearSelectedAddress = false,
     bool clearValidation = false,
   }) {
     return CheckoutViewState(
@@ -79,6 +83,9 @@ class CheckoutViewState {
       selectedCustomerId: clearSelectedCustomer
           ? null
           : (selectedCustomerId ?? this.selectedCustomerId),
+      selectedAddressIndex: clearSelectedAddress
+          ? null
+          : (selectedAddressIndex ?? this.selectedAddressIndex),
       validation: clearValidation ? null : (validation ?? this.validation),
     );
   }
@@ -98,6 +105,7 @@ class CheckoutViewState {
         other.previewTotal == previewTotal &&
         _sameCustomers(other.availableCustomers, availableCustomers) &&
         other.selectedCustomerId == selectedCustomerId &&
+        other.selectedAddressIndex == selectedAddressIndex &&
         other.validation == validation;
   }
 
@@ -115,6 +123,7 @@ class CheckoutViewState {
         previewTotal,
         Object.hashAll(availableCustomers),
         selectedCustomerId,
+        selectedAddressIndex,
         validation,
       );
 }
@@ -133,6 +142,11 @@ class CheckoutState extends ScreenController<CheckoutViewState, CheckoutEffect> 
   final CheckoutRepository _repository;
   final VoucherRepository _voucherRepository;
   final AdminRepository _adminRepository;
+
+  // Extra order fields set directly by UI controllers (no rebuild needed)
+  String? orderNote;
+  String? deliveryDate;
+  String? deliveryTimeSlot;
 
   String get selectedPaymentMethod => state.selectedPaymentMethod;
   bool get isSubmitting => state.isSubmitting;
@@ -174,9 +188,33 @@ class CheckoutState extends ScreenController<CheckoutViewState, CheckoutEffect> 
   String get displayPhone => selectedCustomer?.phone ??
       AppServices.instance.authSession.currentUser?.phone ??
       '0901 234 567';
-  String get displayAddress => selectedCustomer?.address ??
-      AppServices.instance.authSession.currentUser?.address ??
-      'Chưa có địa chỉ mặc định';
+
+  List<String> get userAddresses {
+    if (isAdmin) return const [];
+    return AppServices.instance.authSession.currentUser?.addresses ?? const [];
+  }
+
+  String get displayAddress {
+    if (isAdmin) {
+      return selectedCustomer?.address ?? 'Chưa có địa chỉ mặc định';
+    }
+    final addresses = userAddresses;
+    if (addresses.isEmpty) {
+      return AppServices.instance.authSession.currentUser?.address ??
+          'Chưa có địa chỉ mặc định';
+    }
+    final idx = state.selectedAddressIndex;
+    if (idx != null && idx >= 0 && idx < addresses.length) {
+      return addresses[idx];
+    }
+    return addresses.first;
+  }
+
+  int? get selectedAddressIndex => state.selectedAddressIndex;
+
+  void selectAddress(int? index) {
+    update((current) => current.copyWith(selectedAddressIndex: index));
+  }
 
   Future<void> initialize() async {
     if (isAdmin && state.availableCustomers.isEmpty) {
@@ -420,6 +458,9 @@ class CheckoutState extends ScreenController<CheckoutViewState, CheckoutEffect> 
           items: cartSession.items,
           voucherCode: appliedVoucherCode,
           customerUserId: isAdmin ? selectedCustomerId : null,
+          orderNote: orderNote?.trim().isEmpty == true ? null : orderNote?.trim(),
+          deliveryDate: deliveryDate?.trim().isEmpty == true ? null : deliveryDate?.trim(),
+          deliveryTimeSlot: deliveryTimeSlot,
         ),
       );
       await cartSession.replaceAll(const []);

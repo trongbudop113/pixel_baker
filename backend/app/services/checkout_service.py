@@ -242,6 +242,9 @@ class CheckoutService:
                 "deliveryFee": validation.deliveryFee,
                 "total": validation.total,
                 "voucherCode": validation.voucherCode,
+                "orderNote": payload.orderNote,
+                "deliveryDate": payload.deliveryDate,
+                "deliveryTimeSlot": payload.deliveryTimeSlot,
                 "items": items,
                 "createdAt": created_at,
                 "timeline": [entry.model_dump() for entry in timeline],
@@ -767,6 +770,9 @@ class CheckoutService:
             deliveryFee=int(document.get("deliveryFee") or 0),
             total=int(document.get("total") or 0),
             voucherCode=document.get("voucherCode"),
+            orderNote=document.get("orderNote"),
+            deliveryDate=document.get("deliveryDate"),
+            deliveryTimeSlot=document.get("deliveryTimeSlot"),
             createdAt=(document.get("createdAt") or "").strip(),
             items=[
                 OrderDetailItemResponse(

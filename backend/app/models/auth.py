@@ -38,6 +38,11 @@ class ResetPasswordRequest(ApiModel):
 
 class UpdateProfileRequest(ApiModel):
     address: str = Field(min_length=5, max_length=240)
+    addresses: Optional[List[str]] = None
+
+
+class AddAddressRequest(ApiModel):
+    address: str = Field(min_length=5, max_length=240)
 
 
 class ChangePasswordRequest(ApiModel):
@@ -59,6 +64,7 @@ class UserResponse(ApiModel):
     email: EmailStr
     phone: Optional[str] = None
     address: Optional[str] = None
+    addresses: List[str] = []
     role: UserRole = UserRole.customer
     permissions: List[str] = []
     isAdmin: bool = False

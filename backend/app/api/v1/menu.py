@@ -99,6 +99,7 @@ async def create_product_review(
     product = await repository.add_review(
         product_id,
         author=user.fullName,
+        user_id=user.id,
         payload=payload,
     )
     if product is None:
@@ -106,4 +107,33 @@ async def create_product_review(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found.",
         )
+    return product
+
+
+@router.delete("/products/{product_id}/reviews/{created_at}", response_model=MenuProductDetailResponse)
+async def delete_own_review(
+    product_id: int,
+    created_at: str,
+    user: UserResponse = Depends(_require_current_user),
+    repository: MenuRepository = Depends(get_menu_repository),
+) -> MenuProductDetailResponse:
+    product = await repository.delete_own_review(product_id, created_at, user.id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review không tìm thấy.")
+    return product
+
+
+@router.patch("/products/{product_id}/reviews/{created_at}", response_model=MenuProductDetailResponse)
+async def update_own_review(
+    product_id: int,
+    created_at: str,
+    payload: MenuReviewCreateRequest,
+    user: UserResponse = Depends(_require_current_user),
+    repository: MenuRepository = Depends(get_menu_repository),
+) -> MenuProductDetailResponse:
+    if not payload.content.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nội dung không được để trống.")
+    product = await repository.update_own_review(product_id, created_at, user.id, payload)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review không tìm thấy hoặc không có quyền sửa.")
     return product

@@ -32,6 +32,7 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
   late final MenuState _menuState;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<List<int>> _compareIds = ValueNotifier(const []);
   String? _lastCategoryQuery;
   Timer? _searchDebounce;
   Timer? _autoRefreshTimer;
@@ -75,6 +76,7 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
     _menuState.clearMooncakeBoxPurchase();
     _searchController.dispose();
     _scrollController.dispose();
+    _compareIds.dispose();
     _menuState.dispose();
     super.dispose();
   }
@@ -93,14 +95,16 @@ class _ResponsiveMenuScreenState extends State<ResponsiveMenuScreen> {
               scrollController: _scrollController,
               onSearchChanged: _onSearchChanged,
               isTablet: isTablet,
-              showTopHeader: widget.showTopHeader);
+              showTopHeader: widget.showTopHeader,
+              compareIds: _compareIds);
         }
         return WebMenuLayout(
             state: _menuState,
             searchController: _searchController,
             scrollController: _scrollController,
             onSearchChanged: _onSearchChanged,
-            showTopHeader: widget.showTopHeader);
+            showTopHeader: widget.showTopHeader,
+            compareIds: _compareIds);
       },
     );
   }
@@ -112,12 +116,14 @@ class WebMenuLayout extends StatelessWidget {
   final ScrollController scrollController;
   final void Function(String) onSearchChanged;
   final bool showTopHeader;
+  final ValueNotifier<List<int>> compareIds;
   const WebMenuLayout(
       {super.key,
       required this.state,
       required this.searchController,
       required this.scrollController,
       required this.onSearchChanged,
+      required this.compareIds,
       this.showTopHeader = true});
 
   @override
@@ -202,6 +208,12 @@ class WebMenuLayout extends StatelessWidget {
                     },
                   ),
                 ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _CompareBar(compareIds: compareIds),
+              ),
             ],
           ),
         ),
@@ -403,9 +415,10 @@ class WebMenuLayout extends StatelessWidget {
       );
 
   Widget _menuGrid() => AnimatedBuilder(
-        animation: Listenable.merge([state, AppServices.instance.wishlistSession]),
+        animation: Listenable.merge([state, AppServices.instance.wishlistSession, compareIds]),
         builder: (context, _) {
           final items = state.filteredProducts;
+          final selectedIds = compareIds.value;
           if (state.isLoading && items.isEmpty) {
             return const _MenuGridSkeleton();
           }
@@ -431,6 +444,7 @@ class WebMenuLayout extends StatelessWidget {
                 children: List.generate(rowItems.length * 2 - 1, (index) {
                   if (index.isOdd) return const SizedBox(width: 10);
                   final item = rowItems[index ~/ 2];
+                  final isSelectedForCompare = selectedIds.contains(item.id);
                   return Expanded(
                     child: _MenuItemCard(
                       productId: item.id,
@@ -445,9 +459,11 @@ class WebMenuLayout extends StatelessWidget {
                       isAddingToBox:
                           state.isMooncakeBoxMode && item.mooncakeConfig != null,
                       isFavorite: AppServices.instance.wishlistSession.contains(item.id),
+                      isSelectedForCompare: isSelectedForCompare,
                       onTap: () => _openDetail(context, item),
                       onAddToCart: () => _addToCart(context, item),
                       onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
+                      onToggleCompare: () => _toggleCompare(item.id),
                     ),
                   );
                 }),
@@ -460,6 +476,16 @@ class WebMenuLayout extends StatelessWidget {
           return Column(children: rows);
         },
       );
+
+  void _toggleCompare(int productId) {
+    final current = List<int>.from(compareIds.value);
+    if (current.contains(productId)) {
+      current.remove(productId);
+    } else if (current.length < 3) {
+      current.add(productId);
+    }
+    compareIds.value = List<int>.unmodifiable(current);
+  }
 
   Widget _combo() => ControllerSelector<MenuState, MenuComboSection>(
         controller: state,
@@ -1077,12 +1103,14 @@ class MobileMenuLayout extends StatelessWidget {
   final void Function(String) onSearchChanged;
   final bool showTopHeader;
   final bool isTablet;
+  final ValueNotifier<List<int>> compareIds;
   const MobileMenuLayout(
       {super.key,
       required this.state,
       required this.searchController,
       required this.scrollController,
       required this.onSearchChanged,
+      required this.compareIds,
       this.showTopHeader = true,
       this.isTablet = false});
 
@@ -1124,7 +1152,7 @@ class MobileMenuLayout extends StatelessWidget {
                           const SizedBox(height: 12),
                           AnimatedBuilder(
                             animation: Listenable.merge(
-                              [state, AppServices.instance.wishlistSession],
+                              [state, AppServices.instance.wishlistSession, compareIds],
                             ),
                             builder: (context, _) {
                               final items = state.filteredProducts;
@@ -1192,11 +1220,27 @@ class MobileMenuLayout extends StatelessWidget {
                     },
                   ),
                 ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _CompareBar(compareIds: compareIds),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _toggleCompare(int productId) {
+    final current = List<int>.from(compareIds.value);
+    if (current.contains(productId)) {
+      current.remove(productId);
+    } else if (current.length < 3) {
+      current.add(productId);
+    }
+    compareIds.value = List<int>.unmodifiable(current);
   }
 
   void _openDetail(BuildContext context, MenuProduct item) {
@@ -1218,6 +1262,7 @@ class MobileMenuLayout extends StatelessWidget {
   }
 
   Widget _buildMobileCard(BuildContext context, MenuProduct item) {
+    final isSelectedForCompare = compareIds.value.contains(item.id);
     return _MenuItemCard(
       productId: item.id,
       title: item.title,
@@ -1230,10 +1275,12 @@ class MobileMenuLayout extends StatelessWidget {
       isMooncake: item.mooncakeConfig != null,
       isAddingToBox: state.isMooncakeBoxMode && item.mooncakeConfig != null,
       isFavorite: AppServices.instance.wishlistSession.contains(item.id),
+      isSelectedForCompare: isSelectedForCompare,
       compact: true,
       onTap: () => _openDetail(context, item),
       onAddToCart: () => _addToCart(context, item),
       onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
+      onToggleCompare: () => _toggleCompare(item.id),
     );
   }
 
@@ -1606,9 +1653,11 @@ class _MenuItemCard extends StatelessWidget {
   final bool isMooncake;
   final bool isAddingToBox;
   final bool isFavorite;
+  final bool isSelectedForCompare;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
   final VoidCallback? onToggleFavorite;
+  final VoidCallback? onToggleCompare;
 
   const _MenuItemCard({
     required this.productId,
@@ -1623,9 +1672,11 @@ class _MenuItemCard extends StatelessWidget {
     this.isMooncake = false,
     this.isAddingToBox = false,
     this.isFavorite = false,
+    this.isSelectedForCompare = false,
     this.onTap,
     this.onAddToCart,
     this.onToggleFavorite,
+    this.onToggleCompare,
   });
 
   @override
@@ -1666,22 +1717,52 @@ class _MenuItemCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: GestureDetector(
-                      onTap: onToggleFavorite,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: MenuColors.gray, width: 2),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: onToggleFavorite,
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: MenuColors.gray, width: 2),
+                            ),
+                            child: Icon(
+                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              size: 18,
+                              color: isFavorite ? MenuColors.red : MenuColors.blue,
+                            ),
+                          ),
                         ),
-                        child: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          size: 18,
-                          color: isFavorite ? MenuColors.red : MenuColors.blue,
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: onToggleCompare,
+                          child: Tooltip(
+                            message: isSelectedForCompare ? 'Bỏ so sánh' : 'So sánh',
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: isSelectedForCompare
+                                    ? MenuColors.blue
+                                    : Theme.of(context).cardColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: MenuColors.gray, width: 2),
+                              ),
+                              child: Icon(
+                                Icons.compare_arrows,
+                                size: 18,
+                                color: isSelectedForCompare
+                                    ? Colors.white
+                                    : MenuColors.blue,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ],
@@ -2024,6 +2105,84 @@ class _MooncakeBoxOverlay extends StatelessWidget {
       }
     }
     return '${buffer.toString()}đ';
+  }
+}
+
+class _CompareBar extends StatelessWidget {
+  const _CompareBar({required this.compareIds});
+
+  final ValueNotifier<List<int>> compareIds;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<int>>(
+      valueListenable: compareIds,
+      builder: (context, ids, _) {
+        if (ids.length < 2) return const SizedBox.shrink();
+        return Container(
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: MenuColors.blue,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: MenuColors.gray, width: 2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.compare_arrows, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Đã chọn ${ids.length} sản phẩm để so sánh',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  compareIds.value = const [];
+                },
+                child: const Icon(Icons.close, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () {
+                  final idsStr = ids.join(',');
+                  context.go('${AppRoutePaths.compare}?ids=$idsStr');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: MenuColors.gray, width: 1.5),
+                  ),
+                  child: Text(
+                    'So sánh (${ids.length})',
+                    style: const TextStyle(
+                      color: MenuColors.blue,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

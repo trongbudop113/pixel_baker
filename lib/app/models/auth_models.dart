@@ -5,6 +5,7 @@ class AuthUser {
     required this.email,
     this.phone,
     this.address,
+    this.addresses = const [],
     this.role = 'customer',
     this.permissions = const [],
     this.isAdmin = false,
@@ -15,6 +16,7 @@ class AuthUser {
   final String email;
   final String? phone;
   final String? address;
+  final List<String> addresses;
   final String role;
   final List<String> permissions;
   final bool isAdmin;
@@ -26,6 +28,10 @@ class AuthUser {
       email: (json['email'] ?? '').toString(),
       phone: json['phone']?.toString(),
       address: json['address']?.toString(),
+      addresses: (json['addresses'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       role: (json['role'] ?? 'customer').toString(),
       permissions: (json['permissions'] as List<dynamic>? ?? const [])
           .map((item) => item.toString())
@@ -41,6 +47,7 @@ class AuthUser {
       'email': email,
       'phone': phone,
       'address': address,
+      'addresses': addresses,
       'role': role,
       'permissions': permissions,
       'isAdmin': isAdmin,
@@ -53,6 +60,7 @@ class AuthUser {
     String? email,
     String? phone,
     String? address,
+    List<String>? addresses,
     String? role,
     List<String>? permissions,
     bool? isAdmin,
@@ -65,6 +73,7 @@ class AuthUser {
       email: email ?? this.email,
       phone: clearPhone ? null : (phone ?? this.phone),
       address: clearAddress ? null : (address ?? this.address),
+      addresses: addresses ?? this.addresses,
       role: role ?? this.role,
       permissions: permissions ?? this.permissions,
       isAdmin: isAdmin ?? this.isAdmin,
@@ -98,6 +107,7 @@ class AuthUser {
         other.email == email &&
         other.phone == phone &&
         other.address == address &&
+        _samePermissions(other.addresses, addresses) &&
         other.role == role &&
         _samePermissions(other.permissions, permissions) &&
         other.isAdmin == isAdmin;
@@ -110,6 +120,7 @@ class AuthUser {
         email,
         phone,
         address,
+        Object.hashAll(addresses),
         role,
         Object.hashAll(permissions),
         isAdmin,

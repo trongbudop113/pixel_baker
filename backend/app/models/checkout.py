@@ -37,6 +37,9 @@ class CheckoutRequest(ApiModel):
     items: List[CheckoutItemRequest] = Field(min_length=1)
     voucherCode: Optional[str] = None
     customerUserId: Optional[str] = None
+    orderNote: Optional[str] = None
+    deliveryDate: Optional[str] = None  # ISO date string e.g. "2026-05-20"
+    deliveryTimeSlot: Optional[str] = None  # e.g. "08:00-12:00"
 
 
 class CheckoutItemResponse(ApiModel):
@@ -179,6 +182,9 @@ class OrderDetailResponse(ApiModel):
     deliveryFee: int
     total: int
     voucherCode: Optional[str] = None
+    orderNote: Optional[str] = None
+    deliveryDate: Optional[str] = None
+    deliveryTimeSlot: Optional[str] = None
     createdAt: str
     items: List[OrderDetailItemResponse]
     timeline: List[OrderTimelineEntryResponse] = Field(default_factory=list)
