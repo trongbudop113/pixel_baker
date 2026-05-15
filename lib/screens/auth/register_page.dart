@@ -338,6 +338,11 @@ class _RegisterMobileLayout extends StatelessWidget {
                 const PixelHeaderBar(
                     rightLabel: 'đăng ký', showBack: true, showBrand: false),
               if (showTopHeader) const SizedBox(height: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
               if (state.submitMessage != null) ...[
                 _messageBanner(
                   state.submitMessage!,
@@ -469,6 +474,10 @@ class _RegisterMobileLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
               const PixelFooter(label: 'PIXEL BAKERY | ĐĂNG KÝ', mobile: true),
             ],
           ),

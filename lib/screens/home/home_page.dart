@@ -2059,10 +2059,8 @@ class _HomeProductSkeleton extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: List.generate(itemCount * 2 - 1, (index) {
-          if (index.isOdd) {
-            return const SizedBox(height: 8);
-          }
-          return _cardSkeleton(height: 232);
+          if (index.isOdd) return const SizedBox(height: 8);
+          return _cardSkeleton(); // auto height — no overflow
         }),
       );
     }
@@ -2070,17 +2068,15 @@ class _HomeProductSkeleton extends StatelessWidget {
       height: 270,
       child: Row(
         children: List.generate(itemCount * 2 - 1, (index) {
-          if (index.isOdd) {
-            return const SizedBox(width: 16);
-          }
-          return Expanded(child: _cardSkeleton(height: 270));
+          if (index.isOdd) return const SizedBox(width: 16);
+          return Expanded(child: _cardSkeleton(fixedHeight: 270));
         }),
       ),
     );
   }
 
-  Widget _cardSkeleton({required double height}) => Container(
-        height: height,
+  Widget _cardSkeleton({double? fixedHeight}) => Container(
+        height: fixedHeight,
         decoration: BoxDecoration(
           color: const Color(0xFFF6F7FB),
           borderRadius: BorderRadius.circular(8),
@@ -2089,14 +2085,19 @@ class _HomeProductSkeleton extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ShimmerBox(width: double.infinity, height: mobile ? 140 : 130, borderRadius: 6),
-            const SizedBox(height: 10),
-            ShimmerBox(width: mobile ? 150 : 110, height: 14, borderRadius: 999),
-            const SizedBox(height: 10),
-            ShimmerBox(width: mobile ? 110 : 90, height: mobile ? 24 : 28, borderRadius: 999),
+            ShimmerBox(
+              width: double.infinity,
+              height: mobile ? 120 : 130,
+              borderRadius: 6,
+            ),
             const SizedBox(height: 8),
-            const ShimmerBox(width: 92, height: 22, borderRadius: 999),
+            ShimmerBox(width: mobile ? 150 : 110, height: 13, borderRadius: 999),
+            const SizedBox(height: 8),
+            ShimmerBox(width: mobile ? 100 : 90, height: mobile ? 20 : 26, borderRadius: 999),
+            const SizedBox(height: 8),
+            const ShimmerBox(width: 88, height: 20, borderRadius: 999),
           ],
         ),
       );

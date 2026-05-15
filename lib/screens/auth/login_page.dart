@@ -315,6 +315,11 @@ class _LoginMobileLayout extends StatelessWidget {
                 const PixelHeaderBar(
                     rightLabel: 'đăng nhập', showBack: true, showBrand: false),
               if (showTopHeader) const SizedBox(height: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
               if (state.submitMessage != null) ...[
                 _messageBanner(
                   state.submitMessage!,
@@ -449,6 +454,10 @@ class _LoginMobileLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
               const PixelFooter(label: 'PIXEL BAKERY | ĐĂNG NHẬP', mobile: true),
             ],
           ),
