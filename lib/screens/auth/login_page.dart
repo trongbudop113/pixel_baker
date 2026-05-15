@@ -208,11 +208,6 @@ class _LoginWebLayout extends StatelessWidget {
                       controller: passwordController,
                       height: 44,
                     ),
-                    if (page.helpText != null) ...[
-                      const SizedBox(height: 10),
-                      _hint(page.helpText!, AuthColors.blue,
-                          size: 12, fw: FontWeight.w700),
-                    ],
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,
@@ -330,21 +325,6 @@ class _LoginMobileLayout extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               Container(
-                height: 54,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: _boxDec(radius: 8, borderWidth: 2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _title(page.headerBrand, AuthColors.red, 14,
-                        fw: FontWeight.w900),
-                    _title(page.headerTitle, AuthColors.blue, 12,
-                        fw: FontWeight.w800),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
                 padding: const EdgeInsets.all(10),
                 decoration: _boxDec(radius: 8, borderWidth: 2),
                 child: Column(
@@ -384,11 +364,6 @@ class _LoginMobileLayout extends StatelessWidget {
                       borderWidth: 2,
                       radius: 6,
                     ),
-                    if (page.helpText != null) ...[
-                      const SizedBox(height: 8),
-                      _hint(page.helpText!, AuthColors.blue,
-                          size: 11, fw: FontWeight.w800),
-                    ],
                     const SizedBox(height: 6),
                     Align(
                       alignment: Alignment.centerRight,

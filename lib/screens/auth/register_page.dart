@@ -353,21 +353,6 @@ class _RegisterMobileLayout extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               Container(
-                height: 54,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: _boxDec(radius: 8, borderWidth: 2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _title(page.headerBrand, AuthColors.red, 14,
-                        fw: FontWeight.w900),
-                    _title(page.headerTitle, AuthColors.blue, 12,
-                        fw: FontWeight.w800),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
                 padding: const EdgeInsets.all(10),
                 decoration: _boxDec(radius: 8, borderWidth: 2),
                 child: Column(
