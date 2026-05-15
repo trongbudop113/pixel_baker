@@ -51,14 +51,20 @@
       "reviews": [
         {
           "author": "Minh Anh",
-          "content": "Bánh đẹp và ngon, giao đúng giờ."
+          "content": "Bánh đẹp và ngon, giao đúng giờ.",
+          "rating": 5
         },
         {
           "author": "Tuấn Khoa",
-          "content": "Kem vừa vị, sẽ mua lại."
+          "content": "Kem vừa vị, sẽ mua lại.",
+          "rating": 5
         }
       ],
-      "relatedProductIds": [4, 3, 5],
+      "relatedProductIds": [
+        4,
+        3,
+        5
+      ],
       "images": [
         "https://images.unsplash.com/photo-1621177921600-13666f61db2d?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=1200&q=80",
@@ -85,10 +91,15 @@
       "reviews": [
         {
           "author": "Lan Chi",
-          "content": "Cookie thơm, không bị quá ngọt."
+          "content": "Cookie thơm, không bị quá ngọt.",
+          "rating": 5
         }
       ],
-      "relatedProductIds": [6, 1, 3],
+      "relatedProductIds": [
+        6,
+        1,
+        3
+      ],
       "images": [
         "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1495214783159-3503fd1b572d?auto=format&fit=crop&w=1200&q=80",
@@ -115,10 +126,15 @@
       "reviews": [
         {
           "author": "Bảo Trân",
-          "content": "Vị mát, không ngấy, nhìn cũng rất đẹp."
+          "content": "Vị mát, không ngấy, nhìn cũng rất đẹp.",
+          "rating": 5
         }
       ],
-      "relatedProductIds": [1, 4, 2],
+      "relatedProductIds": [
+        1,
+        4,
+        2
+      ],
       "images": [
         "https://images.unsplash.com/photo-1464306076886-da185f6a9d05?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=1200&q=80",
@@ -145,10 +161,15 @@
       "reviews": [
         {
           "author": "Hà My",
-          "content": "Cupcake mềm, trẻ em rất thích."
+          "content": "Cupcake mềm, trẻ em rất thích.",
+          "rating": 5
         }
       ],
-      "relatedProductIds": [1, 3, 5],
+      "relatedProductIds": [
+        1,
+        3,
+        5
+      ],
       "images": [
         "https://images.unsplash.com/photo-1505253213348-cd54c92b37f6?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=1200&q=80",
@@ -175,10 +196,15 @@
       "reviews": [
         {
           "author": "Quang Vũ",
-          "content": "Bánh thơm, ăn lúc ấm rất ngon."
+          "content": "Bánh thơm, ăn lúc ấm rất ngon.",
+          "rating": 5
         }
       ],
-      "relatedProductIds": [1, 4, 6],
+      "relatedProductIds": [
+        1,
+        4,
+        6
+      ],
       "images": [
         "https://images.unsplash.com/photo-1607920591413-4ec007e70023?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1612203985729-70726954388c?auto=format&fit=crop&w=1200&q=80",
@@ -205,10 +231,15 @@
       "reviews": [
         {
           "author": "Gia Hân",
-          "content": "Set tiện cho tiệc nhỏ, đóng gói rất ổn."
+          "content": "Set tiện cho tiệc nhỏ, đóng gói rất ổn.",
+          "rating": 5
         }
       ],
-      "relatedProductIds": [2, 1, 5],
+      "relatedProductIds": [
+        2,
+        1,
+        5
+      ],
       "images": [
         "https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80",
@@ -239,7 +270,11 @@
           "rating": 5
         }
       ],
-      "relatedProductIds": [5, 1, 9],
+      "relatedProductIds": [
+        5,
+        1,
+        9
+      ],
       "images": [
         "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?auto=format&fit=crop&w=1200&q=80",
@@ -270,7 +305,11 @@
           "rating": 5
         }
       ],
-      "relatedProductIds": [2, 9, 5],
+      "relatedProductIds": [
+        2,
+        9,
+        5
+      ],
       "images": [
         "https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80",
@@ -301,7 +340,11 @@
           "rating": 5
         }
       ],
-      "relatedProductIds": [8, 7, 6],
+      "relatedProductIds": [
+        8,
+        7,
+        6
+      ],
       "mooncakeConfig": {
         "weightOptions": [
           {

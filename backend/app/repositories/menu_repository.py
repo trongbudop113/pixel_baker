@@ -137,7 +137,7 @@ class MenuRepository:
     def _average_rating(self, reviews: List[Dict]) -> float:
         if not reviews:
             return 0
-        total = sum(max(1, min(5, int(item.get("rating") or 0))) for item in reviews)
+        total = sum(max(1, min(5, int(item.get("rating") or 5))) for item in reviews)
         return round(total / len(reviews), 1)
 
 

@@ -58,8 +58,8 @@ class PixelHeaderBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: Image.asset(
                       'assets/images/pixel_bakery_icon.png',
-                      width: 26,
-                      height: 26,
+                      width: 30,
+                      height: 30,
                       fit: BoxFit.cover,
                     ),
                   ),
