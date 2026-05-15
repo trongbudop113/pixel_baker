@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lock_minutes: int = 15
     log_level: str = "INFO"
+    # Gmail SMTP
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_name: str = "Pixel Bakery"
 
     model_config = SettingsConfigDict(
         env_file=".env",

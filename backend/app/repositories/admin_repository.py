@@ -322,6 +322,24 @@ class AdminRepository:
                         )
                         document = await self._orders.find_one({"orderId": order_id})
 
+        # Send status update email (non-blocking)
+        try:
+            customer_email = str(document.get("customerEmail") or "") if document else ""
+            customer_name = str(document.get("customerName") or "") if document else ""
+            points_earned = int(document.get("pointsEarned") or 0) if document else 0
+            if customer_email and normalized in {"processing", "shipping", "delivered", "completed", "cancelled"}:
+                import asyncio
+                from app.services.email_service import send_order_status_changed
+                asyncio.ensure_future(send_order_status_changed(
+                    to_email=customer_email,
+                    customer_name=customer_name,
+                    order_id=order_id,
+                    new_status=normalized,
+                    points_earned=points_earned if normalized == "completed" else 0,
+                ))
+        except Exception:
+            pass
+
         return AdminOrderResponse(
             orderId=str(document.get("orderId") or ""),
             customerName=str(document.get("customerName") or ""),
