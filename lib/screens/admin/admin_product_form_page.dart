@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import '../../app/models/admin_models.dart';
 import '../../app/repositories/admin_repository.dart';
 import '../../app/services/app_services.dart';
 import '../../app/routing/app_router.dart';
+import 'image_editor_dialog.dart';
 
 class ResponsiveAdminProductFormScreen extends StatefulWidget {
   const ResponsiveAdminProductFormScreen({
@@ -212,16 +214,23 @@ class _ResponsiveAdminProductFormScreenState
     for (final file in result.files) {
       final bytes = file.bytes;
       if (bytes == null) continue;
-      final ext = (file.extension ?? 'jpg').toLowerCase();
-      final mime = ext == 'jpg' || ext == 'jpeg'
-          ? 'image/jpeg'
-          : ext == 'webp'
-              ? 'image/webp'
-              : ext == 'gif'
-                  ? 'image/gif'
-                  : 'image/png';
+
+      // Open image editor dialog before uploading
+      Uint8List finalBytes = bytes;
+      if (mounted) {
+        final edited = await showDialog<Uint8List>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => ImageEditorDialog(bytes: bytes, filename: file.name),
+        );
+        if (edited == null) continue; // User cancelled
+        finalBytes = edited;
+      }
+
+      const mime = 'image/jpeg'; // editor always outputs JPEG
+      final fname = file.name.replaceAll(RegExp(r'\.[^.]+$'), '.jpg');
       try {
-        final url = await repository.uploadImage(bytes, file.name, mime);
+        final url = await repository.uploadImage(finalBytes, fname, mime);
         uploadedUrls.add(url);
       } catch (_) {
         failedFiles.add(file.name);
