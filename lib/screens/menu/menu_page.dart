@@ -135,7 +135,7 @@ class WebMenuLayout extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(color: MenuColors.gray, width: 3),
         ),
         child: AnimatedBuilder(
@@ -414,7 +414,7 @@ class WebMenuLayout extends StatelessWidget {
                         width: 88,
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: MenuColors.gray, width: 1.5),
                         ),
@@ -956,7 +956,7 @@ class _FilterChip extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: selected ? MenuColors.blue : const Color(0xFF374151),
+              color: selected ? MenuColors.blue : Theme.of(context).colorScheme.onSurface,
               fontSize: 11.5,
               fontWeight: FontWeight.w800,
             ),
@@ -1194,7 +1194,7 @@ class _StorefrontActionButton extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: isActive ? MenuColors.blue : const Color(0xFF374151),
+          color: isActive ? MenuColors.blue : Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -1228,7 +1228,7 @@ class MobileMenuLayout extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(color: MenuColors.gray, width: 3),
         ),
         child: AnimatedBuilder(
@@ -1411,7 +1411,7 @@ class MobileMenuLayout extends StatelessWidget {
         builder: (context, menuState, _) => Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: const Color(0xFFDCE4EF), width: 1.5),
           ),
@@ -2307,7 +2307,7 @@ class _MenuGridSkeleton extends StatelessWidget {
               height: mobile ? 230 : 290,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: MenuColors.gray, width: 2),
               ),
@@ -2352,7 +2352,7 @@ class _MenuEmptyState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: MenuColors.gray, width: 2),
       ),
@@ -2386,7 +2386,7 @@ class _MenuFeedback extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: MenuColors.gray, width: 2),
       ),

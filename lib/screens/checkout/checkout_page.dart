@@ -284,7 +284,7 @@ class _WebCheckoutLayoutState extends State<WebCheckoutLayout> {
         height: double.infinity,
         child: Container(
           padding: const EdgeInsets.all(28),
-          decoration: _screenBox(),
+          decoration: _screenBox(context),
           child: Column(
             children: [
               if (showTopHeader) _webTopHeader(context),
@@ -1134,8 +1134,8 @@ class _WebCheckoutLayoutState extends State<WebCheckoutLayout> {
         ),
       );
 
-  BoxDecoration _screenBox() => BoxDecoration(
-        color: CheckoutColors.white,
+  BoxDecoration _screenBox([BuildContext? context]) => BoxDecoration(
+        color: context != null ? Theme.of(context).cardColor : CheckoutColors.white,
         border: Border.all(color: CheckoutColors.gray, width: 3),
       );
 
@@ -1230,7 +1230,7 @@ class _MobileCheckoutLayoutState extends State<MobileCheckoutLayout> {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: CheckoutColors.white,
+            color: Theme.of(context).cardColor,
             border: Border.all(color: CheckoutColors.gray, width: 3),
           ),
           child: Column(
@@ -2167,7 +2167,7 @@ class _LoyaltyPointsCardState extends State<_LoyaltyPointsCard> {
         width: double.infinity,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color(0xFF8A8A8A), width: 2),
         ),
@@ -2194,7 +2194,7 @@ class _LoyaltyPointsCardState extends State<_LoyaltyPointsCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F8),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFF8A8A8A), width: 2),
       ),
@@ -2211,7 +2211,7 @@ class _LoyaltyPointsCardState extends State<_LoyaltyPointsCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Bạn có $points điểm', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                    Text('Bạn có $points điểm', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
                     Text('Dùng hết = giảm $discount', style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32))),
                   ],
                 ),

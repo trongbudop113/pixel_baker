@@ -113,7 +113,7 @@ class _WebProductDetail extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               border: Border.all(color: ProductDetailColors.gray, width: 3),
             ),
             child: Column(
@@ -551,27 +551,31 @@ class _WebProductDetail extends StatelessWidget {
     );
   }
 
-  Widget _line(String k, String v) => Row(
-        children: [
-          SizedBox(
-              width: 90,
-              child: _txt(k, ProductDetailColors.gray, 13, FontWeight.w700)),
-          Expanded(child: _txt(v, Colors.black87, 13, FontWeight.w600)),
-        ],
+  Widget _line(String k, String v) => Builder(
+        builder: (context) => Row(
+          children: [
+            SizedBox(
+                width: 90,
+                child: _txt(k, ProductDetailColors.gray, 13, FontWeight.w700)),
+            Expanded(child: _txt(v, Theme.of(context).colorScheme.onSurface, 13, FontWeight.w600)),
+          ],
+        ),
       );
 
-  Widget _qtyBtn(String text, VoidCallback onTap) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 38,
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: ProductDetailColors.gray, width: 2),
+  Widget _qtyBtn(String text, VoidCallback onTap) => Builder(
+        builder: (context) => GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: ProductDetailColors.gray, width: 2),
+            ),
+            child: _txt(text, ProductDetailColors.blue, 18, FontWeight.w900),
           ),
-          child: _txt(text, ProductDetailColors.blue, 18, FontWeight.w900),
         ),
       );
 
@@ -580,23 +584,25 @@ class _WebProductDetail extends StatelessWidget {
     required bool selected,
     required VoidCallback onTap,
   }) =>
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? ProductDetailColors.blue : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected ? ProductDetailColors.blue : ProductDetailColors.gray,
-              width: 2,
+      Builder(
+        builder: (context) => GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? ProductDetailColors.blue : Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected ? ProductDetailColors.blue : ProductDetailColors.gray,
+                width: 2,
+              ),
             ),
-          ),
-          child: _txt(
-            text,
-            selected ? Colors.white : ProductDetailColors.gray,
-            12,
-            FontWeight.w800,
+            child: _txt(
+              text,
+              selected ? Colors.white : ProductDetailColors.gray,
+              12,
+              FontWeight.w800,
+            ),
           ),
         ),
       );
@@ -677,15 +683,17 @@ class _WebProductDetail extends StatelessWidget {
         ),
       );
 
-  Widget _card({required Widget child}) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: ProductDetailColors.gray, width: 2),
+  Widget _card({required Widget child}) => Builder(
+        builder: (context) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: ProductDetailColors.gray, width: 2),
+          ),
+          child: child,
         ),
-        child: child,
       );
 
   Widget _txt(String text, Color color, double size, FontWeight weight) => Text(
@@ -760,7 +768,7 @@ class _MobileProductDetail extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               border: Border.all(color: ProductDetailColors.gray, width: 3),
             ),
             child: Column(
@@ -1007,15 +1015,17 @@ class _MobileProductDetail extends StatelessWidget {
   }
 
 
-  Widget _mobileCard({required Widget child}) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ProductDetailColors.gray, width: 2),
+  Widget _mobileCard({required Widget child}) => Builder(
+        builder: (context) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: ProductDetailColors.gray, width: 2),
+          ),
+          child: child,
         ),
-        child: child,
       );
 
   Widget _mobileMooncakeConfigurator(
@@ -1068,18 +1078,20 @@ class _MobileProductDetail extends StatelessWidget {
     );
   }
 
-  Widget _qtyBtn(String text, VoidCallback onTap) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: ProductDetailColors.gray, width: 2),
+  Widget _qtyBtn(String text, VoidCallback onTap) => Builder(
+        builder: (context) => GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: ProductDetailColors.gray, width: 2),
+            ),
+            child: _mTxt(text, ProductDetailColors.blue, 18, FontWeight.w900),
           ),
-          child: _mTxt(text, ProductDetailColors.blue, 18, FontWeight.w900),
         ),
       );
 
@@ -1115,23 +1127,25 @@ class _MobileProductDetail extends StatelessWidget {
     required bool selected,
     required VoidCallback onTap,
   }) =>
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? ProductDetailColors.blue : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: selected ? ProductDetailColors.blue : ProductDetailColors.gray,
-              width: 2,
+      Builder(
+        builder: (context) => GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? ProductDetailColors.blue : Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: selected ? ProductDetailColors.blue : ProductDetailColors.gray,
+                width: 2,
+              ),
             ),
-          ),
-          child: _mTxt(
-            text,
-            selected ? Colors.white : ProductDetailColors.gray,
-            11,
-            FontWeight.w800,
+            child: _mTxt(
+              text,
+              selected ? Colors.white : ProductDetailColors.gray,
+              11,
+              FontWeight.w800,
+            ),
           ),
         ),
       );
@@ -1496,7 +1510,7 @@ class _ProductDetailLoading extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(color: ProductDetailColors.gray, width: 3),
         ),
         child: Column(
@@ -1687,7 +1701,7 @@ class _ProductDetailError extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(color: ProductDetailColors.gray, width: 3),
         ),
         child: Column(

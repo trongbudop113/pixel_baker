@@ -103,7 +103,7 @@ class WebContactLayout extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               border: Border.all(color: ContactColors.gray, width: 3),
             ),
             child: Column(
@@ -137,7 +137,7 @@ class WebContactLayout extends StatelessWidget {
                           children: [
                             Expanded(flex: 2, child: _leftForm(page)),
                             const SizedBox(width: 12),
-                            Expanded(child: _rightInfo(page.infoCards)),
+                            Expanded(child: _rightInfo(context, page.infoCards)),
                           ],
                         ),
                       ],
@@ -193,7 +193,7 @@ class WebContactLayout extends StatelessWidget {
         ),
       );
 
-  Widget _rightInfo(List<ContactInfoCardModel> infoCards) => Column(
+  Widget _rightInfo(BuildContext context, List<ContactInfoCardModel> infoCards) => Column(
         children: List.generate(infoCards.length * 2 - 1, (index) {
           if (index.isOdd) {
             return const SizedBox(height: 8);
@@ -203,6 +203,7 @@ class WebContactLayout extends StatelessWidget {
           return GestureDetector(
             onTap: () => state.selectInfo(itemIndex),
             child: _infoCard(
+              context,
               info,
               highlighted: state.selectedInfoIndex == itemIndex,
             ),
@@ -210,7 +211,7 @@ class WebContactLayout extends StatelessWidget {
         }),
       );
 
-  Widget _infoCard(ContactInfoCardModel info, {required bool highlighted}) =>
+  Widget _infoCard(BuildContext context, ContactInfoCardModel info, {required bool highlighted}) =>
       _card(
         highlighted: highlighted,
         child: Column(
@@ -224,7 +225,7 @@ class WebContactLayout extends StatelessWidget {
                 height: 78,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F8F8),
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: ContactColors.gray, width: 1.5),
                 ),
@@ -237,7 +238,7 @@ class WebContactLayout extends StatelessWidget {
               )
             else
               ...info.lines.map(
-                (line) => _txt(line, Colors.black87, 11, FontWeight.w500),
+                (line) => _txt(line, Theme.of(context).colorScheme.onSurface, 11, FontWeight.w500),
               ),
           ],
         ),
@@ -269,18 +270,20 @@ class WebContactLayout extends StatelessWidget {
     return widgets;
   }
 
-  Widget _card({required Widget child, bool highlighted = false}) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: highlighted ? ContactColors.blue : ContactColors.gray,
-            width: 1.5,
+  Widget _card({required Widget child, bool highlighted = false, BuildContext? context}) => Builder(
+        builder: (ctx) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context ?? ctx).cardColor,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: highlighted ? ContactColors.blue : ContactColors.gray,
+              width: 1.5,
+            ),
           ),
+          child: child,
         ),
-        child: child,
       );
 
   Widget _field(
@@ -288,21 +291,22 @@ class WebContactLayout extends StatelessWidget {
     TextEditingController? controller,
     double h = 36,
     bool multiline = false,
-  }) => Container(
+  }) => Builder(
+        builder: (context) => Container(
         width: double.infinity,
         height: h,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: ContactColors.gray, width: 1.5),
         ),
         child: TextField(
           controller: controller,
           maxLines: multiline ? null : 1,
-          style: const TextStyle(
-            color: Color(0xFF111827),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -324,6 +328,7 @@ class WebContactLayout extends StatelessWidget {
             ),
           ),
         ),
+      ),
       );
 
   Widget _btn(String text) => Container(
@@ -375,7 +380,7 @@ class _ContactLoadingSkeleton extends StatelessWidget {
       height: double.infinity,
       padding: EdgeInsets.all(mobile ? 12 : 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         border: Border.all(color: ContactColors.gray, width: 3),
       ),
       child: Column(
@@ -457,7 +462,7 @@ class MobileContactLayout extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               border: Border.all(color: ContactColors.gray, width: 3),
             ),
             child: Column(
@@ -516,7 +521,7 @@ class MobileContactLayout extends StatelessWidget {
                           ),
                         ),
                         // Info cards (đồng bộ với web _rightInfo)
-                        ..._buildInfoCards(page.infoCards),
+                        ..._buildInfoCards(page.infoCards, context),
                         const SizedBox(height: 8),
                         _bottomNav(page.bottomNavLabels),
                         const SizedBox(height: 8),
@@ -595,12 +600,13 @@ class MobileContactLayout extends StatelessWidget {
     return widgets;
   }
 
-  List<Widget> _buildInfoCards(List<ContactInfoCardModel> infoCards) {
+  List<Widget> _buildInfoCards(List<ContactInfoCardModel> infoCards, BuildContext context) {
     final widgets = <Widget>[];
     for (final info in infoCards) {
       widgets.add(const SizedBox(height: 8));
       widgets.add(
         _box(
+          context: context,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -612,7 +618,7 @@ class MobileContactLayout extends StatelessWidget {
                   height: 66,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F8F8),
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: ContactColors.gray, width: 1.5),
                   ),
@@ -625,7 +631,7 @@ class MobileContactLayout extends StatelessWidget {
                 )
               else
                 ...info.lines.map(
-                  (line) => _txt(line, Colors.black87, 11, FontWeight.w500),
+                  (line) => _txt(line, Theme.of(context).colorScheme.onSurface, 11, FontWeight.w500),
                 ),
             ],
           ),
@@ -635,15 +641,17 @@ class MobileContactLayout extends StatelessWidget {
     return widgets;
   }
 
-  Widget _box({required Widget child}) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: ContactColors.gray, width: 1.5),
+  Widget _box({required Widget child, BuildContext? context}) => Builder(
+        builder: (ctx) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context ?? ctx).cardColor,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: ContactColors.gray, width: 1.5),
+          ),
+          child: child,
         ),
-        child: child,
       );
 
   Widget _field(

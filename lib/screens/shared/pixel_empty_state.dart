@@ -35,10 +35,10 @@ class PixelEmptyState extends StatelessWidget {
               child: Icon(icon, size: 32, color: const Color(0xFF1E88E5)),
             ),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827)), textAlign: TextAlign.center),
+            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.center),
             if (subtitle != null) ...[
               const SizedBox(height: 6),
-              Text(subtitle!, style: const TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)), textAlign: TextAlign.center),
+              Text(subtitle!, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)), textAlign: TextAlign.center),
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 20),

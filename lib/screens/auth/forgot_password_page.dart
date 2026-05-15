@@ -37,7 +37,7 @@ class _ResponsiveForgotPasswordScreenState
         width: isMobile ? 390 : 760,
         padding: EdgeInsets.all(isMobile ? 12 : 24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(color: const Color(0xFF8A8A8A), width: 3),
         ),
         child: Column(
@@ -210,7 +210,7 @@ class _ResponsiveResetPasswordScreenState
         width: isMobile ? 390 : 760,
         padding: EdgeInsets.all(isMobile ? 12 : 24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(color: const Color(0xFF8A8A8A), width: 3),
         ),
         child: Column(
@@ -370,7 +370,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFF8A8A8A), width: 2),
       ),
@@ -398,7 +398,7 @@ class _AuthInput extends StatelessWidget {
       height: 46,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFF8A8A8A), width: 2),
       ),

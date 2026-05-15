@@ -155,7 +155,7 @@ class _RegisterWebLayout extends StatelessWidget {
           width: 1200,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             border: Border.all(color: AuthColors.gray, width: 3),
           ),
           child: Column(
@@ -328,7 +328,7 @@ class _RegisterMobileLayout extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F8),
+            color: Theme.of(context).scaffoldBackgroundColor,
             border: Border.all(color: AuthColors.gray, width: 3),
           ),
           child: Column(

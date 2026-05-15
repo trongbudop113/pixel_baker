@@ -10,7 +10,7 @@ class NotFoundPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 900;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: Container(
           padding: EdgeInsets.all(isMobile ? 24 : 48),
@@ -26,7 +26,7 @@ class NotFoundPage extends StatelessWidget {
                   horizontal: 24,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFF8A8A8A), width: 3),
                 ),
@@ -117,7 +117,7 @@ class NotFoundPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: primary ? const Color(0xFFE53935) : Colors.white,
+          color: primary ? const Color(0xFFE53935) : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: primary ? const Color(0xFFE53935) : const Color(0xFF8A8A8A),
@@ -129,7 +129,7 @@ class NotFoundPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: primary ? Colors.white : const Color(0xFF8A8A8A),
+            color: primary ? Colors.white : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ),
