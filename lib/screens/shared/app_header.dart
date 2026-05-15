@@ -51,7 +51,22 @@ class PixelHeaderBar extends StatelessWidget {
           else if (showBrand)
             GestureDetector(
               onTap: () => context.go('/'),
-              child: _txt('PIXEL BAKERY', AppHeaderColors.red, 12, FontWeight.w900),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.asset(
+                      'assets/images/pixel_bakery_icon.png',
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  _txt('PIXEL BAKERY', AppHeaderColors.red, 12, FontWeight.w900),
+                ],
+              ),
             )
           else
             const SizedBox(width: 18),
