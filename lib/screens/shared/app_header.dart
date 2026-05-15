@@ -28,8 +28,8 @@ class PixelHeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(4),
@@ -58,8 +58,8 @@ class PixelHeaderBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: Image.asset(
                       'assets/images/pixel_bakery_icon.png',
-                      width: 30,
-                      height: 30,
+                      width: 35,
+                      height: 35,
                       fit: BoxFit.cover,
                     ),
                   ),
