@@ -240,15 +240,21 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: compact ? 42 : 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: _box(),
       child: TextField(
         onChanged: state.setSearchKeyword,
-        style: const TextStyle(fontSize: 12, color: OrdersDetailColors.gray),
-        decoration: const InputDecoration(
+        style: const TextStyle(fontSize: 12, color: OrdersDetailColors.textDark),
+        decoration: InputDecoration(
           border: InputBorder.none,
-          hintText: 'Tìm mã đơn hoặc trạng thái',
-          hintStyle: TextStyle(fontSize: 12, color: OrdersDetailColors.gray),
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: compact ? 12 : 14,
+          ),
+          hintText: 'Tìm mã đơn hoặc trạng thái...',
+          hintStyle: const TextStyle(fontSize: 12, color: OrdersDetailColors.gray),
+          prefixIcon: const Icon(Icons.search_rounded, size: 16, color: OrdersDetailColors.gray),
+          prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 0),
         ),
       ),
     );

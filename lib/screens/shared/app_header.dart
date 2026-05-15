@@ -46,7 +46,7 @@ class PixelHeaderBar extends StatelessWidget {
                 }
                 context.go(backFallbackRoute);
               },
-              child: const Icon(Icons.arrow_back, size: 18, color: AppHeaderColors.blue),
+              child: const Icon(Icons.arrow_back, size: 22, color: AppHeaderColors.blue),
             )
           else if (showBrand)
             GestureDetector(
@@ -58,13 +58,13 @@ class PixelHeaderBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: Image.asset(
                       'assets/images/pixel_bakery_icon.png',
-                      width: 35,
-                      height: 35,
+                      width: 40,
+                      height: 40,
                       fit: BoxFit.cover,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  _txt('PIXEL BAKERY', AppHeaderColors.red, 12, FontWeight.w900),
+                  const SizedBox(width: 8),
+                  _txt('PIXEL BAKERY', AppHeaderColors.red, 15, FontWeight.w900),
                 ],
               ),
             )
@@ -72,11 +72,11 @@ class PixelHeaderBar extends StatelessWidget {
             const SizedBox(width: 18),
           if (centerLabel != null) ...[
             const Spacer(),
-            _txt(centerLabel!, AppHeaderColors.blue, 10, FontWeight.w700),
+            _txt(centerLabel!, AppHeaderColors.blue, 12, FontWeight.w700),
             const Spacer(),
           ] else
             const Spacer(),
-          if (rightWidget != null) rightWidget! else _txt(rightLabel, AppHeaderColors.blue, 12, FontWeight.w800),
+          if (rightWidget != null) rightWidget! else _txt(rightLabel, AppHeaderColors.blue, 14, FontWeight.w800),
         ],
       ),
     );
