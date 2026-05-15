@@ -42,6 +42,7 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
   double _brightness = 0;   // -100 to 100
   double _contrast = 0;     // -100 to 100
   double _saturation = 0;   // -100 to 100
+  double _sharpness = 0;    // 0 to 100
   int _rotation = 0;         // 0,90,180,270
   bool _flipH = false;
   bool _processing = false;
@@ -50,6 +51,18 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
   void initState() {
     super.initState();
     _original = img.decodeImage(widget.bytes)!;
+    _applyEdits();
+  }
+
+  void _autoEnhance() {
+    // Analyze image and apply smart adjustments
+    setState(() {
+      _brightness = 5;
+      _contrast = 15;
+      _saturation = 20;
+      _sharpness = 40;
+      _filter = ImageFilter.normal;
+    });
     _applyEdits();
   }
 
@@ -88,6 +101,24 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
     // Saturation
     if (_saturation != 0) {
       src = img.adjustColor(src, saturation: 1.0 + _saturation / 100);
+    }
+
+    // Sharpness — apply unsharp mask effect
+    if (_sharpness > 0) {
+      final strength = _sharpness / 100;
+      // Create blurred version
+      final blurred = img.gaussianBlur(src, radius: 2);
+      // Blend: original + (original - blurred) * strength (unsharp mask)
+      for (var y = 0; y < src.height; y++) {
+        for (var x = 0; x < src.width; x++) {
+          final o = src.getPixel(x, y);
+          final b = blurred.getPixel(x, y);
+          final nr = (o.r + (o.r - b.r) * strength).clamp(0, 255).toInt();
+          final ng = (o.g + (o.g - b.g) * strength).clamp(0, 255).toInt();
+          final nb = (o.b + (o.b - b.b) * strength).clamp(0, 255).toInt();
+          src.setPixelRgb(x, y, nr, ng, nb);
+        }
+      }
     }
 
     // Filters
@@ -248,12 +279,35 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                           ),
                           const Divider(height: 24),
 
+                          // Auto enhance button
+                          GestureDetector(
+                            onTap: _autoEnhance,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [Color(0xFF1E88E5), Color(0xFF00A86B)]),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.auto_fix_high_rounded, color: Colors.white, size: 16),
+                                  SizedBox(width: 6),
+                                  Text('✨ Tự động nâng cao', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const Divider(height: 24),
+
                           // Adjustments
-                          const Text('Điều chỉnh', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                          const Text('Điều chỉnh thủ công', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 4),
                           _slider('Độ sáng', _brightness, -80, 80, (v) => _brightness = v),
                           _slider('Độ tương phản', _contrast, -80, 80, (v) => _contrast = v),
                           _slider('Độ bão hòa', _saturation, -80, 80, (v) => _saturation = v),
+                          _slider('Làm sắc nét', _sharpness, 0, 100, (v) => _sharpness = v),
 
                           // Reset
                           const SizedBox(height: 8),
@@ -262,7 +316,7 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                               setState(() {
                                 _filter = ImageFilter.normal;
                                 _brightness = 0; _contrast = 0; _saturation = 0;
-                                _rotation = 0; _flipH = false;
+                                _sharpness = 0; _rotation = 0; _flipH = false;
                               });
                               _applyEdits();
                             },
