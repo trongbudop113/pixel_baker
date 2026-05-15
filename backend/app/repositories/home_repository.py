@@ -68,29 +68,33 @@ class HomeRepository:
         return palette[sum(author.encode("utf-8")) % len(palette)]
 
     async def _map_featured_products(self, items: List[Dict]) -> List[Dict]:
+        if not items:
+            return []
+        # Batch fetch all products in 1 query (fix N+1)
+        product_ids = [item.get("productId") for item in items if item.get("productId") is not None]
+        docs = await self._menu_collection.find(
+            {"id": {"$in": product_ids}},
+            {"id": 1, "reviews": 1, "images": 1}
+        ).to_list(length=len(product_ids) + 5)
+        doc_map = {int(d.get("id") or 0): d for d in docs}
+
         mapped: List[Dict] = []
         for item in items:
-            mapped.append(await self._enrich_featured_product(dict(item)))
+            item = dict(item)
+            pid = item.get("productId")
+            doc = doc_map.get(int(pid)) if pid is not None else None
+            if doc is None:
+                item.setdefault("averageRating", 0)
+                item.setdefault("reviewCount", 0)
+            else:
+                reviews = doc.get("reviews", [])
+                images = doc.get("images", [])
+                if images and not item.get("imageUrl"):
+                    item["imageUrl"] = str(images[0])
+                item["averageRating"] = self._average_rating(reviews)
+                item["reviewCount"] = len(reviews)
+            mapped.append(item)
         return mapped
-
-    async def _enrich_featured_product(self, item: Dict) -> Dict:
-        product_id = item.get("productId")
-        if product_id is None:
-            item["averageRating"] = 0
-            item["reviewCount"] = 0
-            return item
-        document = await self._menu_collection.find_one({"id": product_id})
-        if document is None:
-            item["averageRating"] = 0
-            item["reviewCount"] = 0
-            return item
-        reviews = document.get("reviews", [])
-        images = document.get("images", [])
-        if images and not item.get("imageUrl"):
-            item["imageUrl"] = str(images[0])
-        item["averageRating"] = self._average_rating(reviews)
-        item["reviewCount"] = len(reviews)
-        return item
 
     def _average_rating(self, reviews: List[Dict]) -> float:
         if not reviews:

@@ -504,8 +504,8 @@ class _MainShellScaffoldState extends State<_MainShellScaffold> {
   }
 
   Widget _notificationBell() => Container(
-        width: 34,
-        height: 34,
+        width: 24,
+        height: 24,
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
@@ -513,7 +513,7 @@ class _MainShellScaffoldState extends State<_MainShellScaffold> {
         ),
         child: const Icon(
           Icons.notifications_outlined,
-          size: 16,
+          size: 13,
           color: AppHeaderColors.blue,
         ),
       );

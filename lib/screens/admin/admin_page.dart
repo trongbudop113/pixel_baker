@@ -177,6 +177,20 @@ class _AdminWebLayout extends StatelessWidget {
           11 => _SmartAnalyticsSection(state: state),
           _ => _OverviewSection(state: state),
         };
+        // Show loading skeleton on first load
+        if (state.isLoading) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            color: const Color(0xFFF8F8F8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _AdminLoadingSkeleton(),
+              ],
+            ),
+          );
+        }
+
         return Container(
           padding: const EdgeInsets.all(16),
           color: const Color(0xFFF8F8F8),
@@ -1641,7 +1655,12 @@ class _AdminMobileLayout extends StatelessWidget {
             if (showTopHeader) const PixelHeaderBar(rightLabel: 'admin', showBack: true, showBrand: false),
             if (showTopHeader) const SizedBox(height: 10),
             Expanded(
-              child: SingleChildScrollView(
+              child: state.isLoading
+                  ? Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: _AdminLoadingSkeleton(),
+                    )
+                  : SingleChildScrollView(
                 child: DefaultTextStyle.merge(
                   style: const TextStyle(
                     color: AdminColors.textDark,
@@ -1817,7 +1836,7 @@ class _AdminMobileLayout extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
+            ), // end SingleChildScrollView
           ],
         ),
       ),
@@ -3988,6 +4007,99 @@ class _RevenueForecastSummary extends StatelessWidget {
           );
         }),
       ],
+    );
+  }
+}
+
+// ─── Admin Loading Skeleton ───────────────────────────────────────────────────
+
+class _AdminLoadingSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Stat cards row
+        SizedBox(
+          height: 80,
+          child: Row(
+            children: List.generate(4, (i) => Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: i < 3 ? 10 : 0),
+                child: _skelBox(80),
+              ),
+            )),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Main content area
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 5, child: _skelBox(300)),
+            const SizedBox(width: 12),
+            Expanded(flex: 3, child: Column(
+              children: [
+                _skelBox(140),
+                const SizedBox(height: 12),
+                _skelBox(140),
+              ],
+            )),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _skelBox(120),
+      ],
+    );
+  }
+
+  Widget _skelBox(double height) => _ShimmerAdmin(
+    child: Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AdminColors.gray.withOpacity(0.3), width: 1.5),
+      ),
+    ),
+  );
+}
+
+class _ShimmerAdmin extends StatefulWidget {
+  const _ShimmerAdmin({required this.child});
+  final Widget child;
+  @override
+  State<_ShimmerAdmin> createState() => _ShimmerAdminState();
+}
+
+class _ShimmerAdminState extends State<_ShimmerAdmin> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+    _anim = Tween<double>(begin: -2, end: 2).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, child) => ShaderMask(
+        blendMode: BlendMode.srcATop,
+        shaderCallback: (bounds) => LinearGradient(
+          begin: Alignment(_anim.value - 1, 0),
+          end: Alignment(_anim.value + 1, 0),
+          colors: const [Color(0xFFF0F0F0), Color(0xFFE0E0E0), Color(0xFFF0F0F0)],
+        ).createShader(bounds),
+        child: child,
+      ),
+      child: widget.child,
     );
   }
 }

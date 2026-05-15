@@ -280,25 +280,21 @@ class CheckoutService:
         if not user.isAdmin or target_user.id == user.id:
             await self._cart_repository.clear_cart(user.id)
 
-        # Send order confirmation email (non-blocking)
-        try:
-            from app.services.email_service import send_order_placed
-            import asyncio
-            asyncio.ensure_future(send_order_placed(
-                to_email=target_user.email,
-                customer_name=target_user.fullName,
-                order_id=order_id,
-                items=items,
-                subtotal=validation.subtotal,
-                delivery_fee=validation.deliveryFee,
-                discount=validation.discountAmount,
-                total=validation.total,
-                payment_method=payload.paymentMethod,
-                delivery_date=payload.deliveryDate,
-                order_note=payload.orderNote,
-            ))
-        except Exception:
-            pass
+        # Send order confirmation email
+        from app.services.email_service import send_order_placed
+        await send_order_placed(
+            to_email=target_user.email,
+            customer_name=target_user.fullName,
+            order_id=order_id,
+            items=items,
+            subtotal=validation.subtotal,
+            delivery_fee=validation.deliveryFee,
+            discount=validation.discountAmount,
+            total=validation.total,
+            payment_method=payload.paymentMethod,
+            delivery_date=payload.deliveryDate,
+            order_note=payload.orderNote,
+        )
 
         invoice_html = self._build_invoice_html(
             order_id=order_id,
