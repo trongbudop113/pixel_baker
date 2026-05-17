@@ -90,9 +90,9 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
     // Flip
     if (_flipH) src = img.flipHorizontal(src);
 
-    // Brightness
+    // Brightness (image v4 uses 'exposure' instead of 'brightness')
     if (_brightness != 0) {
-      src = img.adjustColor(src, brightness: 1.0 + _brightness / 100);
+      src = img.adjustColor(src, exposure: _brightness / 100);
     }
     // Contrast
     if (_contrast != 0) {
@@ -136,7 +136,7 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
         src = img.adjustColor(src, saturation: 1.5, contrast: 1.1);
         break;
       case ImageFilter.fade:
-        src = img.adjustColor(src, saturation: 0.6, brightness: 1.1);
+        src = img.adjustColor(src, saturation: 0.6, exposure: 0.1);
         break;
       case ImageFilter.vintage:
         src = img.sepia(src);
