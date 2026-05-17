@@ -68,7 +68,8 @@ class AppThemeController {
   AppThemeController._();
   static final AppThemeController instance = AppThemeController._();
 
-  final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(ThemeMode.system);
+  // Dark mode tạm tắt — đổi lại ThemeMode.system để bật
+  final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
 
   bool get isDark => themeMode.value == ThemeMode.dark;
 
