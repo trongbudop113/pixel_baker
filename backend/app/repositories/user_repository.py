@@ -16,6 +16,21 @@ class UserRepository:
     async def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         return await self._collection.find_one({"email": email.lower().strip()})
 
+    async def get_user_by_email_or_phone(self, identifier: str) -> Optional[Dict[str, Any]]:
+        """Find user by email or phone number."""
+        cleaned = identifier.strip()
+        # Try email first
+        if "@" in cleaned:
+            return await self._collection.find_one({"email": cleaned.lower()})
+        # Try phone (normalize: remove spaces, dashes)
+        phone_normalized = cleaned.replace(" ", "").replace("-", "")
+        return await self._collection.find_one({
+            "$or": [
+                {"phone": phone_normalized},
+                {"phone": cleaned},
+            ]
+        })
+
     async def create_user(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         await self._collection.insert_one(payload)
         created = await self._collection.find_one({"email": payload["email"]})

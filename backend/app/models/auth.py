@@ -23,7 +23,7 @@ class RegisterRequest(ApiModel):
 
 
 class LoginRequest(ApiModel):
-    email: EmailStr
+    email: str = Field(min_length=1, max_length=200)  # accepts email or phone
     password: str = Field(min_length=6, max_length=120)
 
 

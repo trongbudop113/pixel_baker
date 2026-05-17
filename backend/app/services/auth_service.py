@@ -68,7 +68,7 @@ class AuthService:
         )
 
     async def login(self, payload: LoginRequest) -> AuthResponse:
-        user = await self._user_repository.get_user_by_email(payload.email)
+        user = await self._user_repository.get_user_by_email_or_phone(payload.email)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
