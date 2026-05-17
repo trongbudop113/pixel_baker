@@ -124,10 +124,32 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
     // Filters
     switch (_filter) {
       case ImageFilter.warm:
-        src = img.adjustColor(src, red: 1.15, blue: 0.85, saturation: 1.1);
+        // Boost red, reduce blue via pixel loop (v4 has no red/blue params)
+        for (var y = 0; y < src.height; y++) {
+          for (var x = 0; x < src.width; x++) {
+            final p = src.getPixel(x, y);
+            src.setPixelRgb(x, y,
+              (p.r * 1.15).clamp(0, 255).toInt(),
+              p.g.toInt(),
+              (p.b * 0.85).clamp(0, 255).toInt(),
+            );
+          }
+        }
+        src = img.adjustColor(src, saturation: 1.1);
         break;
       case ImageFilter.cool:
-        src = img.adjustColor(src, red: 0.85, blue: 1.15, saturation: 0.95);
+        // Reduce red, boost blue
+        for (var y = 0; y < src.height; y++) {
+          for (var x = 0; x < src.width; x++) {
+            final p = src.getPixel(x, y);
+            src.setPixelRgb(x, y,
+              (p.r * 0.85).clamp(0, 255).toInt(),
+              p.g.toInt(),
+              (p.b * 1.15).clamp(0, 255).toInt(),
+            );
+          }
+        }
+        src = img.adjustColor(src, saturation: 0.95);
         break;
       case ImageFilter.bw:
         src = img.grayscale(src);
