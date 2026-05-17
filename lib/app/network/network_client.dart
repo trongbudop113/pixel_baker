@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import 'api_config.dart';
 import 'api_exception.dart';
@@ -167,6 +168,7 @@ class ApiClient {
       'file',
       bytes,
       filename: filename,
+      contentType: MediaType.parse(mimeType.isNotEmpty ? mimeType : 'image/jpeg'),
     ));
     final streamed = await request.send();
     final body = await streamed.stream.bytesToString();
