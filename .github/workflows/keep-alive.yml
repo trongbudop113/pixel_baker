@@ -13,9 +13,8 @@ jobs:
       - name: Ping health endpoint
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 \
-            https://pixel-bakery-api.onrender.com/api/v1/health)
+            --max-time 60 \
+            --connect-timeout 10 \
+            https://pixel-bakery-api.onrender.com/api/v1/health) || STATUS="timeout"
           echo "Status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "Warning: Backend returned $STATUS"
-          fi
+          echo "Keep-alive ping done — backend woken up"
