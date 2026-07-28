@@ -30,7 +30,6 @@ class _ResponsiveAdminProductFormScreenState
     extends State<ResponsiveAdminProductFormScreen> {
   final AdminRepository _repository = AppServices.instance.adminRepository;
   final _titleController = TextEditingController();
-  final _categoryController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _skuController = TextEditingController();
@@ -45,12 +44,15 @@ class _ResponsiveAdminProductFormScreenState
   bool _isSaving = false;
   String? _message;
   bool _isSuccess = false;
+  List<AdminCategoryModel> _categories = const [];
+  String? _selectedCategory;
 
   bool get _isEditMode => widget.productId != null;
 
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     if (_isEditMode) {
       _loadProduct();
     }
@@ -59,7 +61,6 @@ class _ResponsiveAdminProductFormScreenState
   @override
   void dispose() {
     _titleController.dispose();
-    _categoryController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
     _skuController.dispose();
@@ -70,6 +71,33 @@ class _ResponsiveAdminProductFormScreenState
     _imagesController.dispose();
     _detailBulletsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _repository.fetchCategories();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _categories = categories
+            .where((item) =>
+                item.category.trim().isNotEmpty &&
+                item.category.trim().toLowerCase() != 'all')
+            .toList(growable: false);
+        if (_selectedCategory == null && _categories.isNotEmpty) {
+          _selectedCategory = _categories.first.category;
+        }
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _message = 'Không thể tải danh mục sản phẩm.';
+        _isSuccess = false;
+      });
+    }
   }
 
   Future<void> _loadProduct() async {
@@ -94,7 +122,7 @@ class _ResponsiveAdminProductFormScreenState
 
   void _bindDraft(AdminProductDraft draft) {
     _titleController.text = draft.title;
-    _categoryController.text = draft.category;
+    _selectedCategory = draft.category;
     _priceController.text = draft.priceValue.toString();
     _descriptionController.text = draft.description;
     _skuController.text = draft.sku;
@@ -108,7 +136,7 @@ class _ResponsiveAdminProductFormScreenState
 
   AdminProductDraft? _buildDraft() {
     final title = _titleController.text.trim();
-    final category = _categoryController.text.trim();
+    final category = (_selectedCategory ?? '').trim();
     final description = _descriptionController.text.trim();
     final sku = _skuController.text.trim();
     final stockStatus = _stockStatusController.text.trim();
@@ -346,7 +374,7 @@ class _ResponsiveAdminProductFormScreenState
         children: [
           Expanded(child: _field('Tên sản phẩm', _titleController)),
           const SizedBox(width: 12),
-          Expanded(child: _field('Danh mục', _categoryController)),
+          Expanded(child: _categoryDropdown()),
         ],
       ),
       const SizedBox(height: 12),
@@ -382,7 +410,7 @@ class _ResponsiveAdminProductFormScreenState
     return [
       _field('Tên sản phẩm', _titleController),
       const SizedBox(height: 12),
-      _field('Danh mục', _categoryController),
+      _categoryDropdown(),
       const SizedBox(height: 12),
       _field('Giá', _priceController, keyboardType: TextInputType.number),
       const SizedBox(height: 12),
@@ -457,6 +485,63 @@ class _ResponsiveAdminProductFormScreenState
         ],
       ],
     );
+  }
+
+  Widget _categoryDropdown() {
+    final values = <String>{
+      for (final item in _categories) item.category,
+      if ((_selectedCategory ?? '').trim().isNotEmpty) _selectedCategory!.trim(),
+    }.toList(growable: false);
+    final selected = values.contains(_selectedCategory) ? _selectedCategory : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Danh mục',
+          style: TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          key: ValueKey(selected ?? 'category-empty'),
+          initialValue: selected,
+          items: values
+              .map(
+                (value) => DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(_categoryLabel(value)),
+                ),
+              )
+              .toList(growable: false),
+          onChanged: values.isEmpty
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _categoryLabel(String value) {
+    for (final item in _categories) {
+      if (item.category == value) {
+        return item.label;
+      }
+    }
+    return value;
   }
 
   Widget _field(

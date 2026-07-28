@@ -12,7 +12,7 @@ BACKEND_VENV_DIR := $(BACKEND_DIR)/.venv
 BACKEND_PYTHON := $(BACKEND_VENV_DIR)/bin/python
 BACKEND_PIP := $(BACKEND_VENV_DIR)/bin/pip
 
-.PHONY: help install bootstrap-env mongo-up mongo-down backend-install backend-run backend-start backend-stop frontend-run import-home import-menu import-auth-pages import-contact import-story run run-app stop
+.PHONY: help install bootstrap-env mongo-up mongo-down obs-up obs-down backend-install backend-run backend-start backend-stop frontend-run import-home import-menu import-auth-pages import-contact import-story run run-app stop
 
 help:
 	@echo "Targets:"
@@ -20,6 +20,8 @@ help:
 	@echo "  make bootstrap-env  - create backend/.env from backend/.env.example if missing"
 	@echo "  make mongo-up       - start MongoDB with Docker Compose"
 	@echo "  make mongo-down     - stop MongoDB container"
+	@echo "  make obs-up         - start observability stack for Docker metrics"
+	@echo "  make obs-down       - stop observability stack"
 	@echo "  make backend-run    - run FastAPI backend in foreground"
 	@echo "  make backend-start  - run FastAPI backend in background"
 	@echo "  make backend-stop   - stop background FastAPI backend"
@@ -57,6 +59,16 @@ mongo-up:
 
 mongo-down:
 	cd "$(BACKEND_DIR)" && docker compose down
+
+obs-up:
+	@if ! command -v docker >/dev/null 2>&1; then \
+		echo "docker not found. Install Docker before running observability stack."; \
+		exit 1; \
+	fi
+	cd "$(BACKEND_DIR)/observability" && docker compose up -d
+
+obs-down:
+	cd "$(BACKEND_DIR)/observability" && docker compose down
 
 backend-run:
 	cd "$(BACKEND_DIR)" && "$(BACKEND_PYTHON)" -m uvicorn app.main:app --reload --host $(BACKEND_HOST) --port $(BACKEND_PORT)

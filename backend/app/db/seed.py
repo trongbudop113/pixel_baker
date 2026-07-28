@@ -55,6 +55,7 @@ async def _seed_home_page(database) -> None:
 async def _seed_menu_page(database) -> None:
     page_collection = database["menu_pages"]
     product_collection = database["menu_products"]
+    category_collection = database["menu_categories"]
 
     with MENU_PAGE_PATH.open("r", encoding="utf-8") as file:
         document = json.load(file)
@@ -69,6 +70,24 @@ async def _seed_menu_page(database) -> None:
         await product_collection.update_one(
             {"id": product["id"]},
             {"$set": product},
+            upsert=True,
+        )
+
+    for index, category in enumerate(document.get("filters", [])):
+        category_value = str(category.get("category") or "").strip()
+        if not category_value:
+            continue
+        await category_collection.update_one(
+            {"id": _slugify(category_value)},
+            {
+                "$set": {
+                    "id": _slugify(category_value),
+                    "label": str(category.get("label") or category_value).strip(),
+                    "category": category_value,
+                    "imageUrl": category.get("imageUrl"),
+                    "sortOrder": index,
+                }
+            },
             upsert=True,
         )
 
@@ -135,11 +154,16 @@ async def _seed_admin_ingredients(database) -> None:
     for document in documents:
         quantity = int(document.get("availableQuantity") or 0)
         threshold = int(document.get("lowStockThreshold") or 0)
+        price = int(document.get("price") if document.get("price") is not None else document.get("unitPrice") or 0)
+        price_unit_quantity = max(1, int(document.get("priceUnitQuantity") or 1))
         await collection.update_one(
             {"id": document["id"]},
             {
                 "$set": {
                     **document,
+                    "price": price,
+                    "priceUnitQuantity": price_unit_quantity,
+                    "unitPrice": round(price / price_unit_quantity),
                     "availableQuantity": quantity,
                     "lowStockThreshold": threshold,
                     "status": _resolve_ingredient_status(quantity, threshold),
@@ -183,3 +207,11 @@ def _resolve_ingredient_status(quantity: int, threshold: int) -> str:
     if quantity <= threshold:
         return "Sắp hết"
     return "Đủ hàng"
+
+
+def _slugify(value: str) -> str:
+    normalized = value.strip().lower()
+    normalized = "".join(char if char.isalnum() else "-" for char in normalized)
+    while "--" in normalized:
+        normalized = normalized.replace("--", "-")
+    return normalized.strip("-") or "category"

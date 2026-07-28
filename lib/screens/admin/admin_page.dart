@@ -59,8 +59,10 @@ class _ResponsiveAdminScreenState extends State<ResponsiveAdminScreen> {
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 900;
         return isMobile
-            ? _AdminMobileLayout(state: _adminState, showTopHeader: widget.showTopHeader)
-            : _AdminWebLayout(state: _adminState, showTopHeader: widget.showTopHeader);
+            ? _AdminMobileLayout(
+                state: _adminState, showTopHeader: widget.showTopHeader)
+            : _AdminWebLayout(
+                state: _adminState, showTopHeader: widget.showTopHeader);
       },
     );
   }
@@ -84,7 +86,9 @@ class _AdminWebLayout extends StatelessWidget {
         ),
         child: Column(
           children: [
-            if (showTopHeader) const PixelHeaderBar(rightLabel: 'admin', showBack: true, showBrand: false),
+            if (showTopHeader)
+              const PixelHeaderBar(
+                  rightLabel: 'admin', showBack: true, showBrand: false),
             if (showTopHeader) const SizedBox(height: 12),
             Expanded(
               child: Row(
@@ -135,7 +139,8 @@ class _AdminWebLayout extends StatelessWidget {
     );
   }
 
-  Widget _sideItem(String text, {bool active = false, double h = 42, bool bold = false}) {
+  Widget _sideItem(String text,
+      {bool active = false, double h = 42, bool bold = false}) {
     return Container(
       height: h,
       width: double.infinity,
@@ -175,6 +180,7 @@ class _AdminWebLayout extends StatelessWidget {
           9 => _ProfitSummarySection(state: state),
           10 => _ReviewsManagementSection(state: state),
           11 => _SmartAnalyticsSection(state: state),
+          12 => _CategoriesManagementSection(state: state),
           _ => _OverviewSection(state: state),
         };
         // Show loading skeleton on first load
@@ -243,7 +249,11 @@ class _OverviewSection extends StatelessWidget {
           decoration: _box(borderWidth: 2, radius: 12),
           child: Row(
             children: [
-              Text(dashboard.title, style: const TextStyle(color: AdminColors.blue, fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(dashboard.title,
+                  style: const TextStyle(
+                      color: AdminColors.blue,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800)),
               const Spacer(),
               const _TopInput('Tìm đơn hàng, khách hàng...', width: 280),
               const SizedBox(width: 10),
@@ -359,8 +369,9 @@ class _OrdersManagementSection extends StatelessWidget {
             ),
             _MiniActionButton(
               label: 'Bulk xử lý',
-              onTap:
-                  state.isUpdating ? null : () => state.bulkAdvanceFilteredOrders(),
+              onTap: state.isUpdating
+                  ? null
+                  : () => state.bulkAdvanceFilteredOrders(),
             ),
           ],
         ],
@@ -373,7 +384,8 @@ class _OrdersManagementSection extends StatelessWidget {
             sortValue: state.orderSort,
             sortItems: const [
               DropdownMenuItem(value: 'latest', child: Text('Mới nhất')),
-              DropdownMenuItem(value: 'total_desc', child: Text('Tổng tiền giảm dần')),
+              DropdownMenuItem(
+                  value: 'total_desc', child: Text('Tổng tiền giảm dần')),
             ],
             onChanged: state.setOrderSearch,
             onSortChanged: (value) {
@@ -382,7 +394,13 @@ class _OrdersManagementSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _AdminTableHeader(
-            columns: const ['Mã đơn', 'Khách hàng', 'Tổng', 'Trạng thái', 'Thao tác'],
+            columns: const [
+              'Mã đơn',
+              'Khách hàng',
+              'Tổng',
+              'Trạng thái',
+              'Thao tác'
+            ],
             widths: const [2, 3, 2, 2, 2],
           ),
           const SizedBox(height: 10),
@@ -392,14 +410,14 @@ class _OrdersManagementSection extends StatelessWidget {
             ...List.generate(state.filteredOrders.length, (index) {
               final order = state.filteredOrders[index];
               return Padding(
-                padding: EdgeInsets.only(bottom: index == state.filteredOrders.length - 1 ? 0 : 8),
+                padding: EdgeInsets.only(
+                    bottom: index == state.filteredOrders.length - 1 ? 0 : 8),
                 child: _AdminOrderRow(
                   order: order,
                   isUpdating: state.isUpdating,
-                  onAdvance:
-                      state.canManageOrders
-                          ? () => _handleAdvanceOrderStatus(context, state, order)
-                          : null,
+                  onAdvance: state.canManageOrders
+                      ? () => _handleAdvanceOrderStatus(context, state, order)
+                      : null,
                 ),
               );
             }),
@@ -410,13 +428,15 @@ class _OrdersManagementSection extends StatelessWidget {
 
   Future<void> _exportOrders(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchOrderExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchOrderExcelRows();
       await AdminExcelCore.exportOrders(rows);
       if (!context.mounted) return;
       _showAdminSnackBar(context, 'Đã xuất file Excel đơn hàng.');
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể xuất file Excel đơn hàng.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel đơn hàng.',
+          isError: true);
     }
   }
 
@@ -424,13 +444,15 @@ class _OrdersManagementSection extends StatelessWidget {
     try {
       final rows = await AdminExcelCore.importOrders();
       if (rows == null) return;
-      final result = await AppServices.instance.adminRepository.importOrderExcelRows(rows);
+      final result =
+          await AppServices.instance.adminRepository.importOrderExcelRows(rows);
       await state.forceReload();
       if (!context.mounted) return;
       await _showImportResultDialog(context, 'đơn hàng', result);
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể import đơn hàng từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import đơn hàng từ file Excel.',
+          isError: true);
     }
   }
 }
@@ -472,8 +494,9 @@ class _ProductsManagementSection extends StatelessWidget {
             ),
             _MiniActionButton(
               label: 'Bulk ẩn',
-              onTap:
-                  state.isUpdating ? null : () => state.bulkHideFilteredProducts(),
+              onTap: state.isUpdating
+                  ? null
+                  : () => state.bulkHideFilteredProducts(),
             ),
           ],
         ],
@@ -486,7 +509,8 @@ class _ProductsManagementSection extends StatelessWidget {
             sortValue: state.productSort,
             sortItems: const [
               DropdownMenuItem(value: 'name', child: Text('Tên A-Z')),
-              DropdownMenuItem(value: 'price_desc', child: Text('Giá giảm dần')),
+              DropdownMenuItem(
+                  value: 'price_desc', child: Text('Giá giảm dần')),
               DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
             ],
             onChanged: state.setProductSearch,
@@ -496,7 +520,14 @@ class _ProductsManagementSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _AdminTableHeader(
-            columns: const ['ID', 'Tên sản phẩm', 'Danh mục', 'Giá', 'Tồn kho', 'Thao tác'],
+            columns: const [
+              'ID',
+              'Tên sản phẩm',
+              'Danh mục',
+              'Giá',
+              'Tồn kho',
+              'Thao tác'
+            ],
             widths: const [1, 3, 2, 2, 2, 3],
           ),
           const SizedBox(height: 10),
@@ -506,18 +537,23 @@ class _ProductsManagementSection extends StatelessWidget {
             ...List.generate(state.filteredProducts.length, (index) {
               final product = state.filteredProducts[index];
               return Padding(
-                padding: EdgeInsets.only(bottom: index == state.filteredProducts.length - 1 ? 0 : 8),
+                padding: EdgeInsets.only(
+                    bottom: index == state.filteredProducts.length - 1 ? 0 : 8),
                 child: _AdminProductRow(
                   product: product,
                   isUpdating: state.isUpdating,
                   onEdit: state.canManageProducts
                       ? () => context.goNamed(
                             AppRouteNames.adminProductForm,
-                            queryParameters: {'id': '${product.id}', 'sidebar': '2'},
+                            queryParameters: {
+                              'id': '${product.id}',
+                              'sidebar': '2'
+                            },
                           )
                       : null,
-                  onToggle:
-                      state.canManageProducts ? () => state.toggleProductStock(product) : null,
+                  onToggle: state.canManageProducts
+                      ? () => state.toggleProductStock(product)
+                      : null,
                   onDelete: state.canManageProducts
                       ? () => _confirmDangerAction(
                             context,
@@ -535,7 +571,8 @@ class _ProductsManagementSection extends StatelessWidget {
 
   Future<void> _exportProducts(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchProductExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchProductExcelRows();
       await AdminExcelCore.exportProducts(rows);
       if (!context.mounted) {
         return;
@@ -545,7 +582,8 @@ class _ProductsManagementSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể xuất file Excel sản phẩm.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel sản phẩm.',
+          isError: true);
     }
   }
 
@@ -559,10 +597,13 @@ class _ProductsManagementSection extends StatelessWidget {
         if (!context.mounted) {
           return;
         }
-        _showAdminSnackBar(context, 'File Excel không có dữ liệu sản phẩm hợp lệ.', isError: true);
+        _showAdminSnackBar(
+            context, 'File Excel không có dữ liệu sản phẩm hợp lệ.',
+            isError: true);
         return;
       }
-      final result = await AppServices.instance.adminRepository.importProductExcelRows(rows);
+      final result = await AppServices.instance.adminRepository
+          .importProductExcelRows(rows);
       await state.refreshProductsSection();
       if (!context.mounted) {
         return;
@@ -572,8 +613,69 @@ class _ProductsManagementSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể import sản phẩm từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import sản phẩm từ file Excel.',
+          isError: true);
     }
+  }
+}
+
+class _CategoriesManagementSection extends StatelessWidget {
+  const _CategoriesManagementSection({required this.state});
+
+  final AdminState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Quản lý danh mục',
+      action: state.canManageProducts
+          ? _MiniActionButton(
+              label: 'Thêm danh mục',
+              onTap: () => _showCategoryDialog(context, state),
+            )
+          : null,
+      child: Column(
+        children: [
+          _AdminTableHeader(
+            columns: const [
+              'Ảnh',
+              'Tên hiển thị',
+              'Giá trị',
+              'Thứ tự',
+              'Thao tác'
+            ],
+            widths: const [1, 3, 3, 1, 3],
+          ),
+          const SizedBox(height: 10),
+          if (state.categories.isEmpty)
+            const _EmptyAdminState(message: 'Chưa có danh mục nào.')
+          else
+            ...List.generate(state.categories.length, (index) {
+              final category = state.categories[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: index == state.categories.length - 1 ? 0 : 8,
+                ),
+                child: _AdminCategoryRow(
+                  category: category,
+                  isUpdating: state.isUpdating,
+                  onEdit: state.canManageProducts
+                      ? () => _showCategoryDialog(context, state,
+                          category: category)
+                      : null,
+                  onDelete: state.canManageProducts
+                      ? () => _confirmDangerAction(
+                            context,
+                            message: 'Xóa danh mục "${category.label}"?',
+                            onConfirm: () => state.deleteCategory(category),
+                          )
+                      : null,
+                ),
+              );
+            }),
+        ],
+      ),
+    );
   }
 }
 
@@ -615,7 +717,8 @@ class _CustomersManagementSection extends StatelessWidget {
             sortValue: state.customerSort,
             sortItems: const [
               DropdownMenuItem(value: 'name', child: Text('Tên A-Z')),
-              DropdownMenuItem(value: 'orders_desc', child: Text('Nhiều đơn nhất')),
+              DropdownMenuItem(
+                  value: 'orders_desc', child: Text('Nhiều đơn nhất')),
             ],
             onChanged: state.setCustomerSearch,
             onSortChanged: (value) {
@@ -634,13 +737,18 @@ class _CustomersManagementSection extends StatelessWidget {
             ...List.generate(state.filteredCustomers.length, (index) {
               final customer = state.filteredCustomers[index];
               return Padding(
-                padding: EdgeInsets.only(bottom: index == state.filteredCustomers.length - 1 ? 0 : 8),
+                padding: EdgeInsets.only(
+                    bottom:
+                        index == state.filteredCustomers.length - 1 ? 0 : 8),
                 child: _AdminCustomerRow(
                   customer: customer,
                   onEdit: state.canManageCustomers
                       ? () => context.goNamed(
                             AppRouteNames.adminCustomerForm,
-                            queryParameters: {'id': customer.id, 'sidebar': '3'},
+                            queryParameters: {
+                              'id': customer.id,
+                              'sidebar': '3'
+                            },
                           )
                       : null,
                 ),
@@ -653,13 +761,15 @@ class _CustomersManagementSection extends StatelessWidget {
 
   Future<void> _exportCustomers(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchCustomerExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchCustomerExcelRows();
       await AdminExcelCore.exportCustomers(rows);
       if (!context.mounted) return;
       _showAdminSnackBar(context, 'Đã xuất file Excel khách hàng.');
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể xuất file Excel khách hàng.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel khách hàng.',
+          isError: true);
     }
   }
 
@@ -667,13 +777,15 @@ class _CustomersManagementSection extends StatelessWidget {
     try {
       final rows = await AdminExcelCore.importCustomers();
       if (rows == null) return;
-      final result = await AppServices.instance.adminRepository.importCustomerExcelRows(rows);
+      final result = await AppServices.instance.adminRepository
+          .importCustomerExcelRows(rows);
       await state.forceReload();
       if (!context.mounted) return;
       await _showImportResultDialog(context, 'khách hàng', result);
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể import khách hàng từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import khách hàng từ file Excel.',
+          isError: true);
     }
   }
 }
@@ -754,7 +866,9 @@ class _IngredientsManagementSection extends StatelessWidget {
               if (state.canManageInventory) ...[
                 _MiniActionButton(
                   label: 'Nhập Excel',
-                  onTap: state.isUpdating ? null : () => _importIngredients(context),
+                  onTap: state.isUpdating
+                      ? null
+                      : () => _importIngredients(context),
                 ),
                 _MiniActionButton(
                   label: 'Thêm nguyên liệu',
@@ -774,8 +888,10 @@ class _IngredientsManagementSection extends StatelessWidget {
                 sortValue: state.ingredientSort,
                 sortItems: const [
                   DropdownMenuItem(value: 'name', child: Text('Tên A-Z')),
-                  DropdownMenuItem(value: 'stock_asc', child: Text('Tồn thấp nhất')),
-                  DropdownMenuItem(value: 'stock_desc', child: Text('Tồn cao nhất')),
+                  DropdownMenuItem(
+                      value: 'stock_asc', child: Text('Tồn thấp nhất')),
+                  DropdownMenuItem(
+                      value: 'stock_desc', child: Text('Tồn cao nhất')),
                 ],
                 onChanged: state.setIngredientSearch,
                 onSortChanged: (value) {
@@ -784,8 +900,18 @@ class _IngredientsManagementSection extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               _AdminTableHeader(
-                columns: const ['Tên', 'Danh mục', 'Đơn giá', 'Tồn', 'Ngưỡng', 'Trạng thái', 'Thao tác'],
-                widths: const [3, 2, 2, 1, 1, 2, 3],
+                columns: const [
+                  'Tên',
+                  'Danh mục',
+                  'Giá',
+                  'Đơn vị',
+                  'Đơn giá',
+                  'Tồn',
+                  'Ngưỡng',
+                  'Trạng thái',
+                  'Thao tác'
+                ],
+                widths: const [3, 2, 2, 1, 2, 1, 1, 2, 3],
               ),
               const SizedBox(height: 10),
               if (state.filteredIngredients.isEmpty)
@@ -795,7 +921,8 @@ class _IngredientsManagementSection extends StatelessWidget {
                   final ingredient = state.filteredIngredients[index];
                   return Padding(
                     padding: EdgeInsets.only(
-                      bottom: index == state.filteredIngredients.length - 1 ? 0 : 8,
+                      bottom:
+                          index == state.filteredIngredients.length - 1 ? 0 : 8,
                     ),
                     child: _AdminIngredientRow(
                       ingredient: ingredient,
@@ -803,21 +930,28 @@ class _IngredientsManagementSection extends StatelessWidget {
                       onEdit: state.canManageInventory
                           ? () => context.goNamed(
                                 AppRouteNames.adminIngredientForm,
-                                queryParameters: {'id': ingredient.id, 'sidebar': '4'},
+                                queryParameters: {
+                                  'id': ingredient.id,
+                                  'sidebar': '4'
+                                },
                               )
                           : null,
                       onDelete: state.canManageInventory
                           ? () => _confirmDangerAction(
                                 context,
-                                message: 'Xóa nguyên liệu "${ingredient.name}"?',
-                                onConfirm: () => state.deleteIngredient(ingredient),
+                                message:
+                                    'Xóa nguyên liệu "${ingredient.name}"?',
+                                onConfirm: () =>
+                                    state.deleteIngredient(ingredient),
                               )
                           : null,
                       onAdd: state.canManageInventory
-                          ? () => state.restockIngredient(ingredient, quantity: 5)
+                          ? () =>
+                              state.restockIngredient(ingredient, quantity: 5)
                           : null,
                       onConsume: state.canManageInventory
-                          ? () => state.consumeIngredient(ingredient, quantity: 1)
+                          ? () =>
+                              state.consumeIngredient(ingredient, quantity: 1)
                           : null,
                     ),
                   );
@@ -847,7 +981,8 @@ class _IngredientsManagementSection extends StatelessWidget {
 
   Future<void> _exportIngredients(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchIngredientExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchIngredientExcelRows();
       await AdminExcelCore.exportIngredients(rows);
       if (!context.mounted) {
         return;
@@ -857,7 +992,8 @@ class _IngredientsManagementSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể xuất file Excel nguyên liệu.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel nguyên liệu.',
+          isError: true);
     }
   }
 
@@ -871,10 +1007,13 @@ class _IngredientsManagementSection extends StatelessWidget {
         if (!context.mounted) {
           return;
         }
-        _showAdminSnackBar(context, 'File Excel không có dữ liệu nguyên liệu hợp lệ.', isError: true);
+        _showAdminSnackBar(
+            context, 'File Excel không có dữ liệu nguyên liệu hợp lệ.',
+            isError: true);
         return;
       }
-      final result = await AppServices.instance.adminRepository.importIngredientExcelRows(rows);
+      final result = await AppServices.instance.adminRepository
+          .importIngredientExcelRows(rows);
       await state.refreshIngredientsSection();
       if (!context.mounted) {
         return;
@@ -884,7 +1023,8 @@ class _IngredientsManagementSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể import nguyên liệu từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import nguyên liệu từ file Excel.',
+          isError: true);
     }
   }
 }
@@ -939,7 +1079,8 @@ class _RecipesManagementSection extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                      border:
+                          Border.all(color: const Color(0xFFE5E7EB), width: 1),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1022,14 +1163,18 @@ class _RecipesManagementSection extends StatelessWidget {
                               onTap: state.canManageRecipes
                                   ? () => context.goNamed(
                                         AppRouteNames.adminRecipeForm,
-                                        queryParameters: {'id': recipe.id, 'sidebar': '5'},
+                                        queryParameters: {
+                                          'id': recipe.id,
+                                          'sidebar': '5'
+                                        },
                                       )
                                   : null,
                             ),
                             _MiniActionButton(
                               label: 'Copy',
                               onTap: state.canManageRecipes
-                                  ? () => _openCopyRecipeDialog(context, state, recipe)
+                                  ? () => _openCopyRecipeDialog(
+                                      context, state, recipe)
                                   : null,
                             ),
                             _MiniActionButton(
@@ -1038,8 +1183,10 @@ class _RecipesManagementSection extends StatelessWidget {
                                   ? null
                                   : () => _confirmDangerAction(
                                         context,
-                                        message: 'Xóa công thức của "${recipe.productTitle}"?',
-                                        onConfirm: () => state.deleteRecipe(recipe),
+                                        message:
+                                            'Xóa công thức của "${recipe.productTitle}"?',
+                                        onConfirm: () =>
+                                            state.deleteRecipe(recipe),
                                       ),
                               backgroundColor: AdminColors.red,
                             ),
@@ -1056,13 +1203,15 @@ class _RecipesManagementSection extends StatelessWidget {
 
   Future<void> _exportRecipes(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchRecipeExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchRecipeExcelRows();
       await AdminExcelCore.exportRecipes(rows);
       if (!context.mounted) return;
       _showAdminSnackBar(context, 'Đã xuất file Excel công thức.');
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể xuất file Excel công thức.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel công thức.',
+          isError: true);
     }
   }
 
@@ -1070,13 +1219,15 @@ class _RecipesManagementSection extends StatelessWidget {
     try {
       final rows = await AdminExcelCore.importRecipes();
       if (rows == null) return;
-      final result = await AppServices.instance.adminRepository.importRecipeExcelRows(rows);
+      final result = await AppServices.instance.adminRepository
+          .importRecipeExcelRows(rows);
       await state.reloadRecipes();
       if (!context.mounted) return;
       await _showImportResultDialog(context, 'công thức', result);
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể import công thức từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import công thức từ file Excel.',
+          isError: true);
     }
   }
 }
@@ -1116,7 +1267,8 @@ class _ProfitSummarySection extends StatelessWidget {
                 onTap: () => state.refreshRevenueSummary(range: key),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: active ? AdminColors.blue : Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -1277,7 +1429,8 @@ class _RevenueBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxRevenue = days.fold<int>(0, (m, d) => d.revenue > m ? d.revenue : m);
+    final maxRevenue =
+        days.fold<int>(0, (m, d) => d.revenue > m ? d.revenue : m);
 
     return SizedBox(
       height: 160,
@@ -1286,7 +1439,8 @@ class _RevenueBarChart extends StatelessWidget {
         final count = days.length;
         // bar + gap per item
         const gap = 4.0;
-        final barWidth = ((availableWidth - gap * (count - 1)) / count).clamp(4.0, 40.0);
+        final barWidth =
+            ((availableWidth - gap * (count - 1)) / count).clamp(4.0, 40.0);
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -1297,7 +1451,13 @@ class _RevenueBarChart extends StatelessWidget {
             final isEmpty = day.revenue == 0;
 
             // Show label every N days to avoid clutter
-            final labelEvery = count <= 7 ? 1 : count <= 14 ? 2 : count <= 31 ? 5 : 7;
+            final labelEvery = count <= 7
+                ? 1
+                : count <= 14
+                    ? 2
+                    : count <= 31
+                        ? 5
+                        : 7;
             final showLabel = i % labelEvery == 0 || i == count - 1;
 
             return Padding(
@@ -1309,7 +1469,8 @@ class _RevenueBarChart extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Tooltip(
-                      message: '${day.date}\n${_formatCurrency(day.revenue)}\n${day.orderCount} đơn',
+                      message:
+                          '${day.date}\n${_formatCurrency(day.revenue)}\n${day.orderCount} đơn',
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         width: barWidth,
@@ -1348,7 +1509,8 @@ class _RevenueBarChart extends StatelessWidget {
   String _shortDate(String date) {
     // date format: "2026-05-13" → "13/5"
     final parts = date.split('-');
-    if (parts.length == 3) return '${int.tryParse(parts[2]) ?? parts[2]}/${int.tryParse(parts[1]) ?? parts[1]}';
+    if (parts.length == 3)
+      return '${int.tryParse(parts[2]) ?? parts[2]}/${int.tryParse(parts[1]) ?? parts[1]}';
     return date;
   }
 }
@@ -1414,7 +1576,8 @@ class _VouchersManagementSection extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 '${voucher.discountType} • ${voucher.discountValue} • Đơn tối thiểu ${_formatCurrency(voucher.minOrderValue)}',
-                                style: const TextStyle(fontSize: 12, color: AdminColors.textSoft),
+                                style: const TextStyle(
+                                    fontSize: 12, color: AdminColors.textSoft),
                               ),
                             ],
                           ),
@@ -1428,7 +1591,8 @@ class _VouchersManagementSection extends StatelessWidget {
                                   ? () => _openVoucherDialog(
                                         context,
                                         state,
-                                        initial: AdminVoucherDraft.fromVoucher(voucher),
+                                        initial: AdminVoucherDraft.fromVoucher(
+                                            voucher),
                                       )
                                   : null,
                             ),
@@ -1438,8 +1602,10 @@ class _VouchersManagementSection extends StatelessWidget {
                               onTap: state.canManageVouchers
                                   ? () => _confirmDangerAction(
                                         context,
-                                        message: 'Xóa voucher "${voucher.code}"?',
-                                        onConfirm: () => state.deleteVoucher(voucher),
+                                        message:
+                                            'Xóa voucher "${voucher.code}"?',
+                                        onConfirm: () =>
+                                            state.deleteVoucher(voucher),
                                       )
                                   : null,
                             ),
@@ -1456,13 +1622,15 @@ class _VouchersManagementSection extends StatelessWidget {
 
   Future<void> _exportVouchers(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchVoucherExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchVoucherExcelRows();
       await AdminExcelCore.exportVouchers(rows);
       if (!context.mounted) return;
       _showAdminSnackBar(context, 'Đã xuất file Excel voucher.');
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể xuất file Excel voucher.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel voucher.',
+          isError: true);
     }
   }
 
@@ -1470,13 +1638,15 @@ class _VouchersManagementSection extends StatelessWidget {
     try {
       final rows = await AdminExcelCore.importVouchers();
       if (rows == null) return;
-      final result = await AppServices.instance.adminRepository.importVoucherExcelRows(rows);
+      final result = await AppServices.instance.adminRepository
+          .importVoucherExcelRows(rows);
       await state.forceReload();
       if (!context.mounted) return;
       await _showImportResultDialog(context, 'voucher', result);
     } catch (_) {
       if (!context.mounted) return;
-      _showAdminSnackBar(context, 'Không thể import voucher từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import voucher từ file Excel.',
+          isError: true);
     }
   }
 }
@@ -1519,13 +1689,16 @@ class _TestimonialsManagementSection extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: item.isVisible ? AdminColors.green : AdminColors.orange,
+                                color: item.isVisible
+                                    ? AdminColors.green
+                                    : AdminColors.orange,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(item.content, style: const TextStyle(fontSize: 12)),
+                        Text(item.content,
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
@@ -1542,8 +1715,10 @@ class _TestimonialsManagementSection extends StatelessWidget {
                               onTap: state.canManageTestimonials
                                   ? () => _confirmDangerAction(
                                         context,
-                                        message: 'Xóa đánh giá của "${item.author}"?',
-                                        onConfirm: () => state.deleteTestimonial(item),
+                                        message:
+                                            'Xóa đánh giá của "${item.author}"?',
+                                        onConfirm: () =>
+                                            state.deleteTestimonial(item),
                                       )
                                   : null,
                             ),
@@ -1594,7 +1769,8 @@ class _ContentsManagementSection extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 item.key,
-                                style: const TextStyle(fontSize: 12, color: AdminColors.textSoft),
+                                style: const TextStyle(
+                                    fontSize: 12, color: AdminColors.textSoft),
                               ),
                             ],
                           ),
@@ -1616,7 +1792,8 @@ class _ContentsManagementSection extends StatelessWidget {
                             _MiniActionButton(
                               label: 'JSON',
                               onTap: state.canManageContents
-                                  ? () => _openContentDialog(context, state, item)
+                                  ? () =>
+                                      _openContentDialog(context, state, item)
                                   : null,
                             ),
                           ],
@@ -1639,208 +1816,358 @@ class _AdminMobileLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: state,
-      builder: (context, _) => SizedBox(
-      width: 390,
-      height: double.infinity,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF4F6FA),
-          border: Border.all(color: const Color(0xFFD3D8E1), width: 2),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (showTopHeader) const PixelHeaderBar(rightLabel: 'admin', showBack: true, showBrand: false),
-            if (showTopHeader) const SizedBox(height: 10),
-            Expanded(
-              child: state.isLoading
-                  ? Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: _AdminLoadingSkeleton(),
-                    )
-                  : SingleChildScrollView(
-                child: DefaultTextStyle.merge(
-                  style: const TextStyle(
-                    color: AdminColors.textDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  child: IconTheme.merge(
-                    data: const IconThemeData(color: AdminColors.textDark),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                    SizedBox(
-                      height: 36,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: state.sidebarItems
-                            .map(
-                              (item) => _MobileSectionChip(
-                                label: item.label,
-                                active: state.selectedSidebarIndex == item.index,
-                                onTap: () => state.selectSidebar(item.index),
-                              ),
+        animation: state,
+        builder: (context, _) => SizedBox(
+              width: 390,
+              height: double.infinity,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4F6FA),
+                  border: Border.all(color: const Color(0xFFD3D8E1), width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (showTopHeader)
+                      const PixelHeaderBar(
+                          rightLabel: 'admin',
+                          showBack: true,
+                          showBrand: false),
+                    if (showTopHeader) const SizedBox(height: 10),
+                    Expanded(
+                      child: state.isLoading
+                          ? Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: _AdminLoadingSkeleton(),
                             )
-                            .toList(growable: false),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (state.selectedSidebarIndex == 1) ...[
-                      _MobileAdminOrdersSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 2) ...[
-                      _MobileAdminProductsSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 3) ...[
-                      _MobileAdminCustomersSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 4) ...[
-                      _MobileAdminIngredientsSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 5) ...[
-                      _MobileAdminRecipesSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 6) ...[
-                      _VouchersManagementSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 7) ...[
-                      _TestimonialsManagementSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 8) ...[
-                      _ContentsManagementSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 9) ...[
-                      _ProfitSummarySection(state: state),
-                    ] else if (state.selectedSidebarIndex == 10) ...[
-                      _ReviewsManagementSection(state: state),
-                    ] else if (state.selectedSidebarIndex == 11) ...[
-                      _SmartAnalyticsSection(state: state),
-                    ] else ...[
-                    AnimatedBuilder(
-                      animation: state,
-                      builder: (context, _) => Container(
-            height: 56,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AdminColors.line, width: 1),
-            ),
-            child: Row(
-              children: [
-                Text(state.dashboard.title, style: const TextStyle(color: AdminColors.textDark, fontSize: 18, fontWeight: FontWeight.w700)),
-                const Spacer(),
-                Text(state.dashboard.notificationLabel, style: const TextStyle(color: Color(0xFF2563EB), fontSize: 11, fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-                    ),
-                    const SizedBox(height: 10),
-                    AnimatedBuilder(
-                      animation: state,
-                      builder: (context, _) {
-                        final cards = state.dashboard.statCards;
-                        return Row(
-                          children: [
-                            Expanded(child: _MobileKpi(cards.length > 1 ? cards[1].label : 'Đơn mới', cards.length > 1 ? cards[1].value : '0')),
-                            const SizedBox(width: 8),
-                            Expanded(child: _MobileKpi(cards.isNotEmpty ? cards[0].label : 'Doanh thu', cards.isNotEmpty ? cards[0].value : '0đ')),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('Đơn gần đây', style: TextStyle(color: AdminColors.textDark, fontSize: 14, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 8),
-                    AnimatedBuilder(
-                      animation: state,
-                      builder: (context, _) => _MobileList(orders: state.dashboard.recentOrders),
-                    ),
-                    const SizedBox(height: 10),
-                    const Row(
-            children: [
-              Expanded(child: _ActionButton('Tạo đơn', filled: true, h: 42)),
-              SizedBox(width: 8),
-              Expanded(child: _ActionButton('Báo cáo', h: 42)),
-            ],
-                    ),
-                    const SizedBox(height: 10),
-                    AnimatedBuilder(
-                      animation: state,
-                      builder: (context, _) => Container(
-            height: 64,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: _toneBackground(state.dashboard.alerts.isNotEmpty ? state.dashboard.alerts.first.tone : 'info'),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  state.dashboard.alerts.isNotEmpty ? state.dashboard.alerts.first.title : 'Không có cảnh báo',
-                  style: TextStyle(color: _toneTitleColor(state.dashboard.alerts.isNotEmpty ? state.dashboard.alerts.first.tone : 'info'), fontSize: 11, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  state.dashboard.alerts.isNotEmpty ? state.dashboard.alerts.first.description : 'Hệ thống đang ổn định',
-                  style: TextStyle(color: _toneDescColor(state.dashboard.alerts.isNotEmpty ? state.dashboard.alerts.first.tone : 'info'), fontSize: 11),
-                ),
-              ],
-            ),
-                    ),
-                    ),
-                    const SizedBox(height: 10),
-                    AnimatedBuilder(
-                      animation: state,
-                      builder: (context, _) => Container(
-            height: 212,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AdminColors.line, width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(state.dashboard.topTrendLabel, style: const TextStyle(color: AdminColors.blue, fontSize: 13, fontWeight: FontWeight.w800)),
-                SizedBox(height: 4),
-                Text('${state.dashboard.topTrendValue} • ${state.dashboard.notificationLabel}', style: const TextStyle(color: AdminColors.green, fontSize: 11, fontWeight: FontWeight.w700)),
-                SizedBox(height: 8),
-                _MobileBars(values: state.dashboard.salesByHour),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(child: _ActionButton('Đơn hàng', h: 34)),
-                    SizedBox(width: 8),
-                    Expanded(child: _ActionButton('Sản phẩm', h: 34)),
-                    SizedBox(width: 8),
-                    Expanded(child: _ActionButton('Khách hàng', h: 34)),
+                          : SingleChildScrollView(
+                              child: DefaultTextStyle.merge(
+                                style: const TextStyle(
+                                  color: AdminColors.textDark,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                child: IconTheme.merge(
+                                  data: const IconThemeData(
+                                      color: AdminColors.textDark),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      SizedBox(
+                                        height: 36,
+                                        child: ListView(
+                                          scrollDirection: Axis.horizontal,
+                                          children: state.sidebarItems
+                                              .map(
+                                                (item) => _MobileSectionChip(
+                                                  label: item.label,
+                                                  active: state
+                                                          .selectedSidebarIndex ==
+                                                      item.index,
+                                                  onTap: () =>
+                                                      state.selectSidebar(
+                                                          item.index),
+                                                ),
+                                              )
+                                              .toList(growable: false),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      if (state.selectedSidebarIndex == 1) ...[
+                                        _MobileAdminOrdersSection(state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          2) ...[
+                                        _MobileAdminProductsSection(
+                                            state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          3) ...[
+                                        _MobileAdminCustomersSection(
+                                            state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          4) ...[
+                                        _MobileAdminIngredientsSection(
+                                            state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          5) ...[
+                                        _MobileAdminRecipesSection(
+                                            state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          6) ...[
+                                        _VouchersManagementSection(
+                                            state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          7) ...[
+                                        _TestimonialsManagementSection(
+                                            state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          8) ...[
+                                        _ContentsManagementSection(
+                                            state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          9) ...[
+                                        _ProfitSummarySection(state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          10) ...[
+                                        _ReviewsManagementSection(state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          11) ...[
+                                        _SmartAnalyticsSection(state: state),
+                                      ] else if (state.selectedSidebarIndex ==
+                                          12) ...[
+                                        _MobileAdminCategoriesSection(
+                                            state: state),
+                                      ] else ...[
+                                        AnimatedBuilder(
+                                          animation: state,
+                                          builder: (context, _) => Container(
+                                            height: 56,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                  color: AdminColors.line,
+                                                  width: 1),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Text(state.dashboard.title,
+                                                    style: const TextStyle(
+                                                        color: AdminColors
+                                                            .textDark,
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.w700)),
+                                                const Spacer(),
+                                                Text(
+                                                    state.dashboard
+                                                        .notificationLabel,
+                                                    style: const TextStyle(
+                                                        color:
+                                                            Color(0xFF2563EB),
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w700)),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        AnimatedBuilder(
+                                          animation: state,
+                                          builder: (context, _) {
+                                            final cards =
+                                                state.dashboard.statCards;
+                                            return Row(
+                                              children: [
+                                                Expanded(
+                                                    child: _MobileKpi(
+                                                        cards.length > 1
+                                                            ? cards[1].label
+                                                            : 'Đơn mới',
+                                                        cards.length > 1
+                                                            ? cards[1].value
+                                                            : '0')),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                    child: _MobileKpi(
+                                                        cards.isNotEmpty
+                                                            ? cards[0].label
+                                                            : 'Doanh thu',
+                                                        cards.isNotEmpty
+                                                            ? cards[0].value
+                                                            : '0đ')),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 10),
+                                        const Text('Đơn gần đây',
+                                            style: TextStyle(
+                                                color: AdminColors.textDark,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700)),
+                                        const SizedBox(height: 8),
+                                        AnimatedBuilder(
+                                          animation: state,
+                                          builder: (context, _) => _MobileList(
+                                              orders:
+                                                  state.dashboard.recentOrders),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        const Row(
+                                          children: [
+                                            Expanded(
+                                                child: _ActionButton('Tạo đơn',
+                                                    filled: true, h: 42)),
+                                            SizedBox(width: 8),
+                                            Expanded(
+                                                child: _ActionButton('Báo cáo',
+                                                    h: 42)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        AnimatedBuilder(
+                                          animation: state,
+                                          builder: (context, _) => Container(
+                                            height: 64,
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: _toneBackground(state
+                                                      .dashboard
+                                                      .alerts
+                                                      .isNotEmpty
+                                                  ? state.dashboard.alerts.first
+                                                      .tone
+                                                  : 'info'),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  state.dashboard.alerts
+                                                          .isNotEmpty
+                                                      ? state.dashboard.alerts
+                                                          .first.title
+                                                      : 'Không có cảnh báo',
+                                                  style: TextStyle(
+                                                      color: _toneTitleColor(
+                                                          state.dashboard.alerts
+                                                                  .isNotEmpty
+                                                              ? state
+                                                                  .dashboard
+                                                                  .alerts
+                                                                  .first
+                                                                  .tone
+                                                              : 'info'),
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                                ),
+                                                Text(
+                                                  state.dashboard.alerts
+                                                          .isNotEmpty
+                                                      ? state.dashboard.alerts
+                                                          .first.description
+                                                      : 'Hệ thống đang ổn định',
+                                                  style: TextStyle(
+                                                      color: _toneDescColor(
+                                                          state.dashboard.alerts
+                                                                  .isNotEmpty
+                                                              ? state
+                                                                  .dashboard
+                                                                  .alerts
+                                                                  .first
+                                                                  .tone
+                                                              : 'info'),
+                                                      fontSize: 11),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        AnimatedBuilder(
+                                          animation: state,
+                                          builder: (context, _) => Container(
+                                            height: 212,
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                  color: AdminColors.line,
+                                                  width: 1),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                    state.dashboard
+                                                        .topTrendLabel,
+                                                    style: const TextStyle(
+                                                        color: AdminColors.blue,
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w800)),
+                                                SizedBox(height: 4),
+                                                Text(
+                                                    '${state.dashboard.topTrendValue} • ${state.dashboard.notificationLabel}',
+                                                    style: const TextStyle(
+                                                        color:
+                                                            AdminColors.green,
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w700)),
+                                                SizedBox(height: 8),
+                                                _MobileBars(
+                                                    values: state
+                                                        .dashboard.salesByHour),
+                                                SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                        child: _ActionButton(
+                                                            'Đơn hàng',
+                                                            h: 34)),
+                                                    SizedBox(width: 8),
+                                                    Expanded(
+                                                        child: _ActionButton(
+                                                            'Sản phẩm',
+                                                            h: 34)),
+                                                    SizedBox(width: 8),
+                                                    Expanded(
+                                                        child: _ActionButton(
+                                                            'Khách hàng',
+                                                            h: 34)),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                        child: _ActionButton(
+                                                            'Nguyên liệu',
+                                                            h: 30)),
+                                                    SizedBox(width: 8),
+                                                    Expanded(
+                                                        child: _ActionButton(
+                                                            'Doanh số',
+                                                            h: 30)),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        if (state.errorMessage != null) ...[
+                                          const SizedBox(height: 10),
+                                          _InlineMessage(
+                                              message: state.errorMessage!,
+                                              tone: 'danger'),
+                                        ],
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ), // end SingleChildScrollView
                   ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(child: _ActionButton('Nguyên liệu', h: 30)),
-                    SizedBox(width: 8),
-                    Expanded(child: _ActionButton('Doanh số', h: 30)),
-                  ],
-                ),
-              ],
-            ),
-                    ),
-                    ),
-                    if (state.errorMessage != null) ...[
-                      const SizedBox(height: 10),
-                      _InlineMessage(message: state.errorMessage!, tone: 'danger'),
-                    ],
-                    ],
-                      ],
-                    ),
-                  ),
                 ),
               ),
-            ), // end SingleChildScrollView
-          ],
-        ),
-      ),
-    ));
+            ));
   }
 }
 
@@ -1872,7 +2199,8 @@ class _TopInput extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AdminColors.gray, width: 1),
       ),
-      child: Text(text, style: TextStyle(color: color, fontSize: size, fontWeight: weight)),
+      child: Text(text,
+          style: TextStyle(color: color, fontSize: size, fontWeight: weight)),
     );
   }
 }
@@ -2050,10 +2378,22 @@ class _AdminProductRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 1, child: Text('${product.id}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
-          Expanded(flex: 3, child: Text(product.title, style: const TextStyle(fontSize: 12))),
-          Expanded(flex: 2, child: Text(product.category, style: const TextStyle(fontSize: 12))),
-          Expanded(flex: 2, child: Text(_formatCurrency(product.priceValue), style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 1,
+              child: Text('${product.id}',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700))),
+          Expanded(
+              flex: 3,
+              child: Text(product.title, style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 2,
+              child:
+                  Text(product.category, style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 2,
+              child: Text(_formatCurrency(product.priceValue),
+                  style: const TextStyle(fontSize: 12))),
           Expanded(
             flex: 2,
             child: Text(
@@ -2061,7 +2401,9 @@ class _AdminProductRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: product.stockStatus.toLowerCase() == 'còn hàng' ? AdminColors.green : AdminColors.orange,
+                color: product.stockStatus.toLowerCase() == 'còn hàng'
+                    ? AdminColors.green
+                    : AdminColors.orange,
               ),
             ),
           ),
@@ -2079,7 +2421,11 @@ class _AdminProductRow extends StatelessWidget {
                     onTap: onEdit,
                   ),
                   _MiniActionButton(
-                    label: isUpdating ? 'Đang cập nhật' : (product.stockStatus.toLowerCase() == 'còn hàng' ? 'Tạm ẩn' : 'Mở bán'),
+                    label: isUpdating
+                        ? 'Đang cập nhật'
+                        : (product.stockStatus.toLowerCase() == 'còn hàng'
+                            ? 'Tạm ẩn'
+                            : 'Mở bán'),
                     onTap: isUpdating ? null : onToggle,
                   ),
                   _MiniActionButton(
@@ -2092,6 +2438,113 @@ class _AdminProductRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AdminCategoryRow extends StatelessWidget {
+  const _AdminCategoryRow({
+    required this.category,
+    required this.isUpdating,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  final AdminCategoryModel category;
+  final bool isUpdating;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 1,
+            child: _CategoryImageThumb(imageUrl: category.imageUrl),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              category.label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+            ),
+          ),
+          Expanded(
+              flex: 3,
+              child: Text(category.category,
+                  style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 1,
+              child: Text('${category.sortOrder}',
+                  style: const TextStyle(fontSize: 12))),
+          Expanded(
+            flex: 3,
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _MiniActionButton(
+                    label: 'Sửa', onTap: isUpdating ? null : onEdit),
+                _MiniActionButton(
+                  label: 'Xóa',
+                  onTap: isUpdating ? null : onDelete,
+                  backgroundColor: AdminColors.red,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryImageThumb extends StatelessWidget {
+  const _CategoryImageThumb({this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = (imageUrl ?? '').trim();
+    const size = 42.0;
+    if (url.isEmpty) {
+      return Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: const Icon(Icons.image_outlined,
+            size: 18, color: AdminColors.textSoft),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          color: const Color(0xFFFCEAEA),
+          child: const Icon(Icons.broken_image_outlined,
+              size: 18, color: AdminColors.red),
+        ),
       ),
     );
   }
@@ -2156,12 +2609,26 @@ class _AdminOrderRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text('#${order.orderId}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
-          Expanded(flex: 3, child: Text(order.customerName, style: const TextStyle(fontSize: 12))),
-          Expanded(flex: 2, child: Text(_formatCurrency(order.total), style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 2,
+              child: Text('#${order.orderId}',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700))),
+          Expanded(
+              flex: 3,
+              child: Text(order.customerName,
+                  style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 2,
+              child: Text(_formatCurrency(order.total),
+                  style: const TextStyle(fontSize: 12))),
           Expanded(
             flex: 2,
-            child: Text(order.status, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _statusColor(order.status))),
+            child: Text(order.status,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _statusColor(order.status))),
           ),
           Expanded(
             flex: 2,
@@ -2199,10 +2666,23 @@ class _AdminCustomerRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text(customer.fullName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
-          Expanded(flex: 3, child: Text(customer.email, style: const TextStyle(fontSize: 12))),
-          Expanded(flex: 2, child: Text(customer.phone ?? '-', style: const TextStyle(fontSize: 12))),
-          Expanded(flex: 1, child: Text('${customer.orderCount}', style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 3,
+              child: Text(customer.fullName,
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700))),
+          Expanded(
+              flex: 3,
+              child:
+                  Text(customer.email, style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 2,
+              child: Text(customer.phone ?? '-',
+                  style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 1,
+              child: Text('${customer.orderCount}',
+                  style: const TextStyle(fontSize: 12))),
           Expanded(
             flex: 2,
             child: Row(
@@ -2214,7 +2694,8 @@ class _AdminCustomerRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: customer.isAdmin ? AdminColors.red : AdminColors.blue,
+                    color:
+                        customer.isAdmin ? AdminColors.red : AdminColors.blue,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -2266,11 +2747,28 @@ class _AdminIngredientRow extends StatelessWidget {
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
           ),
-          Expanded(flex: 2, child: Text(ingredient.category, style: const TextStyle(fontSize: 12))),
+          Expanded(
+              flex: 2,
+              child: Text(ingredient.category,
+                  style: const TextStyle(fontSize: 12))),
           Expanded(
             flex: 2,
             child: Text(
-              _formatCurrency(ingredient.unitPrice),
+              _formatCurrency(ingredient.price),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              '${ingredient.priceUnitQuantity} ${ingredient.unit}',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              '${_formatCurrency(ingredient.unitPrice)}/${ingredient.unit}',
               style: const TextStyle(fontSize: 12),
             ),
           ),
@@ -2312,7 +2810,9 @@ class _AdminIngredientRow extends StatelessWidget {
                 ),
                 _MiniActionButton(
                   label: '-1',
-                  onTap: isUpdating || ingredient.availableQuantity <= 0 ? null : onConsume,
+                  onTap: isUpdating || ingredient.availableQuantity <= 0
+                      ? null
+                      : onConsume,
                 ),
                 _MiniActionButton(
                   label: isUpdating ? 'Đang cập nhật' : '+5',
@@ -2417,7 +2917,8 @@ class _MobileSectionChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: active ? AdminColors.red : Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: active ? AdminColors.red : AdminColors.line, width: 1),
+            border: Border.all(
+                color: active ? AdminColors.red : AdminColors.line, width: 1),
           ),
           child: Text(
             label,
@@ -2453,9 +2954,15 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: const TextStyle(color: AdminColors.textSoft, fontSize: 12, fontWeight: FontWeight.w400)),
+          Text(label,
+              style: const TextStyle(
+                  color: AdminColors.textSoft,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400)),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w700)),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 20, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -2479,12 +2986,19 @@ class _OrdersPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Đơn hàng gần đây', style: TextStyle(color: AdminColors.blue, fontSize: 16, fontWeight: FontWeight.w800)),
+          const Text('Đơn hàng gần đây',
+              style: TextStyle(
+                  color: AdminColors.blue,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          _orderRow('#Mã', 'Tổng', 'Trạng thái', const Color(0xFFF8F8F8), const Color(0xFF8A8A8A), bordered: true, h: 34),
+          _orderRow('#Mã', 'Tổng', 'Trạng thái', const Color(0xFFF8F8F8),
+              const Color(0xFF8A8A8A),
+              bordered: true, h: 34),
           if (orders.isEmpty) ...[
             const SizedBox(height: 8),
-            const Text('Chưa có đơn hàng nào.', style: TextStyle(fontSize: 12, color: AdminColors.textSoft)),
+            const Text('Chưa có đơn hàng nào.',
+                style: TextStyle(fontSize: 12, color: AdminColors.textSoft)),
           ] else
             ...List.generate(orders.length, (index) {
               final order = orders[index];
@@ -2504,20 +3018,38 @@ class _OrdersPanel extends StatelessWidget {
     );
   }
 
-  Widget _orderRow(String code, String total, String status, Color bg, Color statusColor, {bool bordered = true, double h = 40}) {
+  Widget _orderRow(
+      String code, String total, String status, Color bg, Color statusColor,
+      {bool bordered = true, double h = 40}) {
     return Container(
       height: h,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(8),
-        border: bordered ? Border.all(color: const Color(0xFFE0E0E0), width: 1) : null,
+        border: bordered
+            ? Border.all(color: const Color(0xFFE0E0E0), width: 1)
+            : null,
       ),
       child: Row(
         children: [
-          Expanded(child: Text(code, style: const TextStyle(fontSize: 12, color: AdminColors.textDark, fontWeight: FontWeight.w700))),
-          Expanded(child: Text(total, style: const TextStyle(fontSize: 12, color: AdminColors.textDark))),
-          Expanded(child: Text(status, textAlign: TextAlign.right, style: TextStyle(fontSize: 12, color: statusColor, fontWeight: FontWeight.w700))),
+          Expanded(
+              child: Text(code,
+                  style: const TextStyle(
+                      fontSize: 12,
+                      color: AdminColors.textDark,
+                      fontWeight: FontWeight.w700))),
+          Expanded(
+              child: Text(total,
+                  style: const TextStyle(
+                      fontSize: 12, color: AdminColors.textDark))),
+          Expanded(
+              child: Text(status,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: statusColor,
+                      fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -2550,12 +3082,17 @@ class _RightPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Cảnh báo nhanh', style: TextStyle(color: AdminColors.blue, fontSize: 16, fontWeight: FontWeight.w800)),
+          const Text('Cảnh báo nhanh',
+              style: TextStyle(
+                  color: AdminColors.blue,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
           ...List.generate(alerts.length, (index) {
             final alert = alerts[index];
             return Padding(
-              padding: EdgeInsets.only(bottom: index == alerts.length - 1 ? 0 : 10),
+              padding:
+                  EdgeInsets.only(bottom: index == alerts.length - 1 ? 0 : 10),
               child: _alertBox(
                 alert.title,
                 alert.description,
@@ -2577,14 +3114,22 @@ class _RightPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(topTrendLabel, style: const TextStyle(color: AdminColors.blue, fontSize: 13, fontWeight: FontWeight.w800)),
+                Text(topTrendLabel,
+                    style: const TextStyle(
+                        color: AdminColors.blue,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800)),
                 SizedBox(height: 6),
                 Expanded(child: _ChartBars(values: salesByHour)),
               ],
             ),
           ),
           const SizedBox(height: 10),
-          Text(topTrendValue, style: const TextStyle(color: AdminColors.green, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(topTrendValue,
+              style: const TextStyle(
+                  color: AdminColors.green,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           const _ActionButton('Tạo đơn nhanh', filled: true, h: 44),
         ],
@@ -2592,16 +3137,22 @@ class _RightPanel extends StatelessWidget {
     );
   }
 
-  Widget _alertBox(String title, String desc, Color bg, Color titleColor, Color descColor) {
+  Widget _alertBox(
+      String title, String desc, Color bg, Color titleColor, Color descColor) {
     return Container(
       height: 72,
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: TextStyle(color: titleColor, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(title,
+              style: TextStyle(
+                  color: titleColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(desc, style: TextStyle(color: descColor, fontSize: 11)),
         ],
@@ -2658,15 +3209,23 @@ class _TabCard extends StatelessWidget {
           const SizedBox(height: 8),
           ...rows.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Text(e, style: const TextStyle(color: Color(0xFF222222), fontSize: 12)),
+                child: Text(e,
+                    style: const TextStyle(
+                        color: Color(0xFF222222), fontSize: 12)),
               )),
           if (button != null)
             Container(
               height: 28,
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(8)),
               alignment: Alignment.center,
-              child: Text(button!, style: const TextStyle(color: AdminColors.textDark, fontSize: 11, fontWeight: FontWeight.w700)),
+              child: Text(button!,
+                  style: const TextStyle(
+                      color: AdminColors.textDark,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700)),
             ),
         ],
       ),
@@ -2686,15 +3245,19 @@ class _ChartBars extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         ...List.generate(values.length == 4 ? values.length : 4, (index) {
-          final resolvedValues = values.length == 4 ? values : const [0, 0, 0, 0];
+          final resolvedValues =
+              values.length == 4 ? values : const [0, 0, 0, 0];
           const colors = [
             Color(0xFF93C5FD),
             Color(0xFF60A5FA),
             Color(0xFF3B82F6),
             Color(0xFF1D4ED8),
           ];
-          final maxValue = resolvedValues.fold<int>(0, (max, item) => item > max ? item : max);
-          final normalizedHeight = maxValue == 0 ? 18.0 : 18 + (resolvedValues[index] / maxValue) * 28;
+          final maxValue = resolvedValues.fold<int>(
+              0, (max, item) => item > max ? item : max);
+          final normalizedHeight = maxValue == 0
+              ? 18.0
+              : 18 + (resolvedValues[index] / maxValue) * 28;
           return _bar(normalizedHeight, colors[index]);
         }),
       ],
@@ -2705,7 +3268,8 @@ class _ChartBars extends StatelessWidget {
     return Container(
       width: 52,
       height: h,
-      decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(4)),
+      decoration:
+          BoxDecoration(color: c, borderRadius: BorderRadius.circular(4)),
     );
   }
 }
@@ -2756,9 +3320,17 @@ class _MobileKpi extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(t, style: const TextStyle(color: AdminColors.gray, fontSize: 11, fontWeight: FontWeight.w700)),
+          Text(t,
+              style: const TextStyle(
+                  color: AdminColors.gray,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-          Text(v, style: const TextStyle(color: Color(0xFF2563EB), fontSize: 22, fontWeight: FontWeight.w900)),
+          Text(v,
+              style: const TextStyle(
+                  color: Color(0xFF2563EB),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900)),
         ],
       ),
     );
@@ -2789,19 +3361,32 @@ class _MobileAdminOrdersSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('#${order.orderId}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AdminColors.textDark)),
+                        Text('#${order.orderId}',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AdminColors.textDark)),
                         const SizedBox(height: 4),
-                        Text(order.customerName, style: const TextStyle(fontSize: 12)),
+                        Text(order.customerName,
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text(_formatCurrency(order.total), style: const TextStyle(fontSize: 12)),
+                        Text(_formatCurrency(order.total),
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text(order.status, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _statusColor(order.status))),
+                        Text(order.status,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _statusColor(order.status))),
                         const SizedBox(height: 8),
                         _MiniActionButton(
-                          label: state.isUpdating ? 'Đang cập nhật' : 'Cập nhật trạng thái',
+                          label: state.isUpdating
+                              ? 'Đang cập nhật'
+                              : 'Cập nhật trạng thái',
                           onTap: state.isUpdating
                               ? null
-                              : () => _handleAdvanceOrderStatus(context, state, order),
+                              : () => _handleAdvanceOrderStatus(
+                                  context, state, order),
                         ),
                       ],
                     ),
@@ -2861,26 +3446,46 @@ class _MobileAdminProductsSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(product.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AdminColors.textDark)),
+                        Text(product.title,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AdminColors.textDark)),
                         const SizedBox(height: 4),
-                        Text(product.category, style: const TextStyle(fontSize: 12)),
+                        Text(product.category,
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text(_formatCurrency(product.priceValue), style: const TextStyle(fontSize: 12)),
+                        Text(_formatCurrency(product.priceValue),
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text(product.stockStatus, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: product.stockStatus.toLowerCase() == 'còn hàng' ? AdminColors.green : AdminColors.orange)),
+                        Text(product.stockStatus,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: product.stockStatus.toLowerCase() ==
+                                        'còn hàng'
+                                    ? AdminColors.green
+                                    : AdminColors.orange)),
                         const SizedBox(height: 8),
                         _MiniActionButton(
                           label: 'Sửa',
                           onTap: state.canManageProducts
                               ? () => context.goNamed(
                                     AppRouteNames.adminProductForm,
-                                    queryParameters: {'id': '${product.id}', 'sidebar': '2'},
+                                    queryParameters: {
+                                      'id': '${product.id}',
+                                      'sidebar': '2'
+                                    },
                                   )
                               : null,
                         ),
                         const SizedBox(height: 8),
                         _MiniActionButton(
-                          label: state.isUpdating ? 'Đang cập nhật' : (product.stockStatus.toLowerCase() == 'còn hàng' ? 'Tạm ẩn' : 'Mở bán'),
+                          label: state.isUpdating
+                              ? 'Đang cập nhật'
+                              : (product.stockStatus.toLowerCase() == 'còn hàng'
+                                  ? 'Tạm ẩn'
+                                  : 'Mở bán'),
                           onTap: !state.canManageProducts || state.isUpdating
                               ? null
                               : () => state.toggleProductStock(product),
@@ -2893,7 +3498,8 @@ class _MobileAdminProductsSection extends StatelessWidget {
                               : () => _confirmDangerAction(
                                     context,
                                     message: 'Xóa sản phẩm "${product.title}"?',
-                                    onConfirm: () => state.deleteProduct(product),
+                                    onConfirm: () =>
+                                        state.deleteProduct(product),
                                   ),
                           backgroundColor: AdminColors.red,
                         ),
@@ -2908,7 +3514,8 @@ class _MobileAdminProductsSection extends StatelessWidget {
 
   Future<void> _exportProducts(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchProductExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchProductExcelRows();
       await AdminExcelCore.exportProducts(rows);
       if (!context.mounted) {
         return;
@@ -2918,7 +3525,8 @@ class _MobileAdminProductsSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể xuất file Excel sản phẩm.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel sản phẩm.',
+          isError: true);
     }
   }
 
@@ -2932,10 +3540,13 @@ class _MobileAdminProductsSection extends StatelessWidget {
         if (!context.mounted) {
           return;
         }
-        _showAdminSnackBar(context, 'File Excel không có dữ liệu sản phẩm hợp lệ.', isError: true);
+        _showAdminSnackBar(
+            context, 'File Excel không có dữ liệu sản phẩm hợp lệ.',
+            isError: true);
         return;
       }
-      final result = await AppServices.instance.adminRepository.importProductExcelRows(rows);
+      final result = await AppServices.instance.adminRepository
+          .importProductExcelRows(rows);
       await state.refreshProductsSection();
       if (!context.mounted) {
         return;
@@ -2945,8 +3556,123 @@ class _MobileAdminProductsSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể import sản phẩm từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import sản phẩm từ file Excel.',
+          isError: true);
     }
+  }
+}
+
+class _MobileAdminCategoriesSection extends StatelessWidget {
+  const _MobileAdminCategoriesSection({required this.state});
+
+  final AdminState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Quản lý danh mục',
+      action: state.canManageProducts
+          ? _MiniActionButton(
+              label: 'Thêm',
+              onTap: () => _showCategoryDialog(context, state),
+            )
+          : null,
+      child: state.categories.isEmpty
+          ? const _EmptyAdminState(message: 'Chưa có danh mục nào.')
+          : Column(
+              children: state.categories.map((category) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _CategoryImageThumb(imageUrl: category.imageUrl),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    category.label,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AdminColors.textDark,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(category.category,
+                                      style: const TextStyle(fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Thứ tự: ${category.sortOrder}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if ((category.imageUrl ?? '').trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            category.imageUrl!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AdminColors.textSoft,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _MiniActionButton(
+                              label: 'Sửa',
+                              onTap:
+                                  !state.canManageProducts || state.isUpdating
+                                      ? null
+                                      : () => _showCategoryDialog(
+                                            context,
+                                            state,
+                                            category: category,
+                                          ),
+                            ),
+                            _MiniActionButton(
+                              label: 'Xóa',
+                              onTap:
+                                  !state.canManageProducts || state.isUpdating
+                                      ? null
+                                      : () => _confirmDangerAction(
+                                            context,
+                                            message:
+                                                'Xóa danh mục "${category.label}"?',
+                                            onConfirm: () =>
+                                                state.deleteCategory(category),
+                                          ),
+                              backgroundColor: AdminColors.red,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(growable: false),
+            ),
+    );
   }
 }
 
@@ -2974,22 +3700,41 @@ class _MobileAdminCustomersSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(customer.fullName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AdminColors.textDark)),
+                        Text(customer.fullName,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AdminColors.textDark)),
                         const SizedBox(height: 4),
-                        Text(customer.email, style: const TextStyle(fontSize: 12)),
+                        Text(customer.email,
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text('SĐT: ${customer.phone ?? '-'}', style: const TextStyle(fontSize: 12)),
+                        Text('SĐT: ${customer.phone ?? '-'}',
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text('Đơn hàng: ${customer.orderCount}', style: const TextStyle(fontSize: 12)),
+                        Text('Đơn hàng: ${customer.orderCount}',
+                            style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text(customer.isAdmin ? 'Vai trò: Admin' : 'Vai trò: User', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: customer.isAdmin ? AdminColors.red : AdminColors.blue)),
+                        Text(
+                            customer.isAdmin
+                                ? 'Vai trò: Admin'
+                                : 'Vai trò: User',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: customer.isAdmin
+                                    ? AdminColors.red
+                                    : AdminColors.blue)),
                         const SizedBox(height: 8),
                         _MiniActionButton(
                           label: 'Sửa',
                           onTap: state.canManageCustomers
                               ? () => context.goNamed(
                                     AppRouteNames.adminCustomerForm,
-                                    queryParameters: {'id': customer.id, 'sidebar': '3'},
+                                    queryParameters: {
+                                      'id': customer.id,
+                                      'sidebar': '3'
+                                    },
                                   )
                               : null,
                         ),
@@ -3024,7 +3769,8 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
           if (state.canManageInventory) ...[
             _MiniActionButton(
               label: 'Nhập',
-              onTap: state.isUpdating ? null : () => _importIngredients(context),
+              onTap:
+                  state.isUpdating ? null : () => _importIngredients(context),
             ),
             _MiniActionButton(
               label: 'Thêm',
@@ -3053,18 +3799,31 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(ingredient.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AdminColors.textDark)),
+                      Text(ingredient.name,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AdminColors.textDark)),
                       const SizedBox(height: 4),
                       Text(
-                        '${ingredient.category} • ${_formatCurrency(ingredient.unitPrice)} / ${ingredient.unit}',
+                        '${ingredient.category} • ${_formatCurrency(ingredient.price)} / ${ingredient.priceUnitQuantity} ${ingredient.unit}',
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(height: 4),
-                      Text('${ingredient.availableQuantity} ${ingredient.unit}', style: const TextStyle(fontSize: 12)),
+                      Text(
+                        'Đơn giá: ${_formatCurrency(ingredient.unitPrice)} / ${ingredient.unit}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                       const SizedBox(height: 4),
-                      Text('Chuẩn: ${ingredient.availableNormalizedQuantity} ${ingredient.standardUnit}', style: const TextStyle(fontSize: 12)),
+                      Text('${ingredient.availableQuantity} ${ingredient.unit}',
+                          style: const TextStyle(fontSize: 12)),
                       const SizedBox(height: 4),
-                      Text('Ngưỡng cảnh báo: ${ingredient.lowStockThreshold}', style: const TextStyle(fontSize: 12)),
+                      Text(
+                          'Chuẩn: ${ingredient.availableNormalizedQuantity} ${ingredient.standardUnit}',
+                          style: const TextStyle(fontSize: 12)),
+                      const SizedBox(height: 4),
+                      Text('Ngưỡng cảnh báo: ${ingredient.lowStockThreshold}',
+                          style: const TextStyle(fontSize: 12)),
                       const SizedBox(height: 4),
                       Text(
                         ingredient.status,
@@ -3080,15 +3839,16 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
                           Expanded(
                             child: _MiniActionButton(
                               label: 'Sửa',
-                              onTap: !state.canManageInventory || state.isUpdating
-                                  ? null
-                                  : () => context.goNamed(
-                                        AppRouteNames.adminIngredientForm,
-                                        queryParameters: {
-                                          'id': ingredient.id,
-                                          'sidebar': '4',
-                                        },
-                                      ),
+                              onTap:
+                                  !state.canManageInventory || state.isUpdating
+                                      ? null
+                                      : () => context.goNamed(
+                                            AppRouteNames.adminIngredientForm,
+                                            queryParameters: {
+                                              'id': ingredient.id,
+                                              'sidebar': '4',
+                                            },
+                                          ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -3099,28 +3859,34 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
                                       state.isUpdating ||
                                       ingredient.availableQuantity <= 0
                                   ? null
-                                  : () => state.consumeIngredient(ingredient, quantity: 1),
+                                  : () => state.consumeIngredient(ingredient,
+                                      quantity: 1),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: _MiniActionButton(
                               label: state.isUpdating ? 'Đang cập nhật' : '+5',
-                              onTap: !state.canManageInventory || state.isUpdating
+                              onTap: !state.canManageInventory ||
+                                      state.isUpdating
                                   ? null
-                                  : () => state.restockIngredient(ingredient, quantity: 5),
+                                  : () => state.restockIngredient(ingredient,
+                                      quantity: 5),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: _MiniActionButton(
                               label: 'Xóa',
-                              onTap: !state.canManageInventory || state.isUpdating
+                              onTap: !state.canManageInventory ||
+                                      state.isUpdating
                                   ? null
                                   : () => _confirmDangerAction(
                                         context,
-                                        message: 'Xóa nguyên liệu "${ingredient.name}"?',
-                                        onConfirm: () => state.deleteIngredient(ingredient),
+                                        message:
+                                            'Xóa nguyên liệu "${ingredient.name}"?',
+                                        onConfirm: () =>
+                                            state.deleteIngredient(ingredient),
                                       ),
                               backgroundColor: AdminColors.red,
                             ),
@@ -3146,7 +3912,8 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
 
   Future<void> _exportIngredients(BuildContext context) async {
     try {
-      final rows = await AppServices.instance.adminRepository.fetchIngredientExcelRows();
+      final rows =
+          await AppServices.instance.adminRepository.fetchIngredientExcelRows();
       await AdminExcelCore.exportIngredients(rows);
       if (!context.mounted) {
         return;
@@ -3156,7 +3923,8 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể xuất file Excel nguyên liệu.', isError: true);
+      _showAdminSnackBar(context, 'Không thể xuất file Excel nguyên liệu.',
+          isError: true);
     }
   }
 
@@ -3170,10 +3938,13 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
         if (!context.mounted) {
           return;
         }
-        _showAdminSnackBar(context, 'File Excel không có dữ liệu nguyên liệu hợp lệ.', isError: true);
+        _showAdminSnackBar(
+            context, 'File Excel không có dữ liệu nguyên liệu hợp lệ.',
+            isError: true);
         return;
       }
-      final result = await AppServices.instance.adminRepository.importIngredientExcelRows(rows);
+      final result = await AppServices.instance.adminRepository
+          .importIngredientExcelRows(rows);
       await state.refreshIngredientsSection();
       if (!context.mounted) {
         return;
@@ -3183,7 +3954,8 @@ class _MobileAdminIngredientsSection extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      _showAdminSnackBar(context, 'Không thể import nguyên liệu từ file Excel.', isError: true);
+      _showAdminSnackBar(context, 'Không thể import nguyên liệu từ file Excel.',
+          isError: true);
     }
   }
 }
@@ -3221,26 +3993,51 @@ class _MobileAdminRecipesSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(recipe.productTitle, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AdminColors.textDark)),
+                        Text(recipe.productTitle,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AdminColors.textDark)),
                         const SizedBox(height: 4),
-                        Text(_recipeYieldLabel(recipe), style: const TextStyle(fontSize: 12, color: AdminColors.textSoft, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        Text('Cost theo mẻ: ${_formatCurrency(recipe.totalCost)}', style: const TextStyle(fontSize: 12, color: AdminColors.green, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        Text('Cost / ${recipe.yieldUnit}: ${_formatCurrency(recipe.costPerUnit)}', style: const TextStyle(fontSize: 12, color: AdminColors.blue, fontWeight: FontWeight.w700)),
+                        Text(_recipeYieldLabel(recipe),
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: AdminColors.textSoft,
+                                fontWeight: FontWeight.w700)),
                         const SizedBox(height: 4),
                         Text(
-                          recipe.recipeType == 'semi_finished' ? 'Loại: Bán thành phẩm' : 'Loại: Thành phẩm',
+                            'Cost theo mẻ: ${_formatCurrency(recipe.totalCost)}',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: AdminColors.green,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(
+                            'Cost / ${recipe.yieldUnit}: ${_formatCurrency(recipe.costPerUnit)}',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: AdminColors.blue,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(
+                          recipe.recipeType == 'semi_finished'
+                              ? 'Loại: Bán thành phẩm'
+                              : 'Loại: Thành phẩm',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: recipe.recipeType == 'semi_finished' ? AdminColors.orange : AdminColors.blue,
+                            color: recipe.recipeType == 'semi_finished'
+                                ? AdminColors.orange
+                                : AdminColors.blue,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Lợi nhuận gộp: ${_formatCurrency(recipe.grossProfitEstimate)} • ${recipe.grossMarginPercent.toStringAsFixed(1)}%',
-                          style: const TextStyle(fontSize: 12, color: AdminColors.green, fontWeight: FontWeight.w700),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: AdminColors.green,
+                              fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 6),
                         ...recipe.ingredients.map((ingredient) => Padding(
@@ -3260,7 +4057,10 @@ class _MobileAdminRecipesSection extends StatelessWidget {
                                 onTap: state.canManageRecipes
                                     ? () => context.goNamed(
                                           AppRouteNames.adminRecipeForm,
-                                          queryParameters: {'id': recipe.id, 'sidebar': '5'},
+                                          queryParameters: {
+                                            'id': recipe.id,
+                                            'sidebar': '5'
+                                          },
                                         )
                                     : null,
                               ),
@@ -3270,7 +4070,8 @@ class _MobileAdminRecipesSection extends StatelessWidget {
                               child: _MiniActionButton(
                                 label: 'Copy',
                                 onTap: state.canManageRecipes
-                                    ? () => _openCopyRecipeDialog(context, state, recipe)
+                                    ? () => _openCopyRecipeDialog(
+                                        context, state, recipe)
                                     : null,
                               ),
                             ),
@@ -3282,8 +4083,10 @@ class _MobileAdminRecipesSection extends StatelessWidget {
                                     ? null
                                     : () => _confirmDangerAction(
                                           context,
-                                          message: 'Xóa công thức của "${recipe.productTitle}"?',
-                                          onConfirm: () => state.deleteRecipe(recipe),
+                                          message:
+                                              'Xóa công thức của "${recipe.productTitle}"?',
+                                          onConfirm: () =>
+                                              state.deleteRecipe(recipe),
                                         ),
                                 backgroundColor: AdminColors.red,
                               ),
@@ -3322,7 +4125,9 @@ class _MobileList extends StatelessWidget {
       child: Column(
         children: orders.isEmpty
             ? const [
-                Text('Chưa có đơn hàng nào.', style: TextStyle(color: AdminColors.textSoft, fontSize: 12)),
+                Text('Chưa có đơn hàng nào.',
+                    style:
+                        TextStyle(color: AdminColors.textSoft, fontSize: 12)),
               ]
             : List.generate(orders.length * 2 - 1, (index) {
                 if (index.isOdd) {
@@ -3372,11 +4177,23 @@ class _Row extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(code, style: const TextStyle(color: AdminColors.textDark, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(code,
+              style: const TextStyle(
+                  color: AdminColors.textDark,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700)),
           const SizedBox(width: 8),
-          Text(price, style: const TextStyle(color: AdminColors.textDark, fontSize: 11, fontWeight: FontWeight.w500)),
+          Text(price,
+              style: const TextStyle(
+                  color: AdminColors.textDark,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500)),
           const Spacer(),
-          Text(status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
+          Text(status,
+              style: TextStyle(
+                  color: statusColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -3401,11 +4218,24 @@ class _MobileBars extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(3, (index) {
-          final source = values.isEmpty ? [0, 0, 0] : values.take(3).toList(growable: false);
-          final maxValue = source.fold<int>(0, (max, item) => item > max ? item : max);
-          final resolvedHeight = maxValue == 0 ? 24.0 : 24 + (source[index] / maxValue) * 20;
-          final colors = [const Color(0xFF93C5FD), const Color(0xFF3B82F6), AdminColors.red];
-          return Container(width: 72, height: resolvedHeight, decoration: BoxDecoration(color: colors[index], borderRadius: BorderRadius.circular(4)));
+          final source = values.isEmpty
+              ? [0, 0, 0]
+              : values.take(3).toList(growable: false);
+          final maxValue =
+              source.fold<int>(0, (max, item) => item > max ? item : max);
+          final resolvedHeight =
+              maxValue == 0 ? 24.0 : 24 + (source[index] / maxValue) * 20;
+          final colors = [
+            const Color(0xFF93C5FD),
+            const Color(0xFF3B82F6),
+            AdminColors.red
+          ];
+          return Container(
+              width: 72,
+              height: resolvedHeight,
+              decoration: BoxDecoration(
+                  color: colors[index],
+                  borderRadius: BorderRadius.circular(4)));
         }),
       ),
     );
@@ -3518,7 +4348,8 @@ class _ProductCostReportTile extends StatelessWidget {
                       : 'Chưa map cost theo công thức',
                   style: TextStyle(
                     fontSize: 12,
-                    color: hasRecipe ? AdminColors.textSoft : AdminColors.orange,
+                    color:
+                        hasRecipe ? AdminColors.textSoft : AdminColors.orange,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -3527,7 +4358,9 @@ class _ProductCostReportTile extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            hasRecipe ? '${report.grossMarginPercent.toStringAsFixed(1)}%' : '--',
+            hasRecipe
+                ? '${report.grossMarginPercent.toStringAsFixed(1)}%'
+                : '--',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w800,
@@ -3605,8 +4438,8 @@ class _ReviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stars = '★' * review.rating.clamp(1, 5) +
-        '☆' * (5 - review.rating.clamp(1, 5));
+    final stars =
+        '★' * review.rating.clamp(1, 5) + '☆' * (5 - review.rating.clamp(1, 5));
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: _box(borderWidth: 1, radius: 8),
@@ -3801,7 +4634,8 @@ class _BestSellersList extends StatelessWidget {
     if (items.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text('Chưa có dữ liệu bán hàng.', style: TextStyle(color: AdminColors.textSoft)),
+        child: Text('Chưa có dữ liệu bán hàng.',
+            style: TextStyle(color: AdminColors.textSoft)),
       );
     }
     final maxSold = items.fold(0, (m, i) => i.totalSold > m ? i.totalSold : m);
@@ -3833,7 +4667,8 @@ class _BestSellersList extends StatelessWidget {
                 flex: 3,
                 child: Text(
                   item.title,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -3845,7 +4680,8 @@ class _BestSellersList extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: barFraction.toDouble(),
                     backgroundColor: const Color(0xFFE5E7EB),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AdminColors.green),
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(AdminColors.green),
                     minHeight: 8,
                   ),
                 ),
@@ -3853,14 +4689,18 @@ class _BestSellersList extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '${item.totalSold} cái',
-                style: const TextStyle(fontSize: 11, color: AdminColors.textSoft),
+                style:
+                    const TextStyle(fontSize: 11, color: AdminColors.textSoft),
               ),
               const SizedBox(width: 8),
               SizedBox(
                 width: 80,
                 child: Text(
                   _formatCurrency(item.revenue),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AdminColors.green),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AdminColors.green),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -3881,7 +4721,8 @@ class _CustomerSegmentsSummary extends StatelessWidget {
     if (items.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text('Chưa có dữ liệu khách hàng.', style: TextStyle(color: AdminColors.textSoft)),
+        child: Text('Chưa có dữ liệu khách hàng.',
+            style: TextStyle(color: AdminColors.textSoft)),
       );
     }
     final counts = <String, int>{};
@@ -3913,7 +4754,8 @@ class _CustomerSegmentsSummary extends StatelessWidget {
               ),
               child: Text(
                 '${counts[seg]} $seg',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700, color: color),
               ),
             );
           }).toList(growable: false),
@@ -3937,10 +4779,15 @@ class _RevenueForecastSummary extends StatelessWidget {
     if (forecast.forecast.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text('Chưa có dữ liệu dự báo.', style: TextStyle(color: AdminColors.textSoft)),
+        child: Text('Chưa có dữ liệu dự báo.',
+            style: TextStyle(color: AdminColors.textSoft)),
       );
     }
-    final trendIcon = forecast.trend == 'up' ? '↑' : forecast.trend == 'down' ? '↓' : '→';
+    final trendIcon = forecast.trend == 'up'
+        ? '↑'
+        : forecast.trend == 'down'
+            ? '↓'
+            : '→';
     final trendColor = forecast.trend == 'up'
         ? AdminColors.green
         : forecast.trend == 'down'
@@ -3959,7 +4806,8 @@ class _RevenueForecastSummary extends StatelessWidget {
             ),
             Text(
               '$trendIcon ${forecast.trend == 'up' ? 'Tăng' : forecast.trend == 'down' ? 'Giảm' : 'Ổn định'}',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: trendColor),
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w800, color: trendColor),
             ),
             const SizedBox(width: 12),
             Text(
@@ -3995,12 +4843,14 @@ class _RevenueForecastSummary extends StatelessWidget {
                   width: 90,
                   child: Text(
                     day.date,
-                    style: const TextStyle(fontSize: 11, color: AdminColors.textSoft),
+                    style: const TextStyle(
+                        fontSize: 11, color: AdminColors.textSoft),
                   ),
                 ),
                 Text(
                   _formatCurrency(day.predicted),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -4023,12 +4873,14 @@ class _AdminLoadingSkeleton extends StatelessWidget {
         SizedBox(
           height: 80,
           child: Row(
-            children: List.generate(4, (i) => Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: i < 3 ? 10 : 0),
-                child: _skelBox(80),
-              ),
-            )),
+            children: List.generate(
+                4,
+                (i) => Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: i < 3 ? 10 : 0),
+                        child: _skelBox(80),
+                      ),
+                    )),
           ),
         ),
         const SizedBox(height: 12),
@@ -4038,13 +4890,15 @@ class _AdminLoadingSkeleton extends StatelessWidget {
           children: [
             Expanded(flex: 5, child: _skelBox(300)),
             const SizedBox(width: 12),
-            Expanded(flex: 3, child: Column(
-              children: [
-                _skelBox(140),
-                const SizedBox(height: 12),
-                _skelBox(140),
-              ],
-            )),
+            Expanded(
+                flex: 3,
+                child: Column(
+                  children: [
+                    _skelBox(140),
+                    const SizedBox(height: 12),
+                    _skelBox(140),
+                  ],
+                )),
           ],
         ),
         const SizedBox(height: 12),
@@ -4054,15 +4908,16 @@ class _AdminLoadingSkeleton extends StatelessWidget {
   }
 
   Widget _skelBox(double height) => _ShimmerAdmin(
-    child: Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AdminColors.gray.withOpacity(0.3), width: 1.5),
-      ),
-    ),
-  );
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: AdminColors.gray.withOpacity(0.3), width: 1.5),
+          ),
+        ),
+      );
 }
 
 class _ShimmerAdmin extends StatefulWidget {
@@ -4072,19 +4927,26 @@ class _ShimmerAdmin extends StatefulWidget {
   State<_ShimmerAdmin> createState() => _ShimmerAdminState();
 }
 
-class _ShimmerAdminState extends State<_ShimmerAdmin> with SingleTickerProviderStateMixin {
+class _ShimmerAdminState extends State<_ShimmerAdmin>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _anim;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
-    _anim = Tween<double>(begin: -2, end: 2).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat();
+    _anim = Tween<double>(begin: -2, end: 2)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -4095,7 +4957,11 @@ class _ShimmerAdminState extends State<_ShimmerAdmin> with SingleTickerProviderS
         shaderCallback: (bounds) => LinearGradient(
           begin: Alignment(_anim.value - 1, 0),
           end: Alignment(_anim.value + 1, 0),
-          colors: const [Color(0xFFF0F0F0), Color(0xFFE0E0E0), Color(0xFFF0F0F0)],
+          colors: const [
+            Color(0xFFF0F0F0),
+            Color(0xFFE0E0E0),
+            Color(0xFFF0F0F0)
+          ],
         ).createShader(bounds),
         child: child,
       ),
@@ -4104,20 +4970,24 @@ class _ShimmerAdminState extends State<_ShimmerAdmin> with SingleTickerProviderS
   }
 }
 
-BoxDecoration _box({double borderWidth = 2, double radius = 10}) => BoxDecoration(
+BoxDecoration _box({double borderWidth = 2, double radius = 10}) =>
+    BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(color: AdminColors.gray, width: borderWidth),
     );
 
-String _formatCurrency(int amount) => '${amount.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}đ';
+String _formatCurrency(int amount) =>
+    '${amount.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}đ';
 
 Color _statusColor(String status) {
   final normalized = status.toLowerCase();
   if (normalized.contains('mới')) return const Color(0xFF2563EB);
   if (normalized.contains('xử lý')) return AdminColors.orange;
-  if (normalized.contains('giao') || normalized.contains('hoàn tất')) return const Color(0xFF059669);
-  if (normalized.contains('huỷ') || normalized.contains('lỗi')) return AdminColors.red;
+  if (normalized.contains('giao') || normalized.contains('hoàn tất'))
+    return const Color(0xFF059669);
+  if (normalized.contains('huỷ') || normalized.contains('lỗi'))
+    return AdminColors.red;
   return AdminColors.gray;
 }
 
@@ -4170,6 +5040,96 @@ Color _toneDescColor(String tone) {
       return const Color(0xFFD97706);
     default:
       return const Color(0xFF2563EB);
+  }
+}
+
+Future<void> _showCategoryDialog(
+  BuildContext context,
+  AdminState state, {
+  AdminCategoryModel? category,
+}) async {
+  final labelController = TextEditingController(text: category?.label ?? '');
+  final categoryController =
+      TextEditingController(text: category?.category ?? '');
+  final imageUrlController =
+      TextEditingController(text: category?.imageUrl ?? '');
+  final sortOrderController = TextEditingController(
+      text: '${category?.sortOrder ?? state.categories.length}');
+  final isEdit = category != null;
+
+  final draft = await showDialog<AdminCategoryDraft>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(isEdit ? 'Sửa danh mục' : 'Thêm danh mục'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: labelController,
+              decoration: const InputDecoration(labelText: 'Tên hiển thị'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: categoryController,
+              decoration: const InputDecoration(labelText: 'Giá trị danh mục'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: imageUrlController,
+              decoration: const InputDecoration(labelText: 'URL hình ảnh'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: sortOrderController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Thứ tự'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final label = labelController.text.trim();
+            final value = categoryController.text.trim();
+            if (label.isEmpty || value.isEmpty) {
+              return;
+            }
+            Navigator.of(context).pop(
+              AdminCategoryDraft(
+                label: label,
+                category: value,
+                imageUrl: imageUrlController.text.trim().isEmpty
+                    ? null
+                    : imageUrlController.text.trim(),
+                sortOrder: int.tryParse(sortOrderController.text.trim()) ?? 0,
+              ),
+            );
+          },
+          child: const Text('Lưu'),
+        ),
+      ],
+    ),
+  );
+
+  labelController.dispose();
+  categoryController.dispose();
+  imageUrlController.dispose();
+  sortOrderController.dispose();
+
+  if (draft == null) {
+    return;
+  }
+  if (isEdit) {
+    await state.updateCategory(category.id, draft);
+  } else {
+    await state.createCategory(draft);
   }
 }
 
@@ -4256,7 +5216,8 @@ Future<void> _openCopyRecipeDialog(
   AdminState state,
   AdminRecipeModel recipe,
 ) async {
-  final options = await AppServices.instance.adminRepository.fetchRecipeOptions();
+  final options =
+      await AppServices.instance.adminRepository.fetchRecipeOptions();
   final candidates = options.products;
   if (!context.mounted) {
     return;
@@ -4342,9 +5303,15 @@ Future<void> _openVoucherDialog(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: codeController, decoration: const InputDecoration(labelText: 'Mã voucher')),
-                TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Tiêu đề')),
-                TextField(controller: noteController, decoration: const InputDecoration(labelText: 'Ghi chú')),
+                TextField(
+                    controller: codeController,
+                    decoration: const InputDecoration(labelText: 'Mã voucher')),
+                TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(labelText: 'Tiêu đề')),
+                TextField(
+                    controller: noteController,
+                    decoration: const InputDecoration(labelText: 'Ghi chú')),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: accent,
@@ -4354,7 +5321,8 @@ Future<void> _openVoucherDialog(
                     DropdownMenuItem(value: 'green', child: Text('Green')),
                     DropdownMenuItem(value: 'orange', child: Text('Orange')),
                   ],
-                  onChanged: (value) => setModalState(() => accent = value ?? 'red'),
+                  onChanged: (value) =>
+                      setModalState(() => accent = value ?? 'red'),
                   decoration: const InputDecoration(labelText: 'Accent'),
                 ),
                 const SizedBox(height: 12),
@@ -4362,9 +5330,11 @@ Future<void> _openVoucherDialog(
                   value: discountType,
                   items: const [
                     DropdownMenuItem(value: 'percent', child: Text('Percent')),
-                    DropdownMenuItem(value: 'shipping', child: Text('Shipping')),
+                    DropdownMenuItem(
+                        value: 'shipping', child: Text('Shipping')),
                   ],
-                  onChanged: (value) => setModalState(() => discountType = value ?? 'percent'),
+                  onChanged: (value) =>
+                      setModalState(() => discountType = value ?? 'percent'),
                   decoration: const InputDecoration(labelText: 'Loại giảm giá'),
                 ),
                 TextField(
@@ -4396,7 +5366,8 @@ Future<void> _openVoucherDialog(
                   accent: accent,
                   discountType: discountType,
                   discountValue: int.tryParse(valueController.text.trim()) ?? 0,
-                  minOrderValue: int.tryParse(minOrderController.text.trim()) ?? 0,
+                  minOrderValue:
+                      int.tryParse(minOrderController.text.trim()) ?? 0,
                 ),
               );
             },
@@ -4590,8 +5561,10 @@ Future<void> _openHomeContentFormDialog(
   final storyTitleController = TextEditingController(text: page.story.title);
   final storyDescriptionController =
       TextEditingController(text: page.story.description);
-  final storyBadgeController = TextEditingController(text: page.story.badgeText);
-  final promoMessageController = TextEditingController(text: page.promo.message);
+  final storyBadgeController =
+      TextEditingController(text: page.story.badgeText);
+  final promoMessageController =
+      TextEditingController(text: page.promo.message);
   final promoActionController =
       TextEditingController(text: page.promo.action.label);
   final footerTaglineController =
@@ -4607,7 +5580,8 @@ Future<void> _openHomeContentFormDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _ContentFormField(label: 'Hero title', controller: heroTitleController),
+              _ContentFormField(
+                  label: 'Hero title', controller: heroTitleController),
               _ContentFormField(
                 label: 'Hero description',
                 controller: heroDescriptionController,
@@ -4726,7 +5700,8 @@ Future<void> _openStoryContentFormDialog(
   final heroDescriptionController =
       TextEditingController(text: page.heroDescription);
   final heroBadgeController = TextEditingController(text: page.heroBadge);
-  final timelineTitleController = TextEditingController(text: page.timelineTitle);
+  final timelineTitleController =
+      TextEditingController(text: page.timelineTitle);
   final imageTimelineTitleController =
       TextEditingController(text: page.imageTimelineTitle);
   final valuesTitleController = TextEditingController(text: page.values.title);
@@ -4748,14 +5723,17 @@ Future<void> _openStoryContentFormDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _ContentFormField(label: 'Header title', controller: headerTitleController),
-              _ContentFormField(label: 'Hero title', controller: heroTitleController),
+              _ContentFormField(
+                  label: 'Header title', controller: headerTitleController),
+              _ContentFormField(
+                  label: 'Hero title', controller: heroTitleController),
               _ContentFormField(
                 label: 'Hero description',
                 controller: heroDescriptionController,
                 maxLines: 3,
               ),
-              _ContentFormField(label: 'Hero badge', controller: heroBadgeController),
+              _ContentFormField(
+                  label: 'Hero badge', controller: heroBadgeController),
               _ContentFormField(
                 label: 'Timeline title',
                 controller: timelineTitleController,
@@ -4768,7 +5746,8 @@ Future<void> _openStoryContentFormDialog(
                 label: 'Values title',
                 controller: valuesTitleController,
               ),
-              _ContentFormField(label: 'Craft title', controller: craftTitleController),
+              _ContentFormField(
+                  label: 'Craft title', controller: craftTitleController),
               _ContentFormField(
                 label: 'Craft description',
                 controller: craftDescriptionController,
@@ -4861,13 +5840,15 @@ Future<void> _openContactContentFormDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _ContentFormField(label: 'Hero title', controller: heroTitleController),
+              _ContentFormField(
+                  label: 'Hero title', controller: heroTitleController),
               _ContentFormField(
                 label: 'Hero description',
                 controller: heroDescriptionController,
                 maxLines: 3,
               ),
-              _ContentFormField(label: 'Form title', controller: formTitleController),
+              _ContentFormField(
+                  label: 'Form title', controller: formTitleController),
               _ContentFormField(
                 label: 'Submit label',
                 controller: submitLabelController,
@@ -4949,15 +5930,19 @@ Future<void> _openAuthContentFormDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _ContentFormField(label: 'Header brand', controller: headerBrandController),
-              _ContentFormField(label: 'Header title', controller: headerTitleController),
-              _ContentFormField(label: 'Intro title', controller: introTitleController),
+              _ContentFormField(
+                  label: 'Header brand', controller: headerBrandController),
+              _ContentFormField(
+                  label: 'Header title', controller: headerTitleController),
+              _ContentFormField(
+                  label: 'Intro title', controller: introTitleController),
               _ContentFormField(
                 label: 'Intro description',
                 controller: introDescriptionController,
                 maxLines: 3,
               ),
-              _ContentFormField(label: 'Help text', controller: helpTextController),
+              _ContentFormField(
+                  label: 'Help text', controller: helpTextController),
               _ContentFormField(
                 label: 'Primary action',
                 controller: primaryActionController,

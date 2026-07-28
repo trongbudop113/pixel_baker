@@ -20,6 +20,7 @@ class AdminViewState {
     this.dashboard = defaultAdminDashboard,
     this.orders = const [],
     this.products = const [],
+    this.categories = const [],
     this.customers = const [],
     this.importAuditLogs = const [],
     this.vouchers = const [],
@@ -52,6 +53,7 @@ class AdminViewState {
   final AdminDashboardModel dashboard;
   final List<AdminOrderModel> orders;
   final List<AdminProductModel> products;
+  final List<AdminCategoryModel> categories;
   final List<AdminCustomerModel> customers;
   final List<AdminImportAuditLogModel> importAuditLogs;
   final List<AdminVoucherModel> vouchers;
@@ -84,6 +86,7 @@ class AdminViewState {
     AdminDashboardModel? dashboard,
     List<AdminOrderModel>? orders,
     List<AdminProductModel>? products,
+    List<AdminCategoryModel>? categories,
     List<AdminCustomerModel>? customers,
     List<AdminImportAuditLogModel>? importAuditLogs,
     List<AdminVoucherModel>? vouchers,
@@ -117,6 +120,7 @@ class AdminViewState {
       dashboard: dashboard ?? this.dashboard,
       orders: orders ?? this.orders,
       products: products ?? this.products,
+      categories: categories ?? this.categories,
       customers: customers ?? this.customers,
       importAuditLogs: importAuditLogs ?? this.importAuditLogs,
       vouchers: vouchers ?? this.vouchers,
@@ -155,6 +159,7 @@ class AdminViewState {
         other.dashboard == dashboard &&
         _sameOrders(other.orders, orders) &&
         _sameProducts(other.products, products) &&
+        _sameCategories(other.categories, categories) &&
         _sameCustomers(other.customers, customers) &&
         _sameImportAuditLogs(other.importAuditLogs, importAuditLogs) &&
         _sameVouchers(other.vouchers, vouchers) &&
@@ -192,6 +197,7 @@ class AdminViewState {
         dashboard,
         Object.hashAll(orders),
         Object.hashAll(products),
+        Object.hashAll(categories),
         Object.hashAll(customers),
         Object.hashAll(importAuditLogs),
         Object.hashAll(vouchers),
@@ -234,6 +240,7 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   AdminDashboardModel get dashboard => state.dashboard;
   List<AdminOrderModel> get orders => state.orders;
   List<AdminProductModel> get products => state.products;
+  List<AdminCategoryModel> get categories => state.categories;
   List<AdminCustomerModel> get customers => state.customers;
   List<AdminImportAuditLogModel> get importAuditLogs => state.importAuditLogs;
   List<AdminVoucherModel> get vouchers => state.vouchers;
@@ -249,7 +256,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   AdminRevenueSummaryModel get revenueSummary => state.revenueSummary;
   String get revenueRange => state.revenueRange;
   List<AdminBestSellerModel> get bestSellers => state.bestSellers;
-  List<AdminCustomerSegmentModel> get customerSegments => state.customerSegments;
+  List<AdminCustomerSegmentModel> get customerSegments =>
+      state.customerSegments;
   AdminRevenueForecastModel get revenueForecast => state.revenueForecast;
   bool get isLoading => state.isLoading;
   bool get isUpdating => state.isUpdating;
@@ -301,6 +309,7 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     }
     if (canViewProducts) {
       items.add(const AdminSidebarItem(index: 2, label: 'Sản phẩm'));
+      items.add(const AdminSidebarItem(index: 12, label: 'Danh mục'));
     }
     if (canViewCustomers) {
       items.add(const AdminSidebarItem(index: 3, label: 'Khách hàng'));
@@ -410,7 +419,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
 
   Future<void> forceReload() async {
     _hasLoaded = true;
-    update((current) => current.copyWith(isLoading: true, clearErrorMessage: true));
+    update((current) =>
+        current.copyWith(isLoading: true, clearErrorMessage: true));
     final errors = <String>[];
 
     final dashboard = canViewReports || canAccessAdmin
@@ -437,6 +447,14 @@ class AdminState extends ScreenController<AdminViewState, Never> {
             label: 'products',
           )
         : state.products;
+    final categories = canViewProducts
+        ? await _loadSection(
+            loader: _repository.fetchCategories,
+            fallback: state.categories,
+            errors: errors,
+            label: 'categories',
+          )
+        : state.categories;
     final customers = canViewCustomers
         ? await _loadSection(
             loader: _repository.fetchCustomers,
@@ -563,6 +581,7 @@ class AdminState extends ScreenController<AdminViewState, Never> {
           dashboard: dashboard,
           orders: orders,
           products: products,
+          categories: categories,
           customers: customers,
           importAuditLogs: importAuditLogs,
           vouchers: vouchers,
@@ -594,14 +613,23 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     }
     update((current) => current.copyWith(selectedSidebarIndex: index));
   }
-  void setOrderSearch(String value) => update((current) => current.copyWith(orderSearch: value));
-  void setProductSearch(String value) => update((current) => current.copyWith(productSearch: value));
-  void setCustomerSearch(String value) => update((current) => current.copyWith(customerSearch: value));
-  void setIngredientSearch(String value) => update((current) => current.copyWith(ingredientSearch: value));
-  void setOrderSort(String value) => update((current) => current.copyWith(orderSort: value));
-  void setProductSort(String value) => update((current) => current.copyWith(productSort: value));
-  void setCustomerSort(String value) => update((current) => current.copyWith(customerSort: value));
-  void setIngredientSort(String value) => update((current) => current.copyWith(ingredientSort: value));
+
+  void setOrderSearch(String value) =>
+      update((current) => current.copyWith(orderSearch: value));
+  void setProductSearch(String value) =>
+      update((current) => current.copyWith(productSearch: value));
+  void setCustomerSearch(String value) =>
+      update((current) => current.copyWith(customerSearch: value));
+  void setIngredientSearch(String value) =>
+      update((current) => current.copyWith(ingredientSearch: value));
+  void setOrderSort(String value) =>
+      update((current) => current.copyWith(orderSort: value));
+  void setProductSort(String value) =>
+      update((current) => current.copyWith(productSort: value));
+  void setCustomerSort(String value) =>
+      update((current) => current.copyWith(customerSort: value));
+  void setIngredientSort(String value) =>
+      update((current) => current.copyWith(ingredientSort: value));
 
   Future<void> advanceOrderStatus(AdminOrderModel order) async {
     final nextStatus = switch (order.status.toLowerCase()) {
@@ -614,16 +642,19 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     await _updateOrder(order.orderId, nextStatus);
   }
 
-  Future<AdminOrderAdvanceCheckModel> getOrderAdvanceCheck(AdminOrderModel order) {
+  Future<AdminOrderAdvanceCheckModel> getOrderAdvanceCheck(
+      AdminOrderModel order) {
     return _repository.fetchOrderAdvanceCheck(order.orderId);
   }
 
   Future<void> toggleProductStock(AdminProductModel product) async {
     final nextStatus =
         product.stockStatus.toLowerCase() == 'còn hàng' ? 'Tạm ẩn' : 'Còn hàng';
-    update((current) => current.copyWith(isUpdating: true, clearErrorMessage: true));
+    update((current) =>
+        current.copyWith(isUpdating: true, clearErrorMessage: true));
     try {
-      final updated = await _repository.updateProductStock(product.id, nextStatus);
+      final updated =
+          await _repository.updateProductStock(product.id, nextStatus);
       final updatedProducts = [
         for (final item in state.products)
           if (item.id == updated.id) updated else item,
@@ -634,7 +665,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
             clearErrorMessage: true,
           ));
     } on ApiException catch (error) {
-      update((current) => current.copyWith(isUpdating: false, errorMessage: error.message));
+      update((current) =>
+          current.copyWith(isUpdating: false, errorMessage: error.message));
     } catch (_) {
       update((current) => current.copyWith(
             isUpdating: false,
@@ -659,6 +691,48 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     );
   }
 
+  Future<void> createCategory(AdminCategoryDraft draft) async {
+    await _wrapUpdate(
+      action: () async {
+        final created = await _repository.createCategory(draft);
+        final categories = [...state.categories, created]
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        update((current) => current.copyWith(categories: categories));
+      },
+      fallbackMessage: 'Không thể tạo danh mục.',
+    );
+  }
+
+  Future<void> updateCategory(
+      String categoryId, AdminCategoryDraft draft) async {
+    await _wrapUpdate(
+      action: () async {
+        final updated = await _repository.updateCategory(categoryId, draft);
+        final categories = [
+          for (final item in state.categories)
+            if (item.id == categoryId) updated else item,
+        ]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        update((current) => current.copyWith(categories: categories));
+      },
+      fallbackMessage: 'Không thể cập nhật danh mục.',
+    );
+  }
+
+  Future<void> deleteCategory(AdminCategoryModel category) async {
+    await _wrapUpdate(
+      action: () async {
+        await _repository.deleteCategory(category.id);
+        update((current) => current.copyWith(
+              categories: [
+                for (final item in current.categories)
+                  if (item.id != category.id) item,
+              ],
+            ));
+      },
+      fallbackMessage: 'Không thể xóa danh mục.',
+    );
+  }
+
   Future<void> reloadRecipes() async {
     try {
       final recipes = await _repository.fetchRecipes();
@@ -671,7 +745,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     } on ApiException catch (error) {
       update((current) => current.copyWith(errorMessage: error.message));
     } catch (_) {
-      update((current) => current.copyWith(errorMessage: 'Không thể tải danh sách công thức.'));
+      update((current) =>
+          current.copyWith(errorMessage: 'Không thể tải danh sách công thức.'));
     }
   }
 
@@ -725,7 +800,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
       action: () async {
         final dashboard = await _repository.fetchDashboard();
         final ingredients = await _repository.fetchIngredients();
-        final inventoryTransactions = await _repository.fetchInventoryTransactions();
+        final inventoryTransactions =
+            await _repository.fetchInventoryTransactions();
         update((current) => current.copyWith(
               dashboard: dashboard,
               ingredients: ingredients,
@@ -736,11 +812,13 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     );
   }
 
-  Future<void> restockIngredient(AdminIngredientModel ingredient, {int quantity = 5}) async {
+  Future<void> restockIngredient(AdminIngredientModel ingredient,
+      {int quantity = 5}) async {
     await _updateIngredient(ingredient.id, quantityDelta: quantity);
   }
 
-  Future<void> consumeIngredient(AdminIngredientModel ingredient, {int quantity = 1}) async {
+  Future<void> consumeIngredient(AdminIngredientModel ingredient,
+      {int quantity = 1}) async {
     await _updateIngredient(ingredient.id, quantityDelta: -quantity);
   }
 
@@ -850,7 +928,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
       update((current) => current.copyWith(errorMessage: error.message));
       return null;
     } catch (_) {
-      update((current) => current.copyWith(errorMessage: 'Không thể tải nội dung trang.'));
+      update((current) =>
+          current.copyWith(errorMessage: 'Không thể tải nội dung trang.'));
       return null;
     }
   }
@@ -885,7 +964,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   }
 
   Future<void> bulkAdvanceFilteredOrders() async {
-    final orderIds = filteredOrders.map((item) => item.orderId).toList(growable: false);
+    final orderIds =
+        filteredOrders.map((item) => item.orderId).toList(growable: false);
     if (orderIds.isEmpty) {
       return;
     }
@@ -900,7 +980,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
   }
 
   Future<void> bulkHideFilteredProducts() async {
-    final productIds = filteredProducts.map((item) => item.id).toList(growable: false);
+    final productIds =
+        filteredProducts.map((item) => item.id).toList(growable: false);
     if (productIds.isEmpty) {
       return;
     }
@@ -914,7 +995,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     );
   }
 
-  Future<void> _updateIngredient(String ingredientId, {required int quantityDelta}) async {
+  Future<void> _updateIngredient(String ingredientId,
+      {required int quantityDelta}) async {
     await _wrapUpdate(
       action: () async {
         final updated = await _repository.updateIngredient(
@@ -944,7 +1026,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
 
   Future<void> _refreshCostReportsOnly() async {
     final productCostReports = await _repository.fetchProductCostReports();
-    update((current) => current.copyWith(productCostReports: productCostReports));
+    update(
+        (current) => current.copyWith(productCostReports: productCostReports));
   }
 
   Future<void> deleteReview(int productId, String createdAt) async {
@@ -952,7 +1035,8 @@ class AdminState extends ScreenController<AdminViewState, Never> {
       action: () async {
         await _repository.deleteReview(productId, createdAt);
         final updated = state.reviews
-            .where((r) => !(r.productId == productId && r.createdAt == createdAt))
+            .where(
+                (r) => !(r.productId == productId && r.createdAt == createdAt))
             .toList(growable: false);
         update((current) => current.copyWith(reviews: updated));
       },
@@ -977,14 +1061,18 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     required Future<void> Function() action,
     required String fallbackMessage,
   }) async {
-    update((current) => current.copyWith(isUpdating: true, clearErrorMessage: true));
+    update((current) =>
+        current.copyWith(isUpdating: true, clearErrorMessage: true));
     try {
       await action();
-      update((current) => current.copyWith(isUpdating: false, clearErrorMessage: true));
+      update((current) =>
+          current.copyWith(isUpdating: false, clearErrorMessage: true));
     } on ApiException catch (error) {
-      update((current) => current.copyWith(isUpdating: false, errorMessage: error.message));
+      update((current) =>
+          current.copyWith(isUpdating: false, errorMessage: error.message));
     } catch (_) {
-      update((current) => current.copyWith(isUpdating: false, errorMessage: fallbackMessage));
+      update((current) =>
+          current.copyWith(isUpdating: false, errorMessage: fallbackMessage));
     }
   }
 
@@ -1033,7 +1121,8 @@ bool _sameOrders(List<AdminOrderModel> left, List<AdminOrderModel> right) {
   return true;
 }
 
-bool _sameProducts(List<AdminProductModel> left, List<AdminProductModel> right) {
+bool _sameProducts(
+    List<AdminProductModel> left, List<AdminProductModel> right) {
   if (left.length != right.length) return false;
   for (var i = 0; i < left.length; i++) {
     final a = left[i];
@@ -1050,7 +1139,27 @@ bool _sameProducts(List<AdminProductModel> left, List<AdminProductModel> right) 
   return true;
 }
 
-bool _sameCustomers(List<AdminCustomerModel> left, List<AdminCustomerModel> right) {
+bool _sameCategories(
+  List<AdminCategoryModel> left,
+  List<AdminCategoryModel> right,
+) {
+  if (left.length != right.length) return false;
+  for (var i = 0; i < left.length; i++) {
+    final a = left[i];
+    final b = right[i];
+    if (a.id != b.id ||
+        a.label != b.label ||
+        a.category != b.category ||
+        a.imageUrl != b.imageUrl ||
+        a.sortOrder != b.sortOrder) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool _sameCustomers(
+    List<AdminCustomerModel> left, List<AdminCustomerModel> right) {
   if (left.length != right.length) return false;
   for (var i = 0; i < left.length; i++) {
     final a = left[i];
@@ -1089,7 +1198,8 @@ bool _sameImportAuditLogs(
   return true;
 }
 
-bool _sameVouchers(List<AdminVoucherModel> left, List<AdminVoucherModel> right) {
+bool _sameVouchers(
+    List<AdminVoucherModel> left, List<AdminVoucherModel> right) {
   if (left.length != right.length) return false;
   for (var i = 0; i < left.length; i++) {
     final a = left[i];
@@ -1107,7 +1217,8 @@ bool _sameVouchers(List<AdminVoucherModel> left, List<AdminVoucherModel> right) 
   return true;
 }
 
-bool _sameTestimonials(List<AdminTestimonialModel> left, List<AdminTestimonialModel> right) {
+bool _sameTestimonials(
+    List<AdminTestimonialModel> left, List<AdminTestimonialModel> right) {
   if (left.length != right.length) return false;
   for (var i = 0; i < left.length; i++) {
     final a = left[i];
@@ -1124,19 +1235,23 @@ bool _sameTestimonials(List<AdminTestimonialModel> left, List<AdminTestimonialMo
   return true;
 }
 
-bool _sameContents(List<AdminContentDocumentModel> left, List<AdminContentDocumentModel> right) {
+bool _sameContents(List<AdminContentDocumentModel> left,
+    List<AdminContentDocumentModel> right) {
   if (left.length != right.length) return false;
   for (var i = 0; i < left.length; i++) {
     final a = left[i];
     final b = right[i];
-    if (a.key != b.key || a.title != b.title || a.jsonContent != b.jsonContent) {
+    if (a.key != b.key ||
+        a.title != b.title ||
+        a.jsonContent != b.jsonContent) {
       return false;
     }
   }
   return true;
 }
 
-bool _sameIngredients(List<AdminIngredientModel> left, List<AdminIngredientModel> right) {
+bool _sameIngredients(
+    List<AdminIngredientModel> left, List<AdminIngredientModel> right) {
   if (left.length != right.length) return false;
   for (var i = 0; i < left.length; i++) {
     final a = left[i];
@@ -1147,6 +1262,8 @@ bool _sameIngredients(List<AdminIngredientModel> left, List<AdminIngredientModel
         a.unit != b.unit ||
         a.standardUnit != b.standardUnit ||
         a.conversionFactor != b.conversionFactor ||
+        a.price != b.price ||
+        a.priceUnitQuantity != b.priceUnitQuantity ||
         a.unitPrice != b.unitPrice ||
         a.availableQuantity != b.availableQuantity ||
         a.availableNormalizedQuantity != b.availableNormalizedQuantity ||

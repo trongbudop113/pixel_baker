@@ -12,6 +12,10 @@ abstract class AdminRepository {
   Future<AdminOrderModel> updateOrderStatus(String orderId, String status);
   Future<String> bulkUpdateOrders(List<String> orderIds, String status);
   Future<List<AdminProductModel>> fetchProducts();
+  Future<List<AdminCategoryModel>> fetchCategories();
+  Future<AdminCategoryModel> createCategory(AdminCategoryDraft draft);
+  Future<AdminCategoryModel> updateCategory(String categoryId, AdminCategoryDraft draft);
+  Future<void> deleteCategory(String categoryId);
   Future<List<AdminProductExcelRow>> fetchProductExcelRows();
   Future<AdminBulkImportResultModel> importProductExcelRows(List<AdminProductExcelRow> rows);
   Future<AdminProductModel> updateProductStock(int productId, String stockStatus);
@@ -180,6 +184,59 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       decoder: (json) => readList(_unwrapListPayload(json), AdminProductModel.fromJson),
     );
     return response.data;
+  }
+
+  @override
+  Future<List<AdminCategoryModel>> fetchCategories() async {
+    final response = await apiClient.get<List<AdminCategoryModel>>(
+      '/admin/categories',
+      requiresAuth: true,
+      decoder: (json) => readList(
+        _unwrapListPayload(json),
+        AdminCategoryModel.fromJson,
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<AdminCategoryModel> createCategory(AdminCategoryDraft draft) async {
+    final response = await apiClient.post<AdminCategoryModel>(
+      '/admin/categories',
+      requiresAuth: true,
+      body: draft.toJson(),
+      decoder: (json) => readItem(
+        _unwrapItemPayload(json),
+        AdminCategoryModel.fromJson,
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<AdminCategoryModel> updateCategory(
+    String categoryId,
+    AdminCategoryDraft draft,
+  ) async {
+    final response = await apiClient.put<AdminCategoryModel>(
+      '/admin/categories/$categoryId',
+      requiresAuth: true,
+      body: draft.toJson(),
+      decoder: (json) => readItem(
+        _unwrapItemPayload(json),
+        AdminCategoryModel.fromJson,
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<void> deleteCategory(String categoryId) async {
+    await apiClient.delete<Object?>(
+      '/admin/categories/$categoryId',
+      requiresAuth: true,
+      decoder: (json) => _unwrapItemPayload(json),
+    );
   }
 
   @override

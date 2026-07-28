@@ -4,6 +4,8 @@
     "name": "Bột mì số 13",
     "category": "Bột",
     "unit": "kg",
+    "price": 38000,
+    "priceUnitQuantity": 1,
     "unitPrice": 38000,
     "availableQuantity": 42,
     "lowStockThreshold": 12
@@ -13,6 +15,8 @@
     "name": "Bơ Anchor",
     "category": "Bơ sữa",
     "unit": "kg",
+    "price": 245000,
+    "priceUnitQuantity": 1,
     "unitPrice": 245000,
     "availableQuantity": 8,
     "lowStockThreshold": 10
@@ -22,6 +26,8 @@
     "name": "Cream Cheese",
     "category": "Bơ sữa",
     "unit": "kg",
+    "price": 210000,
+    "priceUnitQuantity": 1,
     "unitPrice": 210000,
     "availableQuantity": 5,
     "lowStockThreshold": 6
@@ -31,6 +37,8 @@
     "name": "Trứng gà trang trại",
     "category": "Trứng",
     "unit": "vỉ",
+    "price": 42000,
+    "priceUnitQuantity": 1,
     "unitPrice": 42000,
     "availableQuantity": 18,
     "lowStockThreshold": 8
@@ -40,6 +48,8 @@
     "name": "Dâu tây tươi",
     "category": "Trái cây",
     "unit": "hộp",
+    "price": 95000,
+    "priceUnitQuantity": 1,
     "unitPrice": 95000,
     "availableQuantity": 0,
     "lowStockThreshold": 4

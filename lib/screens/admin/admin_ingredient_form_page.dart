@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/models/admin_models.dart';
+import '../../app/network/api_exception.dart';
 import '../../app/repositories/admin_repository.dart';
 import '../../app/routing/app_router.dart';
 import '../../app/services/app_services.dart';
@@ -28,16 +29,27 @@ class _ResponsiveAdminIngredientFormScreenState
   final AdminRepository _repository = AppServices.instance.adminRepository;
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();
-  final _unitPriceController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _priceUnitQuantityController = TextEditingController();
   final _availableQuantityController = TextEditingController();
   final _lowStockThresholdController = TextEditingController();
+
+  static const _unitOptions = ['ml', 'g', 'cái'];
 
   String _unit = 'g';
   bool _isLoading = false;
   bool _isSaving = false;
   String? _message;
 
-  bool get _isEditMode => widget.ingredientId != null && widget.ingredientId!.isNotEmpty;
+  bool get _isEditMode =>
+      widget.ingredientId != null && widget.ingredientId!.isNotEmpty;
+
+  List<String> get _visibleUnitOptions {
+    if (_unitOptions.contains(_unit)) {
+      return _unitOptions;
+    }
+    return [..._unitOptions, _unit];
+  }
 
   @override
   void initState() {
@@ -51,7 +63,8 @@ class _ResponsiveAdminIngredientFormScreenState
   void dispose() {
     _nameController.dispose();
     _categoryController.dispose();
-    _unitPriceController.dispose();
+    _priceController.dispose();
+    _priceUnitQuantityController.dispose();
     _availableQuantityController.dispose();
     _lowStockThresholdController.dispose();
     super.dispose();
@@ -63,11 +76,13 @@ class _ResponsiveAdminIngredientFormScreenState
       _message = null;
     });
     try {
-      final ingredient = await _repository.fetchIngredient(widget.ingredientId!);
+      final ingredient =
+          await _repository.fetchIngredient(widget.ingredientId!);
       final draft = AdminIngredientDraft.fromIngredient(ingredient);
       _nameController.text = draft.name;
       _categoryController.text = draft.category;
-      _unitPriceController.text = draft.unitPrice.toString();
+      _priceController.text = draft.price.toString();
+      _priceUnitQuantityController.text = draft.priceUnitQuantity.toString();
       _availableQuantityController.text = draft.availableQuantity.toString();
       _lowStockThresholdController.text = draft.lowStockThreshold.toString();
       _unit = draft.unit;
@@ -85,17 +100,28 @@ class _ResponsiveAdminIngredientFormScreenState
   AdminIngredientDraft? _buildDraft() {
     final name = _nameController.text.trim();
     final category = _categoryController.text.trim();
-    final unitPrice = int.tryParse(_unitPriceController.text.trim());
-    final availableQuantity = int.tryParse(_availableQuantityController.text.trim());
-    final lowStockThreshold = int.tryParse(_lowStockThresholdController.text.trim());
+    final price = int.tryParse(_priceController.text.trim());
+    final priceUnitQuantity =
+        int.tryParse(_priceUnitQuantityController.text.trim());
+    final availableQuantity =
+        int.tryParse(_availableQuantityController.text.trim());
+    final lowStockThreshold =
+        int.tryParse(_lowStockThresholdController.text.trim());
 
     if (name.isEmpty ||
         category.isEmpty ||
-        unitPrice == null ||
+        price == null ||
+        priceUnitQuantity == null ||
         availableQuantity == null ||
         lowStockThreshold == null) {
       setState(() {
         _message = 'Vui lòng nhập đầy đủ thông tin nguyên liệu.';
+      });
+      return null;
+    }
+    if (price < 0 || priceUnitQuantity <= 0) {
+      setState(() {
+        _message = 'Giá phải từ 0 và đơn vị phải lớn hơn 0.';
       });
       return null;
     }
@@ -104,7 +130,8 @@ class _ResponsiveAdminIngredientFormScreenState
       name: name,
       category: category,
       unit: _unit,
-      unitPrice: unitPrice,
+      price: price,
+      priceUnitQuantity: priceUnitQuantity,
       availableQuantity: availableQuantity,
       lowStockThreshold: lowStockThreshold,
     );
@@ -132,6 +159,11 @@ class _ResponsiveAdminIngredientFormScreenState
         AppRouteNames.admin,
         queryParameters: {'sidebar': '${widget.returnSidebarIndex}'},
       );
+    } on ApiException catch (error) {
+      setState(() {
+        _isSaving = false;
+        _message = error.message;
+      });
     } catch (_) {
       setState(() {
         _isSaving = false;
@@ -225,9 +257,11 @@ class _ResponsiveAdminIngredientFormScreenState
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _field('Đơn giá', _unitPriceController, number: true)),
+                Expanded(child: _field('Giá', _priceController, number: true)),
                 const SizedBox(width: 12),
-                Expanded(child: _field('Số lượng tồn', _availableQuantityController, number: true)),
+                Expanded(
+                    child: _field('Đơn vị', _priceUnitQuantityController,
+                        number: true)),
               ],
             ),
             const SizedBox(height: 12),
@@ -236,10 +270,14 @@ class _ResponsiveAdminIngredientFormScreenState
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _unit,
-                    items: const [
-                      DropdownMenuItem(value: 'g', child: Text('g')),
-                      DropdownMenuItem(value: 'ml', child: Text('ml')),
-                    ],
+                    items: _visibleUnitOptions
+                        .map(
+                          (unit) => DropdownMenuItem(
+                            value: unit,
+                            child: Text(unit),
+                          ),
+                        )
+                        .toList(growable: false),
                     onChanged: (value) {
                       if (value != null) {
                         setState(() {
@@ -248,7 +286,7 @@ class _ResponsiveAdminIngredientFormScreenState
                       }
                     },
                     decoration: InputDecoration(
-                      labelText: 'Đơn vị',
+                      labelText: 'Đơn vị tính',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -256,14 +294,28 @@ class _ResponsiveAdminIngredientFormScreenState
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: _field('Ngưỡng cảnh báo', _lowStockThresholdController, number: true)),
+                Expanded(
+                    child: _field('Số lượng tồn', _availableQuantityController,
+                        number: true)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                    child: _field(
+                        'Ngưỡng cảnh báo', _lowStockThresholdController,
+                        number: true)),
+                const SizedBox(width: 12),
+                const Spacer(),
               ],
             ),
           ],
         ),
       );
 
-  Widget _field(String label, TextEditingController controller, {bool number = false}) {
+  Widget _field(String label, TextEditingController controller,
+      {bool number = false}) {
     return TextField(
       controller: controller,
       keyboardType: number ? TextInputType.number : TextInputType.text,

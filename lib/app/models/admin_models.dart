@@ -296,6 +296,64 @@ class AdminProductModel {
   }
 }
 
+class AdminCategoryModel {
+  const AdminCategoryModel({
+    required this.id,
+    required this.label,
+    required this.category,
+    this.imageUrl,
+    required this.sortOrder,
+  });
+
+  final String id;
+  final String label;
+  final String category;
+  final String? imageUrl;
+  final int sortOrder;
+
+  factory AdminCategoryModel.fromJson(Map<String, dynamic> json) {
+    return AdminCategoryModel(
+      id: (json['id'] ?? '').toString(),
+      label: (json['label'] ?? '').toString(),
+      category: (json['category'] ?? '').toString(),
+      imageUrl: json['imageUrl']?.toString(),
+      sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class AdminCategoryDraft {
+  const AdminCategoryDraft({
+    required this.label,
+    required this.category,
+    this.imageUrl,
+    required this.sortOrder,
+  });
+
+  final String label;
+  final String category;
+  final String? imageUrl;
+  final int sortOrder;
+
+  factory AdminCategoryDraft.fromModel(AdminCategoryModel category) {
+    return AdminCategoryDraft(
+      label: category.label,
+      category: category.category,
+      imageUrl: category.imageUrl,
+      sortOrder: category.sortOrder,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'label': label,
+      'category': category,
+      'imageUrl': imageUrl,
+      'sortOrder': sortOrder,
+    };
+  }
+}
+
 class AdminCustomerModel {
   const AdminCustomerModel({
     required this.id,
@@ -368,6 +426,8 @@ class AdminIngredientModel {
     required this.unit,
     required this.standardUnit,
     required this.conversionFactor,
+    required this.price,
+    required this.priceUnitQuantity,
     required this.unitPrice,
     required this.availableQuantity,
     required this.availableNormalizedQuantity,
@@ -383,6 +443,8 @@ class AdminIngredientModel {
   final String unit;
   final String standardUnit;
   final int conversionFactor;
+  final int price;
+  final int priceUnitQuantity;
   final int unitPrice;
   final int availableQuantity;
   final int availableNormalizedQuantity;
@@ -392,6 +454,12 @@ class AdminIngredientModel {
   final String lastUpdatedAt;
 
   factory AdminIngredientModel.fromJson(Map<String, dynamic> json) {
+    final price = (json['price'] as num?)?.toInt() ??
+        (json['unitPrice'] as num?)?.toInt() ??
+        0;
+    final priceUnitQuantity = (json['priceUnitQuantity'] as num?)?.toInt() ?? 1;
+    final safePriceUnitQuantity =
+        priceUnitQuantity <= 0 ? 1 : priceUnitQuantity;
     return AdminIngredientModel(
       id: (json['id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
@@ -399,7 +467,10 @@ class AdminIngredientModel {
       unit: (json['unit'] ?? '').toString(),
       standardUnit: (json['standardUnit'] ?? '').toString(),
       conversionFactor: (json['conversionFactor'] as num?)?.toInt() ?? 1,
-      unitPrice: (json['unitPrice'] as num?)?.toInt() ?? 0,
+      price: price,
+      priceUnitQuantity: safePriceUnitQuantity,
+      unitPrice: (json['unitPrice'] as num?)?.toInt() ??
+          (price / safePriceUnitQuantity).round(),
       availableQuantity: (json['availableQuantity'] as num?)?.toInt() ?? 0,
       availableNormalizedQuantity:
           (json['availableNormalizedQuantity'] as num?)?.toInt() ?? 0,
@@ -417,7 +488,8 @@ class AdminIngredientDraft {
     required this.name,
     required this.category,
     required this.unit,
-    required this.unitPrice,
+    required this.price,
+    required this.priceUnitQuantity,
     required this.availableQuantity,
     required this.lowStockThreshold,
   });
@@ -425,16 +497,21 @@ class AdminIngredientDraft {
   final String name;
   final String category;
   final String unit;
-  final int unitPrice;
+  final int price;
+  final int priceUnitQuantity;
   final int availableQuantity;
   final int lowStockThreshold;
+
+  int get unitPrice =>
+      (price / (priceUnitQuantity <= 0 ? 1 : priceUnitQuantity)).round();
 
   factory AdminIngredientDraft.fromIngredient(AdminIngredientModel ingredient) {
     return AdminIngredientDraft(
       name: ingredient.name,
       category: ingredient.category,
       unit: ingredient.unit,
-      unitPrice: ingredient.unitPrice,
+      price: ingredient.price,
+      priceUnitQuantity: ingredient.priceUnitQuantity,
       availableQuantity: ingredient.availableQuantity,
       lowStockThreshold: ingredient.lowStockThreshold,
     );
@@ -445,6 +522,8 @@ class AdminIngredientDraft {
       'name': name,
       'category': category,
       'unit': unit,
+      'price': price,
+      'priceUnitQuantity': priceUnitQuantity,
       'unitPrice': unitPrice,
       'availableQuantity': availableQuantity,
       'lowStockThreshold': lowStockThreshold,
@@ -546,7 +625,8 @@ class AdminIngredientExcelRow {
     required this.name,
     required this.category,
     required this.unit,
-    required this.unitPrice,
+    required this.price,
+    required this.priceUnitQuantity,
     required this.availableQuantity,
     required this.lowStockThreshold,
   });
@@ -555,17 +635,26 @@ class AdminIngredientExcelRow {
   final String name;
   final String category;
   final String unit;
-  final int unitPrice;
+  final int price;
+  final int priceUnitQuantity;
   final int availableQuantity;
   final int lowStockThreshold;
 
+  int get unitPrice =>
+      (price / (priceUnitQuantity <= 0 ? 1 : priceUnitQuantity)).round();
+
   factory AdminIngredientExcelRow.fromJson(Map<String, dynamic> json) {
+    final price = (json['price'] as num?)?.toInt() ??
+        (json['unitPrice'] as num?)?.toInt() ??
+        0;
+    final priceUnitQuantity = (json['priceUnitQuantity'] as num?)?.toInt() ?? 1;
     return AdminIngredientExcelRow(
       id: json['id']?.toString(),
       name: (json['name'] ?? '').toString(),
       category: (json['category'] ?? '').toString(),
       unit: (json['unit'] ?? '').toString(),
-      unitPrice: (json['unitPrice'] as num?)?.toInt() ?? 0,
+      price: price,
+      priceUnitQuantity: priceUnitQuantity <= 0 ? 1 : priceUnitQuantity,
       availableQuantity: (json['availableQuantity'] as num?)?.toInt() ?? 0,
       lowStockThreshold: (json['lowStockThreshold'] as num?)?.toInt() ?? 0,
     );
@@ -577,7 +666,8 @@ class AdminIngredientExcelRow {
       'name': name,
       'category': category,
       'unit': unit,
-      'unitPrice': unitPrice,
+      'price': price,
+      'priceUnitQuantity': priceUnitQuantity,
       'availableQuantity': availableQuantity,
       'lowStockThreshold': lowStockThreshold,
     };
@@ -1041,7 +1131,8 @@ class AdminRecipeDraft {
       'recipeType': recipeType,
       'yieldQuantity': yieldQuantity,
       'yieldUnit': yieldUnit,
-      'ingredients': ingredients.map((item) => item.toJson()).toList(growable: false),
+      'ingredients':
+          ingredients.map((item) => item.toJson()).toList(growable: false),
     };
   }
 }
@@ -1190,7 +1281,8 @@ class AdminRevenueSummaryModel {
       other.days.length == days.length;
 
   @override
-  int get hashCode => Object.hash(range, totalRevenue, totalOrders, avgOrderValue, days.length);
+  int get hashCode =>
+      Object.hash(range, totalRevenue, totalOrders, avgOrderValue, days.length);
 }
 
 const defaultRevenueSummary = AdminRevenueSummaryModel(
@@ -1262,7 +1354,8 @@ class AdminRevenueForecastHistoricalDay {
   final String date;
   final int revenue;
 
-  factory AdminRevenueForecastHistoricalDay.fromJson(Map<String, dynamic> json) {
+  factory AdminRevenueForecastHistoricalDay.fromJson(
+      Map<String, dynamic> json) {
     return AdminRevenueForecastHistoricalDay(
       date: (json['date'] ?? '').toString(),
       revenue: (json['revenue'] as num?)?.toInt() ?? 0,
@@ -1317,7 +1410,8 @@ class AdminRevenueForecastModel {
     );
   }
 
-  int get totalForecastRevenue => forecast.fold(0, (sum, d) => sum + d.predicted);
+  int get totalForecastRevenue =>
+      forecast.fold(0, (sum, d) => sum + d.predicted);
 
   @override
   bool operator ==(Object other) =>
@@ -1564,7 +1658,8 @@ const defaultAdminDashboard = AdminDashboardModel(
   title: 'Dashboard Quản trị',
   notificationLabel: '0 thông báo',
   statCards: [
-    AdminStatCardModel(label: 'Doanh thu hôm nay', value: '0đ', tone: 'default'),
+    AdminStatCardModel(
+        label: 'Doanh thu hôm nay', value: '0đ', tone: 'default'),
     AdminStatCardModel(label: 'Đơn mới', value: '0', tone: 'default'),
     AdminStatCardModel(label: 'Khách mới', value: '+0', tone: 'success'),
     AdminStatCardModel(label: 'Tỷ lệ huỷ', value: '0%', tone: 'danger'),

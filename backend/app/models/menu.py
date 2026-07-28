@@ -11,6 +11,7 @@ class MenuIntroSection(ApiModel):
 class MenuFilterOption(ApiModel):
     label: str
     category: str
+    imageUrl: Optional[str] = None
 
 
 class MenuProductResponse(ApiModel):

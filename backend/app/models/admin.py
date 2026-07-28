@@ -62,6 +62,21 @@ class AdminProductResponse(ApiModel):
     imageUrl: Optional[str] = None
 
 
+class AdminCategoryResponse(ApiModel):
+    id: str
+    label: str
+    category: str
+    imageUrl: Optional[str] = None
+    sortOrder: int = 0
+
+
+class AdminCategoryUpsertRequest(ApiModel):
+    label: str
+    category: str
+    imageUrl: Optional[str] = None
+    sortOrder: int = 0
+
+
 class AdminProductUpdateRequest(ApiModel):
     stockStatus: str
 
@@ -117,6 +132,8 @@ class AdminIngredientResponse(ApiModel):
     unit: str
     standardUnit: str
     conversionFactor: int
+    price: int
+    priceUnitQuantity: int
     unitPrice: int
     availableQuantity: int
     availableNormalizedQuantity: int
@@ -136,7 +153,9 @@ class AdminIngredientUpsertRequest(ApiModel):
     name: str
     category: str
     unit: str
-    unitPrice: int
+    price: Optional[int] = None
+    priceUnitQuantity: int = 1
+    unitPrice: Optional[int] = None
     availableQuantity: int
     lowStockThreshold: int
 
@@ -146,7 +165,9 @@ class AdminIngredientExcelRow(ApiModel):
     name: str
     category: str
     unit: str
-    unitPrice: int
+    price: Optional[int] = None
+    priceUnitQuantity: int = 1
+    unitPrice: Optional[int] = None
     availableQuantity: int
     lowStockThreshold: int
 

@@ -36,7 +36,8 @@ class AdminExcelCore {
     'name',
     'category',
     'unit',
-    'unitPrice',
+    'price',
+    'priceUnitQuantity',
     'availableQuantity',
     'lowStockThreshold',
   ];
@@ -128,7 +129,8 @@ class AdminExcelCore {
         TextCellValue(row.name),
         TextCellValue(row.category),
         TextCellValue(row.unit),
-        IntCellValue(row.unitPrice),
+        IntCellValue(row.price),
+        IntCellValue(row.priceUnitQuantity),
         IntCellValue(row.availableQuantity),
         IntCellValue(row.lowStockThreshold),
       ]);
@@ -242,7 +244,8 @@ class AdminExcelCore {
         category: 'Mousse',
         priceValue: 120000,
         description: 'Mẫu import sản phẩm',
-        images: 'https://example.com/image-1.jpg | https://example.com/image-2.jpg',
+        images:
+            'https://example.com/image-1.jpg | https://example.com/image-2.jpg',
         sku: 'MOUSSE-DAU-01',
         stockStatus: 'Còn hàng',
         weight: '450g',
@@ -260,7 +263,8 @@ class AdminExcelCore {
         name: 'Bột mì số 8',
         category: 'Bột',
         unit: 'kg',
-        unitPrice: 40000,
+        price: 40000,
+        priceUnitQuantity: 1,
         availableQuantity: 5,
         lowStockThreshold: 2,
       ),
@@ -431,7 +435,8 @@ class AdminExcelCore {
         if (header.isEmpty) {
           continue;
         }
-        final value = i < row.length ? row[i]?.value?.toString().trim() ?? '' : '';
+        final value =
+            i < row.length ? row[i]?.value?.toString().trim() ?? '' : '';
         if (value.isNotEmpty) {
           hasValue = true;
         }
@@ -464,7 +469,8 @@ class AdminExcelCore {
     );
   }
 
-  static AdminIngredientExcelRow? _ingredientRowFromMap(Map<String, String> row) {
+  static AdminIngredientExcelRow? _ingredientRowFromMap(
+      Map<String, String> row) {
     final name = row['name']?.trim() ?? '';
     if (name.isEmpty) {
       return null;
@@ -474,7 +480,8 @@ class AdminExcelCore {
       name: name,
       category: row['category']?.trim() ?? '',
       unit: row['unit']?.trim() ?? '',
-      unitPrice: int.tryParse(row['unitPrice'] ?? '') ?? 0,
+      price: int.tryParse(row['price'] ?? row['unitPrice'] ?? '') ?? 0,
+      priceUnitQuantity: int.tryParse(row['priceUnitQuantity'] ?? '') ?? 1,
       availableQuantity: int.tryParse(row['availableQuantity'] ?? '') ?? 0,
       lowStockThreshold: int.tryParse(row['lowStockThreshold'] ?? '') ?? 0,
     );
@@ -525,7 +532,8 @@ class AdminExcelCore {
     if (orderId.isEmpty) return null;
     return AdminOrderExcelRow(
       orderId: orderId,
-      userId: row['userId']?.trim().isEmpty ?? true ? null : row['userId']?.trim(),
+      userId:
+          row['userId']?.trim().isEmpty ?? true ? null : row['userId']?.trim(),
       customerName: row['customerName']?.trim() ?? '',
       customerEmail: row['customerEmail']?.trim() ?? '',
       customerPhone: row['customerPhone']?.trim(),
@@ -549,7 +557,8 @@ class AdminExcelCore {
       allowedExtensions: const ['xlsx'],
       withData: true,
     );
-    final file = result == null || result.files.isEmpty ? null : result.files.first;
+    final file =
+        result == null || result.files.isEmpty ? null : result.files.first;
     return file?.bytes;
   }
 

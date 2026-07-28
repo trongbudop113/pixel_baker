@@ -88,15 +88,18 @@ class MenuFilterOption {
   const MenuFilterOption({
     required this.label,
     required this.category,
+    this.imageUrl,
   });
 
   final String label;
   final String category;
+  final String? imageUrl;
 
   factory MenuFilterOption.fromJson(Map<String, dynamic> json) {
     return MenuFilterOption(
       label: (json['label'] ?? '').toString(),
       category: (json['category'] ?? '').toString(),
+      imageUrl: json['imageUrl']?.toString(),
     );
   }
 
@@ -104,6 +107,7 @@ class MenuFilterOption {
     return {
       'label': label,
       'category': category,
+      'imageUrl': imageUrl,
     };
   }
 }

@@ -7,13 +7,15 @@ FRONTEND_DEVICE := chrome
 API_BASE_URL := http://localhost:$(BACKEND_PORT)/api/v1
 BACKEND_PID_FILE := .backend.pid
 
-.PHONY: help install mongo-up mongo-down backend-install backend-run backend-start backend-stop frontend-run run stop
+.PHONY: help install mongo-up mongo-down obs-up obs-down backend-install backend-run backend-start backend-stop frontend-run run stop
 
 help:
 	@echo "Targets:"
 	@echo "  make install        - install backend dependencies"
 	@echo "  make mongo-up       - start MongoDB with Docker Compose"
 	@echo "  make mongo-down     - stop MongoDB container"
+	@echo "  make obs-up         - start observability stack for Docker metrics"
+	@echo "  make obs-down       - stop observability stack"
 	@echo "  make backend-run    - run FastAPI backend in foreground"
 	@echo "  make backend-start  - run FastAPI backend in background"
 	@echo "  make backend-stop   - stop background FastAPI backend"
@@ -31,6 +33,12 @@ mongo-up:
 
 mongo-down:
 	cd $(BACKEND_DIR) && docker compose down
+
+obs-up:
+	cd $(BACKEND_DIR)/observability && docker compose up -d
+
+obs-down:
+	cd $(BACKEND_DIR)/observability && docker compose down
 
 backend-run:
 	cd $(BACKEND_DIR) && uv run uvicorn app.main:app --reload --host $(BACKEND_HOST) --port $(BACKEND_PORT)

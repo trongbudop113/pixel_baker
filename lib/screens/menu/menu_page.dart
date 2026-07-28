@@ -147,40 +147,43 @@ class WebMenuLayout extends StatelessWidget {
                 children: [
                   if (showTopHeader)
                     const PixelHeaderBar(
-                        rightLabel: 'thực đơn', showBack: true, showBrand: false),
+                        rightLabel: 'thực đơn',
+                        showBack: true,
+                        showBrand: false),
                   if (showTopHeader) const SizedBox(height: 10),
                   Expanded(
                     child: Stack(
                       children: [
-                    SingleChildScrollView(
-                      controller: scrollController,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _intro(),
-                          const SizedBox(height: 10),
-                          _searchAndSort(),
-                          const SizedBox(height: 10),
-                          _filters(),
-                          const SizedBox(height: 10),
-                          _sectionTitle(),
-                          if (state.isMooncakeTabSelected) ...[
-                            const SizedBox(height: 10),
-                            _mooncakeBoxToolbar(context),
-                          ],
-                          const SizedBox(height: 8),
-                          _recentlyViewed(context),
-                          _menuGrid(),
-                          const SizedBox(height: 10),
-                          _combo(),
-                          const SizedBox(height: 10),
-                          _faq(),
-                          const SizedBox(height: 12),
-                          const PixelFooter(label: 'PIXEL BAKERY | THỰC ĐƠN'),
-                        ],
-                      ),
-                    ),
-                      BackToTopButton(scrollController: scrollController),
+                        SingleChildScrollView(
+                          controller: scrollController,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _intro(),
+                              const SizedBox(height: 10),
+                              _searchAndSort(),
+                              const SizedBox(height: 10),
+                              _filters(),
+                              const SizedBox(height: 10),
+                              _sectionTitle(),
+                              if (state.isMooncakeTabSelected) ...[
+                                const SizedBox(height: 10),
+                                _mooncakeBoxToolbar(context),
+                              ],
+                              const SizedBox(height: 8),
+                              _recentlyViewed(context),
+                              _menuGrid(),
+                              const SizedBox(height: 10),
+                              _combo(),
+                              const SizedBox(height: 10),
+                              _faq(),
+                              const SizedBox(height: 12),
+                              const PixelFooter(
+                                  label: 'PIXEL BAKERY | THỰC ĐƠN'),
+                            ],
+                          ),
+                        ),
+                        BackToTopButton(scrollController: scrollController),
                       ],
                     ),
                   ),
@@ -243,39 +246,45 @@ class WebMenuLayout extends StatelessWidget {
         ),
       );
 
-  Widget _filters() => Builder(builder: (ctx) => Container(
-        padding: const EdgeInsets.all(10),
-        decoration: _boxDec(ctx),
-        child: ControllerSelector<MenuState, MenuViewState>(
-          controller: state,
-          selector: (controller) => controller.state,
-          builder: (context, menuState, _) => Row(
-            children: List.generate(menuState.pageResponse.filters.length * 2 - 1,
-                (index) {
-              if (index.isOdd) {
-                return const SizedBox(width: 6);
-              }
-              final filter = menuState.pageResponse.filters[index ~/ 2];
-              final filterIndex = index ~/ 2;
-              // Count products in this filter category
-              final filterCat = filter.category;
-              final productCount = filterCat == null || filterCat == 'all'
-                  ? state.products.length
-                  : state.products.where((p) => state.mapCategory(p.category) == state.mapCategory(filterCat)).length;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => _selectFilter(context, filterIndex, filter),
-                  child: _FilterChip(
-                    label: filter.label,
-                    selected: menuState.selectedFilterIndex == filterIndex,
-                    count: productCount,
-                  ),
-                ),
-              );
-            }),
-          ),
-        ),
-      ));
+  Widget _filters() => Builder(
+      builder: (ctx) => Container(
+            padding: const EdgeInsets.all(10),
+            decoration: _boxDec(ctx),
+            child: ControllerSelector<MenuState, MenuViewState>(
+              controller: state,
+              selector: (controller) => controller.state,
+              builder: (context, menuState, _) => Row(
+                children: List.generate(
+                    menuState.pageResponse.filters.length * 2 - 1, (index) {
+                  if (index.isOdd) {
+                    return const SizedBox(width: 6);
+                  }
+                  final filter = menuState.pageResponse.filters[index ~/ 2];
+                  final filterIndex = index ~/ 2;
+                  // Count products in this filter category
+                  final filterCat = filter.category;
+                  final productCount = filterCat == null || filterCat == 'all'
+                      ? state.products.length
+                      : state.products
+                          .where((p) =>
+                              state.mapCategory(p.category) ==
+                              state.mapCategory(filterCat))
+                          .length;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => _selectFilter(context, filterIndex, filter),
+                      child: _FilterChip(
+                        label: filter.label,
+                        selected: menuState.selectedFilterIndex == filterIndex,
+                        count: productCount,
+                        imageUrl: filter.imageUrl,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ));
 
   Widget _searchAndSort() => ControllerSelector<MenuState, MenuViewState>(
         controller: state,
@@ -283,7 +292,8 @@ class WebMenuLayout extends StatelessWidget {
         builder: (context, menuState, _) => Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF8FAFC),
+            color: Theme.of(context).inputDecorationTheme.fillColor ??
+                const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFDCE4EF)),
           ),
@@ -313,15 +323,21 @@ class WebMenuLayout extends StatelessWidget {
                         value: menuState.sortKey,
                         style: _storefrontDropdownTextStyle(),
                         items: const [
-                          DropdownMenuItem(value: 'featured', child: Text('Nổi bật')),
-                          DropdownMenuItem(value: 'rating_desc', child: Text('Đánh giá cao')),
-                          DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
-                          DropdownMenuItem(value: 'price_desc', child: Text('Giá giảm dần')),
+                          DropdownMenuItem(
+                              value: 'featured', child: Text('Nổi bật')),
+                          DropdownMenuItem(
+                              value: 'rating_desc',
+                              child: Text('Đánh giá cao')),
+                          DropdownMenuItem(
+                              value: 'price_asc', child: Text('Giá tăng dần')),
+                          DropdownMenuItem(
+                              value: 'price_desc', child: Text('Giá giảm dần')),
                         ],
                         onChanged: (value) {
                           if (value != null) state.setSortKey(value);
                         },
-                        decoration: _storefrontFieldDecoration(labelText: 'Sắp xếp'),
+                        decoration:
+                            _storefrontFieldDecoration(labelText: 'Sắp xếp'),
                       ),
                     ),
                     SizedBox(
@@ -330,15 +346,20 @@ class WebMenuLayout extends StatelessWidget {
                         value: menuState.priceRangeKey,
                         style: _storefrontDropdownTextStyle(),
                         items: const [
-                          DropdownMenuItem(value: 'all', child: Text('Mọi mức giá')),
-                          DropdownMenuItem(value: 'under_100k', child: Text('Dưới 100k')),
-                          DropdownMenuItem(value: '100k_200k', child: Text('100k - 200k')),
-                          DropdownMenuItem(value: 'over_200k', child: Text('Trên 200k')),
+                          DropdownMenuItem(
+                              value: 'all', child: Text('Mọi mức giá')),
+                          DropdownMenuItem(
+                              value: 'under_100k', child: Text('Dưới 100k')),
+                          DropdownMenuItem(
+                              value: '100k_200k', child: Text('100k - 200k')),
+                          DropdownMenuItem(
+                              value: 'over_200k', child: Text('Trên 200k')),
                         ],
                         onChanged: (value) {
                           if (value != null) state.setPriceRangeKey(value);
                         },
-                        decoration: _storefrontFieldDecoration(labelText: 'Giá'),
+                        decoration:
+                            _storefrontFieldDecoration(labelText: 'Giá'),
                       ),
                     ),
                     SizedBox(
@@ -347,14 +368,17 @@ class WebMenuLayout extends StatelessWidget {
                         value: menuState.minimumRating,
                         style: _storefrontDropdownTextStyle(),
                         items: const [
-                          DropdownMenuItem(value: 0, child: Text('Mọi đánh giá')),
+                          DropdownMenuItem(
+                              value: 0, child: Text('Mọi đánh giá')),
                           DropdownMenuItem(value: 4, child: Text('Từ 4.0 sao')),
-                          DropdownMenuItem(value: 4.5, child: Text('Từ 4.5 sao')),
+                          DropdownMenuItem(
+                              value: 4.5, child: Text('Từ 4.5 sao')),
                         ],
                         onChanged: (value) {
                           if (value != null) state.setMinimumRating(value);
                         },
-                        decoration: _storefrontFieldDecoration(labelText: 'Đánh giá'),
+                        decoration:
+                            _storefrontFieldDecoration(labelText: 'Đánh giá'),
                       ),
                     ),
                     _StorefrontActionButton(
@@ -377,7 +401,8 @@ class WebMenuLayout extends StatelessWidget {
         ),
       );
 
-  Widget _recentlyViewed(BuildContext context) => ValueListenableBuilder<List<int>>(
+  Widget _recentlyViewed(BuildContext context) =>
+      ValueListenableBuilder<List<int>>(
         valueListenable: AppServices.instance.recentlyViewedSession,
         builder: (context, ids, _) {
           if (ids.isEmpty) return const SizedBox.shrink();
@@ -394,9 +419,11 @@ class WebMenuLayout extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.history_rounded, size: 14, color: MenuColors.blue),
+                    const Icon(Icons.history_rounded,
+                        size: 14, color: MenuColors.blue),
                     const SizedBox(width: 4),
-                    _txt('Đã xem gần đây', MenuColors.blue, 13, FontWeight.w800),
+                    _txt(
+                        'Đã xem gần đây', MenuColors.blue, 13, FontWeight.w800),
                   ],
                 ),
               ),
@@ -409,14 +436,16 @@ class WebMenuLayout extends StatelessWidget {
                   itemBuilder: (_, i) {
                     final p = products[i];
                     return GestureDetector(
-                      onTap: () => context.go('${AppRoutePaths.productDetail}?id=${p.id}'),
+                      onTap: () => context
+                          .go('${AppRoutePaths.productDetail}?id=${p.id}'),
                       child: Container(
                         width: 88,
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: MenuColors.gray, width: 1.5),
+                          border:
+                              Border.all(color: MenuColors.gray, width: 1.5),
                         ),
                         child: Column(
                           children: [
@@ -425,12 +454,20 @@ class WebMenuLayout extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(5),
                                 child: p.images.isEmpty
                                     ? Container(color: const Color(0xFFEAF3FF))
-                                    : Image.network(p.images.first, fit: BoxFit.cover, width: double.infinity,
-                                        errorBuilder: (_, __, ___) => Container(color: const Color(0xFFEAF3FF))),
+                                    : Image.network(p.images.first,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        errorBuilder: (_, __, ___) => Container(
+                                            color: const Color(0xFFEAF3FF))),
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(p.title, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                            Text(p.title,
+                                style: const TextStyle(
+                                    fontSize: 9, fontWeight: FontWeight.w700),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center),
                           ],
                         ),
                       ),
@@ -490,7 +527,8 @@ class WebMenuLayout extends StatelessWidget {
       );
 
   Widget _menuGrid() => AnimatedBuilder(
-        animation: Listenable.merge([state, AppServices.instance.wishlistSession, compareIds]),
+        animation: Listenable.merge(
+            [state, AppServices.instance.wishlistSession, compareIds]),
         builder: (context, _) {
           final items = state.filteredProducts;
           final selectedIds = compareIds.value;
@@ -531,13 +569,15 @@ class WebMenuLayout extends StatelessWidget {
                       tone: _toneFor(item),
                       accent: _accentFor(item),
                       isMooncake: item.mooncakeConfig != null,
-                      isAddingToBox:
-                          state.isMooncakeBoxMode && item.mooncakeConfig != null,
-                      isFavorite: AppServices.instance.wishlistSession.contains(item.id),
+                      isAddingToBox: state.isMooncakeBoxMode &&
+                          item.mooncakeConfig != null,
+                      isFavorite: AppServices.instance.wishlistSession
+                          .contains(item.id),
                       isSelectedForCompare: isSelectedForCompare,
                       onTap: () => _openDetail(context, item),
                       onAddToCart: () => _addToCart(context, item),
-                      onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
+                      onToggleFavorite: () =>
+                          AppServices.instance.wishlistSession.toggle(item.id),
                       onToggleCompare: () => _toggleCompare(item.id),
                     ),
                   );
@@ -588,7 +628,8 @@ class WebMenuLayout extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: MenuColors.gray, width: 2),
                 ),
-                child: _txt(combo.actionLabel, Colors.white, 13, FontWeight.w800),
+                child:
+                    _txt(combo.actionLabel, Colors.white, 13, FontWeight.w800),
               ),
             ],
           ),
@@ -698,7 +739,9 @@ class WebMenuLayout extends StatelessWidget {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     context.go('${AppRoutePaths.menu}?category=combo');
                   },
-                  child: const Text('Xem combo', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.w800)),
+                  child: const Text('Xem combo',
+                      style: TextStyle(
+                          color: Colors.amber, fontWeight: FontWeight.w800)),
                 ),
               ])
             : Text('Đã thêm ${item.title} vào giỏ hàng'),
@@ -777,7 +820,8 @@ class WebMenuLayout extends StatelessWidget {
     );
   }
 
-  Future<void> _handleMooncakeAction(BuildContext context, MenuProduct item) async {
+  Future<void> _handleMooncakeAction(
+      BuildContext context, MenuProduct item) async {
     final config = item.mooncakeConfig;
     if (config == null) {
       return;
@@ -799,7 +843,8 @@ class WebMenuLayout extends StatelessWidget {
       if (!added) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Hộp đã đủ số lượng bánh. Hãy xóa bớt hoặc thêm vào giỏ.'),
+            content:
+                Text('Hộp đã đủ số lượng bánh. Hãy xóa bớt hoặc thêm vào giỏ.'),
           ),
         );
         return;
@@ -827,7 +872,8 @@ class WebMenuLayout extends StatelessWidget {
     AppServices.instance.cartSession.addCartItem(cartItem);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Đã thêm ${item.title} (${cartItem.variantLabel}) vào giỏ hàng'),
+        content: Text(
+            'Đã thêm ${item.title} (${cartItem.variantLabel}) vào giỏ hàng'),
       ),
     );
   }
@@ -901,8 +947,8 @@ class WebMenuLayout extends StatelessWidget {
               child: const Text('Hủy'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop((selectedWeight, selectedEgg)),
+              onPressed: () => Navigator.of(dialogContext)
+                  .pop((selectedWeight, selectedEgg)),
               child: const Text('Xác nhận'),
             ),
           ],
@@ -933,13 +979,19 @@ class _FilterChip extends StatelessWidget {
   final String label;
   final bool selected;
   final int? count;
+  final String? imageUrl;
 
-  const _FilterChip({required this.label, this.selected = false, this.count});
+  const _FilterChip({
+    required this.label,
+    this.selected = false,
+    this.count,
+    this.imageUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
+      height: 58,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -953,10 +1005,25 @@ class _FilterChip extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          if ((imageUrl ?? '').trim().isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: Image.network(
+                imageUrl!.trim(),
+                width: 22,
+                height: 22,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+            const SizedBox(height: 2),
+          ],
           Text(
             label,
             style: TextStyle(
-              color: selected ? MenuColors.blue : Theme.of(context).colorScheme.onSurface,
+              color: selected
+                  ? MenuColors.blue
+                  : Theme.of(context).colorScheme.onSurface,
               fontSize: 11.5,
               fontWeight: FontWeight.w800,
             ),
@@ -965,7 +1032,9 @@ class _FilterChip extends StatelessWidget {
             Text(
               '$count SP',
               style: TextStyle(
-                color: selected ? MenuColors.blue.withOpacity(0.7) : const Color(0xFF8A8A8A),
+                color: selected
+                    ? MenuColors.blue.withOpacity(0.7)
+                    : const Color(0xFF8A8A8A),
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
               ),
@@ -1112,21 +1181,25 @@ class _AutocompleteSearchState extends State<_AutocompleteSearch> {
                 return InkWell(
                   onTap: () => _select(p),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
                     child: Row(
                       children: [
-                        const Icon(Icons.search_rounded, size: 14, color: MenuColors.gray),
+                        const Icon(Icons.search_rounded,
+                            size: 14, color: MenuColors.gray),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             p.title,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Text(
                           p.category,
-                          style: const TextStyle(fontSize: 11, color: MenuColors.gray),
+                          style: const TextStyle(
+                              fontSize: 11, color: MenuColors.gray),
                         ),
                       ],
                     ),
@@ -1181,8 +1254,7 @@ class _StorefrontActionButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(0, 56),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        backgroundColor:
-            isActive ? const Color(0xFFEAF3FF) : Colors.white,
+        backgroundColor: isActive ? const Color(0xFFEAF3FF) : Colors.white,
         side: BorderSide(
           color: isActive ? MenuColors.blue : const Color(0xFFD6E4FF),
           width: isActive ? 1.5 : 1.0,
@@ -1194,7 +1266,9 @@ class _StorefrontActionButton extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: isActive ? MenuColors.blue : Theme.of(context).colorScheme.onSurface,
+          color: isActive
+              ? MenuColors.blue
+              : Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -1240,62 +1314,75 @@ class MobileMenuLayout extends StatelessWidget {
                 children: [
                   if (showTopHeader)
                     const PixelHeaderBar(
-                        rightLabel: 'thực đơn', showBack: true, showBrand: false),
+                        rightLabel: 'thực đơn',
+                        showBack: true,
+                        showBrand: false),
                   if (showTopHeader) const SizedBox(height: 10),
                   Expanded(
                     child: Stack(
                       children: [
-                    SingleChildScrollView(
-                      controller: scrollController,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 12),
-                          _mobileSearchAndSort(),
-                          if (state.isMooncakeTabSelected) ...[
-                            const SizedBox(height: 12),
-                            _mobileMooncakeBoxToolbar(context),
-                          ],
-                          const SizedBox(height: 12),
-                          AnimatedBuilder(
-                            animation: Listenable.merge(
-                              [state, AppServices.instance.wishlistSession, compareIds],
-                            ),
-                            builder: (context, _) {
-                              final items = state.filteredProducts;
-                              return Column(
-                                children: items.isEmpty
-                                    ? [
-                                        if (state.isLoading)
-                                          const _MenuGridSkeleton(mobile: true)
-                                        else if (state.errorMessage != null)
-                                          _MenuFeedback(
-                                            message: state.errorMessage ??
-                                                'Chưa có sản phẩm để hiển thị.',
-                                            actionLabel: 'Tải lại',
-                                            onTap: state.loadMenuPage,
-                                          )
-                                        else
-                                          const _MenuEmptyState(
-                                            message: 'Không tìm thấy sản phẩm phù hợp.',
-                                          ),
-                                      ]
-                                    : isTablet
-                                        ? _buildTabletGrid(context, items)
-                                        : List<Widget>.generate(items.length * 2 - 1, (index) {
-                                        if (index.isOdd) {
-                                          return const SizedBox(height: 10);
-                                        }
-                                        return _buildMobileCard(context, items[index ~/ 2]);
-                                      }),
-                              );
-                            },
+                        SingleChildScrollView(
+                          controller: scrollController,
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 12),
+                              _mobileSearchAndSort(),
+                              if (state.isMooncakeTabSelected) ...[
+                                const SizedBox(height: 12),
+                                _mobileMooncakeBoxToolbar(context),
+                              ],
+                              const SizedBox(height: 12),
+                              AnimatedBuilder(
+                                animation: Listenable.merge(
+                                  [
+                                    state,
+                                    AppServices.instance.wishlistSession,
+                                    compareIds
+                                  ],
+                                ),
+                                builder: (context, _) {
+                                  final items = state.filteredProducts;
+                                  return Column(
+                                    children: items.isEmpty
+                                        ? [
+                                            if (state.isLoading)
+                                              const _MenuGridSkeleton(
+                                                  mobile: true)
+                                            else if (state.errorMessage != null)
+                                              _MenuFeedback(
+                                                message: state.errorMessage ??
+                                                    'Chưa có sản phẩm để hiển thị.',
+                                                actionLabel: 'Tải lại',
+                                                onTap: state.loadMenuPage,
+                                              )
+                                            else
+                                              const _MenuEmptyState(
+                                                message:
+                                                    'Không tìm thấy sản phẩm phù hợp.',
+                                              ),
+                                          ]
+                                        : isTablet
+                                            ? _buildTabletGrid(context, items)
+                                            : List<Widget>.generate(
+                                                items.length * 2 - 1, (index) {
+                                                if (index.isOdd) {
+                                                  return const SizedBox(
+                                                      height: 10);
+                                                }
+                                                return _buildMobileCard(
+                                                    context, items[index ~/ 2]);
+                                              }),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              const PixelFooter(
+                                  label: 'PIXEL BAKERY | THỰC ĐƠN',
+                                  mobile: true),
+                            ],
                           ),
-                          const SizedBox(height: 12),
-                          const PixelFooter(label: 'PIXEL BAKERY | THỰC ĐƠN', mobile: true),
-                        ],
-                      ),
-                    ),
-                      BackToTopButton(scrollController: scrollController),
+                        ),
+                        BackToTopButton(scrollController: scrollController),
                       ],
                     ),
                   ),
@@ -1376,7 +1463,9 @@ class MobileMenuLayout extends StatelessWidget {
       imageUrl: item.images.isEmpty ? null : item.images.first,
       averageRating: item.averageRating,
       reviewCount: item.reviewCount,
-      tone: item.category == 'Cookie' ? const Color(0xFFFFF1F1) : const Color(0xFFEAF3FF),
+      tone: item.category == 'Cookie'
+          ? const Color(0xFFFFF1F1)
+          : const Color(0xFFEAF3FF),
       accent: item.category == 'Cookie' ? MenuColors.red : MenuColors.blue,
       isMooncake: item.mooncakeConfig != null,
       isAddingToBox: state.isMooncakeBoxMode && item.mooncakeConfig != null,
@@ -1385,7 +1474,8 @@ class MobileMenuLayout extends StatelessWidget {
       compact: true,
       onTap: () => _openDetail(context, item),
       onAddToCart: () => _addToCart(context, item),
-      onToggleFavorite: () => AppServices.instance.wishlistSession.toggle(item.id),
+      onToggleFavorite: () =>
+          AppServices.instance.wishlistSession.toggle(item.id),
       onToggleCompare: () => _toggleCompare(item.id),
     );
   }
@@ -1397,7 +1487,8 @@ class MobileMenuLayout extends StatelessWidget {
       rows.add(Row(
         children: List<Widget>.generate(rowItems.length * 2 - 1, (index) {
           if (index.isOdd) return const SizedBox(width: 10);
-          return Expanded(child: _buildMobileCard(context, rowItems[index ~/ 2]));
+          return Expanded(
+              child: _buildMobileCard(context, rowItems[index ~/ 2]));
         }),
       ));
       if (i + 2 < items.length) rows.add(const SizedBox(height: 10));
@@ -1416,79 +1507,85 @@ class MobileMenuLayout extends StatelessWidget {
             border: Border.all(color: const Color(0xFFDCE4EF), width: 1.5),
           ),
           child: Column(
-          children: [
-            _AutocompleteSearch(
-              controller: searchController,
-              onChanged: onSearchChanged,
-              products: state.products,
-              hintText: 'Tìm sản phẩm...',
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: menuState.sortKey,
-              style: _storefrontDropdownTextStyle(),
-              items: const [
-                DropdownMenuItem(value: 'featured', child: Text('Nổi bật')),
-                DropdownMenuItem(value: 'rating_desc', child: Text('Đánh giá cao')),
-                DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
-                DropdownMenuItem(value: 'price_desc', child: Text('Giá giảm dần')),
-              ],
-              onChanged: (value) {
-                if (value != null) state.setSortKey(value);
-              },
-              decoration: _storefrontFieldDecoration(labelText: 'Sắp xếp'),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: menuState.priceRangeKey,
-              style: _storefrontDropdownTextStyle(),
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('Mọi mức giá')),
-                DropdownMenuItem(value: 'under_100k', child: Text('Dưới 100k')),
-                DropdownMenuItem(value: '100k_200k', child: Text('100k - 200k')),
-                DropdownMenuItem(value: 'over_200k', child: Text('Trên 200k')),
-              ],
-              onChanged: (value) {
-                if (value != null) state.setPriceRangeKey(value);
-              },
-              decoration: _storefrontFieldDecoration(labelText: 'Giá'),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<double>(
-              value: menuState.minimumRating,
-              style: _storefrontDropdownTextStyle(),
-              items: const [
-                DropdownMenuItem(value: 0, child: Text('Mọi đánh giá')),
-                DropdownMenuItem(value: 4, child: Text('Từ 4.0 sao')),
-                DropdownMenuItem(value: 4.5, child: Text('Từ 4.5 sao')),
-              ],
-              onChanged: (value) {
-                if (value != null) state.setMinimumRating(value);
-              },
-              decoration: _storefrontFieldDecoration(labelText: 'Đánh giá'),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _StorefrontActionButton(
-                    label: 'Chỉ yêu thích',
-                    isActive: menuState.favoritesOnly,
-                    onTap: state.toggleFavoritesOnly,
+            children: [
+              _AutocompleteSearch(
+                controller: searchController,
+                onChanged: onSearchChanged,
+                products: state.products,
+                hintText: 'Tìm sản phẩm...',
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: menuState.sortKey,
+                style: _storefrontDropdownTextStyle(),
+                items: const [
+                  DropdownMenuItem(value: 'featured', child: Text('Nổi bật')),
+                  DropdownMenuItem(
+                      value: 'rating_desc', child: Text('Đánh giá cao')),
+                  DropdownMenuItem(
+                      value: 'price_asc', child: Text('Giá tăng dần')),
+                  DropdownMenuItem(
+                      value: 'price_desc', child: Text('Giá giảm dần')),
+                ],
+                onChanged: (value) {
+                  if (value != null) state.setSortKey(value);
+                },
+                decoration: _storefrontFieldDecoration(labelText: 'Sắp xếp'),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: menuState.priceRangeKey,
+                style: _storefrontDropdownTextStyle(),
+                items: const [
+                  DropdownMenuItem(value: 'all', child: Text('Mọi mức giá')),
+                  DropdownMenuItem(
+                      value: 'under_100k', child: Text('Dưới 100k')),
+                  DropdownMenuItem(
+                      value: '100k_200k', child: Text('100k - 200k')),
+                  DropdownMenuItem(
+                      value: 'over_200k', child: Text('Trên 200k')),
+                ],
+                onChanged: (value) {
+                  if (value != null) state.setPriceRangeKey(value);
+                },
+                decoration: _storefrontFieldDecoration(labelText: 'Giá'),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<double>(
+                value: menuState.minimumRating,
+                style: _storefrontDropdownTextStyle(),
+                items: const [
+                  DropdownMenuItem(value: 0, child: Text('Mọi đánh giá')),
+                  DropdownMenuItem(value: 4, child: Text('Từ 4.0 sao')),
+                  DropdownMenuItem(value: 4.5, child: Text('Từ 4.5 sao')),
+                ],
+                onChanged: (value) {
+                  if (value != null) state.setMinimumRating(value);
+                },
+                decoration: _storefrontFieldDecoration(labelText: 'Đánh giá'),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _StorefrontActionButton(
+                      label: 'Chỉ yêu thích',
+                      isActive: menuState.favoritesOnly,
+                      onTap: state.toggleFavoritesOnly,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _StorefrontActionButton(
-                  label: 'Xóa lọc',
-                  onTap: () {
-                    searchController.clear();
-                    state.clearSearchFilters();
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+                  const SizedBox(width: 8),
+                  _StorefrontActionButton(
+                    label: 'Xóa lọc',
+                    onTap: () {
+                      searchController.clear();
+                      state.clearSearchFilters();
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       );
 
@@ -1611,7 +1708,8 @@ class MobileMenuLayout extends StatelessWidget {
     );
   }
 
-  Future<void> _handleMooncakeAction(BuildContext context, MenuProduct item) async {
+  Future<void> _handleMooncakeAction(
+      BuildContext context, MenuProduct item) async {
     final config = item.mooncakeConfig;
     if (config == null) {
       return;
@@ -1633,7 +1731,8 @@ class MobileMenuLayout extends StatelessWidget {
       if (!added) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Hộp đã đủ số lượng bánh. Hãy xóa bớt hoặc thêm vào giỏ.'),
+            content:
+                Text('Hộp đã đủ số lượng bánh. Hãy xóa bớt hoặc thêm vào giỏ.'),
           ),
         );
         return;
@@ -1661,7 +1760,8 @@ class MobileMenuLayout extends StatelessWidget {
     AppServices.instance.cartSession.addCartItem(cartItem);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Đã thêm ${item.title} (${cartItem.variantLabel}) vào giỏ hàng'),
+        content: Text(
+            'Đã thêm ${item.title} (${cartItem.variantLabel}) vào giỏ hàng'),
       ),
     );
   }
@@ -1735,8 +1835,8 @@ class MobileMenuLayout extends StatelessWidget {
               child: const Text('Hủy'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop((selectedWeight, selectedEgg)),
+              onPressed: () => Navigator.of(dialogContext)
+                  .pop((selectedWeight, selectedEgg)),
               child: const Text('Xác nhận'),
             ),
           ],
@@ -1834,12 +1934,16 @@ class _MenuItemCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Theme.of(context).cardColor,
                               shape: BoxShape.circle,
-                              border: Border.all(color: MenuColors.gray, width: 2),
+                              border:
+                                  Border.all(color: MenuColors.gray, width: 2),
                             ),
                             child: Icon(
-                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
                               size: 18,
-                              color: isFavorite ? MenuColors.red : MenuColors.blue,
+                              color:
+                                  isFavorite ? MenuColors.red : MenuColors.blue,
                             ),
                           ),
                         ),
@@ -1847,7 +1951,8 @@ class _MenuItemCard extends StatelessWidget {
                         GestureDetector(
                           onTap: onToggleCompare,
                           child: Tooltip(
-                            message: isSelectedForCompare ? 'Bỏ so sánh' : 'So sánh',
+                            message:
+                                isSelectedForCompare ? 'Bỏ so sánh' : 'So sánh',
                             child: Container(
                               width: 34,
                               height: 34,
@@ -1856,7 +1961,8 @@ class _MenuItemCard extends StatelessWidget {
                                     ? MenuColors.blue
                                     : Theme.of(context).cardColor,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: MenuColors.gray, width: 2),
+                                border: Border.all(
+                                    color: MenuColors.gray, width: 2),
                               ),
                               child: Icon(
                                 Icons.compare_arrows,
@@ -1882,10 +1988,13 @@ class _MenuItemCard extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.star, size: compact ? 14 : 16, color: Colors.amber.shade700),
+                  Icon(Icons.star,
+                      size: compact ? 14 : 16, color: Colors.amber.shade700),
                   const SizedBox(width: 4),
                   Text(
-                    averageRating <= 0 ? 'Mới' : averageRating.toStringAsFixed(1),
+                    averageRating <= 0
+                        ? 'Mới'
+                        : averageRating.toStringAsFixed(1),
                     style: TextStyle(
                       color: MenuColors.blue,
                       fontSize: compact ? 11 : 12,
@@ -1917,7 +2026,9 @@ class _MenuItemCard extends StatelessWidget {
                   height: compact ? 34 : 38,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: isAddingToBox ? const Color(0xFF8E44AD) : MenuColors.red,
+                    color: isAddingToBox
+                        ? const Color(0xFF8E44AD)
+                        : MenuColors.red,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: MenuColors.gray, width: 2),
                   ),
@@ -2268,7 +2379,8 @@ class _CompareBar extends StatelessWidget {
                   context.go('${AppRoutePaths.compare}?ids=$idsStr');
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -2313,13 +2425,17 @@ class _MenuGridSkeleton extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  ShimmerBox(width: double.infinity, height: mobile ? 120 : 150, borderRadius: 6),
+                  ShimmerBox(
+                      width: double.infinity,
+                      height: mobile ? 120 : 150,
+                      borderRadius: 6),
                   const SizedBox(height: 10),
                   const ShimmerBox(width: double.infinity, height: 16),
                   const SizedBox(height: 8),
                   const ShimmerBox(width: 100, height: 14),
                   const Spacer(),
-                  const ShimmerBox(width: double.infinity, height: 36, borderRadius: 6),
+                  const ShimmerBox(
+                      width: double.infinity, height: 36, borderRadius: 6),
                 ],
               ),
             ),

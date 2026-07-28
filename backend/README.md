@@ -56,6 +56,24 @@ The menu repository in the Flutter app already matches:
 - `GET /menu/products`
 - `GET /menu/products/{id}`
 
+## Observability stack
+
+Docker container metrics are available through the observability stack:
+
+```bash
+make obs-up
+```
+
+- Grafana: http://localhost:3000, default login `admin` / `admin`
+- Prometheus: http://localhost:9090
+- cAdvisor: http://localhost:8080
+
+Stop it with:
+
+```bash
+make obs-down
+```
+
 ## Import home page data
 
 Home page content is stored in:

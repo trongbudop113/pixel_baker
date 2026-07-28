@@ -13,6 +13,8 @@ from app.models.admin import (
     AdminOrderIngredientShortageResponse,
     AdminAlertResponse,
     AdminBulkImportResult,
+    AdminCategoryResponse,
+    AdminCategoryUpsertRequest,
     AdminContentDocumentResponse,
     AdminCustomerResponse,
     AdminCustomerExcelRow,
@@ -61,6 +63,7 @@ class AdminRepository:
         self._orders = database["orders"]
         self._users = database["users"]
         self._products = database["menu_products"]
+        self._categories = database["menu_categories"]
         self._ingredients = database["admin_ingredients"]
         self._recipes = database["admin_recipes"]
         self._inventory_transactions = database["inventory_transactions"]
@@ -234,7 +237,7 @@ class AdminRepository:
                     f"• {len(ingredient_docs)} nguyên liệu đang được theo dõi",
                     f"• {len(low_stock_ingredients)} nguyên liệu cần nhập thêm",
                     f"• {sum(int(item.get('availableQuantity') or 0) for item in ingredient_docs)} đơn vị tồn kho khả dụng",
-                    f"• Giá trị kho: {self._format_currency(sum(int(item.get('availableQuantity') or 0) * int(item.get('unitPrice') or 0) for item in ingredient_docs))}",
+                    f"• Giá trị kho: {self._format_currency(sum(int(item.get('availableQuantity') or 0) * self._ingredient_unit_price(item) for item in ingredient_docs))}",
                 ],
                 buttonLabel="Xem kho",
                 compact=True,
@@ -468,6 +471,50 @@ class AdminRepository:
             )
             for document in documents
         ]
+
+    async def list_categories(self) -> list[AdminCategoryResponse]:
+        documents = await self._categories.find({}).sort("sortOrder", 1).to_list(length=200)
+        return [self._map_category_response(document) for document in documents]
+
+    async def create_category(
+        self,
+        payload: AdminCategoryUpsertRequest,
+    ) -> AdminCategoryResponse:
+        document = self._build_category_document(payload)
+        existing = await self._categories.find_one(
+            {"$or": [{"id": document["id"]}, {"category": document["category"]}]},
+        )
+        if existing is not None:
+            raise ValueError("Danh mục đã tồn tại.")
+        await self._categories.insert_one(document)
+        created = await self._categories.find_one({"id": document["id"]})
+        if created is None:
+            raise RuntimeError("Failed to create category.")
+        return self._map_category_response(created)
+
+    async def replace_category(
+        self,
+        category_id: str,
+        payload: AdminCategoryUpsertRequest,
+    ) -> Optional[AdminCategoryResponse]:
+        existing = await self._categories.find_one({"id": category_id})
+        if existing is None:
+            return None
+        document = self._build_category_document(payload, category_id=category_id)
+        duplicate = await self._categories.find_one(
+            {"category": document["category"], "id": {"$ne": category_id}},
+        )
+        if duplicate is not None:
+            raise ValueError("Danh mục đã tồn tại.")
+        await self._categories.update_one({"id": category_id}, {"$set": document})
+        updated = await self._categories.find_one({"id": document["id"]})
+        if updated is None:
+            return None
+        return self._map_category_response(updated)
+
+    async def delete_category(self, category_id: str) -> bool:
+        result = await self._categories.delete_one({"id": category_id})
+        return result.deleted_count > 0
 
     async def list_product_excel_rows(self) -> list[AdminProductExcelRow]:
         documents = await self._products.find({}).sort("id", 1).to_list(length=1000)
@@ -1069,7 +1116,9 @@ class AdminRepository:
                 name=str(document.get("name") or ""),
                 category=str(document.get("category") or ""),
                 unit=str(document.get("unit") or ""),
-                unitPrice=int(document.get("unitPrice") or 0),
+                price=self._ingredient_price(document),
+                priceUnitQuantity=self._ingredient_price_unit_quantity(document),
+                unitPrice=self._ingredient_unit_price(document),
                 availableQuantity=int(document.get("availableQuantity") or 0),
                 lowStockThreshold=int(document.get("lowStockThreshold") or 0),
             )
@@ -1087,6 +1136,13 @@ class AdminRepository:
         payload: AdminIngredientUpsertRequest,
     ) -> AdminIngredientResponse:
         standard_unit, conversion_factor = self._normalize_unit(payload.unit)
+        price = self._payload_ingredient_price(payload)
+        price_unit_quantity = self._payload_ingredient_price_unit_quantity(payload)
+        if price < 0:
+            raise ValueError("Giá không hợp lệ.")
+        if price_unit_quantity <= 0:
+            raise ValueError("Đơn vị phải lớn hơn 0.")
+        unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
         document = {
             "id": self._slugify(payload.name),
             "name": payload.name.strip(),
@@ -1094,7 +1150,9 @@ class AdminRepository:
             "unit": payload.unit.strip().lower(),
             "standardUnit": standard_unit,
             "conversionFactor": conversion_factor,
-            "unitPrice": int(payload.unitPrice or 0),
+            "price": price,
+            "priceUnitQuantity": price_unit_quantity,
+            "unitPrice": unit_price,
             "availableQuantity": int(payload.availableQuantity or 0),
             "availableNormalizedQuantity": int(payload.availableQuantity or 0) * conversion_factor,
             "lowStockThreshold": int(payload.lowStockThreshold or 0),
@@ -1132,14 +1190,20 @@ class AdminRepository:
             if not row.name.strip():
                 errors.append(self._import_error(index, "name", "Tên nguyên liệu là bắt buộc.", row.name))
                 continue
-            if int(row.unitPrice or 0) < 0:
-                errors.append(self._import_error(index, "unitPrice", "Đơn giá không hợp lệ.", str(row.unitPrice)))
+            row_price = self._row_ingredient_price(row)
+            row_price_unit_quantity = self._row_ingredient_price_unit_quantity(row)
+            if row_price < 0:
+                errors.append(self._import_error(index, "price", "Giá không hợp lệ.", str(row_price)))
+                continue
+            if row_price_unit_quantity <= 0:
+                errors.append(self._import_error(index, "priceUnitQuantity", "Đơn vị phải lớn hơn 0.", str(row_price_unit_quantity)))
                 continue
             payload = AdminIngredientUpsertRequest(
                 name=row.name.strip(),
                 category=row.category.strip(),
                 unit=row.unit.strip().lower(),
-                unitPrice=int(row.unitPrice or 0),
+                price=row_price,
+                priceUnitQuantity=row_price_unit_quantity,
                 availableQuantity=int(row.availableQuantity or 0),
                 lowStockThreshold=int(row.lowStockThreshold or 0),
             )
@@ -1148,6 +1212,9 @@ class AdminRepository:
 
             if existing is None:
                 standard_unit, conversion_factor = self._normalize_unit(payload.unit)
+                price = self._payload_ingredient_price(payload)
+                price_unit_quantity = self._payload_ingredient_price_unit_quantity(payload)
+                unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
                 document = {
                     "id": lookup_id,
                     "name": payload.name,
@@ -1155,7 +1222,9 @@ class AdminRepository:
                     "unit": payload.unit,
                     "standardUnit": standard_unit,
                     "conversionFactor": conversion_factor,
-                    "unitPrice": payload.unitPrice,
+                    "price": price,
+                    "priceUnitQuantity": price_unit_quantity,
+                    "unitPrice": unit_price,
                     "availableQuantity": payload.availableQuantity,
                     "availableNormalizedQuantity": payload.availableQuantity * conversion_factor,
                     "lowStockThreshold": payload.lowStockThreshold,
@@ -1171,6 +1240,9 @@ class AdminRepository:
                 continue
 
             standard_unit, conversion_factor = self._normalize_unit(payload.unit)
+            price = self._payload_ingredient_price(payload)
+            price_unit_quantity = self._payload_ingredient_price_unit_quantity(payload)
+            unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
             await self._ingredients.update_one(
                 {"id": lookup_id},
                 {
@@ -1180,7 +1252,9 @@ class AdminRepository:
                         "unit": payload.unit,
                         "standardUnit": standard_unit,
                         "conversionFactor": conversion_factor,
-                        "unitPrice": payload.unitPrice,
+                        "price": price,
+                        "priceUnitQuantity": price_unit_quantity,
+                        "unitPrice": unit_price,
                         "availableQuantity": payload.availableQuantity,
                         "availableNormalizedQuantity": payload.availableQuantity * conversion_factor,
                         "lowStockThreshold": payload.lowStockThreshold,
@@ -1217,6 +1291,13 @@ class AdminRepository:
         quantity = int(payload.availableQuantity or 0)
         threshold = int(payload.lowStockThreshold or 0)
         standard_unit, conversion_factor = self._normalize_unit(payload.unit)
+        price = self._payload_ingredient_price(payload)
+        price_unit_quantity = self._payload_ingredient_price_unit_quantity(payload)
+        if price < 0:
+            raise ValueError("Giá không hợp lệ.")
+        if price_unit_quantity <= 0:
+            raise ValueError("Đơn vị phải lớn hơn 0.")
+        unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
         await self._ingredients.update_one(
             {"id": ingredient_id},
             {
@@ -1226,7 +1307,9 @@ class AdminRepository:
                     "unit": payload.unit.strip().lower(),
                     "standardUnit": standard_unit,
                     "conversionFactor": conversion_factor,
-                    "unitPrice": int(payload.unitPrice or 0),
+                    "price": price,
+                    "priceUnitQuantity": price_unit_quantity,
+                    "unitPrice": unit_price,
                     "availableQuantity": quantity,
                     "availableNormalizedQuantity": quantity * conversion_factor,
                     "lowStockThreshold": threshold,
@@ -2037,12 +2120,44 @@ class AdminRepository:
             return "Sắp hết"
         return "Đủ hàng"
 
+    def _calculate_ingredient_unit_price(self, price: int, price_unit_quantity: int) -> int:
+        basis = max(1, int(price_unit_quantity or 1))
+        return max(0, round(int(price or 0) / basis))
+
+    def _payload_ingredient_price(self, payload: AdminIngredientUpsertRequest) -> int:
+        return int(payload.price if payload.price is not None else payload.unitPrice or 0)
+
+    def _payload_ingredient_price_unit_quantity(self, payload: AdminIngredientUpsertRequest) -> int:
+        return int(payload.priceUnitQuantity if payload.priceUnitQuantity is not None else 1)
+
+    def _row_ingredient_price(self, row: AdminIngredientExcelRow) -> int:
+        return int(row.price if row.price is not None else row.unitPrice or 0)
+
+    def _row_ingredient_price_unit_quantity(self, row: AdminIngredientExcelRow) -> int:
+        return int(row.priceUnitQuantity if row.priceUnitQuantity is not None else 1)
+
+    def _ingredient_price(self, document) -> int:
+        return int(document.get("price") if document.get("price") is not None else document.get("unitPrice") or 0)
+
+    def _ingredient_price_unit_quantity(self, document) -> int:
+        return max(1, int(document.get("priceUnitQuantity") or 1))
+
+    def _ingredient_unit_price(self, document) -> int:
+        if document.get("unitPrice") is not None:
+            return int(document.get("unitPrice") or 0)
+        return self._calculate_ingredient_unit_price(
+            self._ingredient_price(document),
+            self._ingredient_price_unit_quantity(document),
+        )
+
     def _map_ingredient(self, document) -> AdminIngredientResponse:
         quantity = int(document.get("availableQuantity") or 0)
         threshold = int(document.get("lowStockThreshold") or 0)
         standard_unit, conversion_factor = self._normalize_unit(str(document.get("unit") or ""))
         normalized_quantity = int(document.get("availableNormalizedQuantity") or quantity * conversion_factor)
         normalized_threshold = int(document.get("lowStockThresholdNormalized") or threshold * conversion_factor)
+        price = self._ingredient_price(document)
+        price_unit_quantity = self._ingredient_price_unit_quantity(document)
         return AdminIngredientResponse(
             id=str(document.get("id") or ""),
             name=str(document.get("name") or ""),
@@ -2050,7 +2165,9 @@ class AdminRepository:
             unit=str(document.get("unit") or ""),
             standardUnit=str(document.get("standardUnit") or standard_unit),
             conversionFactor=int(document.get("conversionFactor") or conversion_factor),
-            unitPrice=int(document.get("unitPrice") or 0),
+            price=price,
+            priceUnitQuantity=price_unit_quantity,
+            unitPrice=self._ingredient_unit_price(document),
             availableQuantity=quantity,
             availableNormalizedQuantity=normalized_quantity,
             lowStockThreshold=threshold,
@@ -2133,7 +2250,7 @@ class AdminRepository:
                 if ingredient is None:
                     raise ValueError("Ingredient not found.")
                 factor = int(ingredient.get("conversionFactor") or self._normalize_unit(str(ingredient.get("unit") or ""))[1])
-                raw_unit_price = int(ingredient.get("unitPrice") or 0)
+                raw_unit_price = self._ingredient_unit_price(ingredient)
                 unit_price = max(1, round(raw_unit_price / factor)) if factor > 1 else raw_unit_price
                 normalized_quantity = int(item.quantity or 0) * factor
                 ingredient_name = str(ingredient.get("name") or "")
@@ -2298,6 +2415,32 @@ class AdminRepository:
             deliveryNote=row.deliveryNote.strip(),
             detailBullets=self._split_excel_list(row.detailBullets),
         )
+
+    def _map_category_response(self, document: dict) -> AdminCategoryResponse:
+        return AdminCategoryResponse(
+            id=str(document.get("id") or ""),
+            label=str(document.get("label") or ""),
+            category=str(document.get("category") or ""),
+            imageUrl=document.get("imageUrl"),
+            sortOrder=int(document.get("sortOrder") or 0),
+        )
+
+    def _build_category_document(
+        self,
+        payload: AdminCategoryUpsertRequest,
+        *,
+        category_id: Optional[str] = None,
+    ) -> dict:
+        label = payload.label.strip()
+        category = payload.category.strip()
+        document_id = category_id or self._slugify(category or label)
+        return {
+            "id": document_id,
+            "label": label,
+            "category": category,
+            "imageUrl": payload.imageUrl.strip() if payload.imageUrl else None,
+            "sortOrder": int(payload.sortOrder or 0),
+        }
 
     def _build_product_document(
         self,

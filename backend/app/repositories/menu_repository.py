@@ -17,6 +17,7 @@ class MenuRepository:
     def __init__(self, database: AsyncIOMotorDatabase):
         self._page_collection = database["menu_pages"]
         self._collection = database["menu_products"]
+        self._category_collection = database["menu_categories"]
 
     async def get_menu_page(self) -> MenuPageResponse:
         document = await self._page_collection.find_one({"slug": "main"})
@@ -26,6 +27,16 @@ class MenuRepository:
         cloned = _strip_mongo_fields(document)
         cloned.pop("slug", None)
         product_documents = await self._collection.find({}).sort("id", 1).to_list(length=None)
+        category_documents = await self._category_collection.find({}).sort("sortOrder", 1).to_list(length=None)
+        if category_documents:
+            cloned["filters"] = [
+                {
+                    "label": str(item.get("label") or ""),
+                    "category": str(item.get("category") or ""),
+                    "imageUrl": item.get("imageUrl"),
+                }
+                for item in category_documents
+            ]
         cloned["products"] = [
             self._map_product_response(_strip_mongo_fields(item)).model_dump()
             for item in product_documents

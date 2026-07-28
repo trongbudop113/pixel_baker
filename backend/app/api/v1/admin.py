@@ -10,6 +10,8 @@ from app.models.admin import (
     AdminBulkOrderStatusUpdateRequest,
     AdminBulkProductStockUpdateRequest,
     AdminBulkImportResult,
+    AdminCategoryResponse,
+    AdminCategoryUpsertRequest,
     AdminContentDocumentResponse,
     AdminContentDocumentUpdateRequest,
     AdminCustomerResponse,
@@ -167,6 +169,76 @@ async def bulk_update_admin_order_status(
 ) -> AdminActionResponse:
     modified = await repository.bulk_update_order_status(payload.orderIds, payload.status)
     return AdminActionResponse(message=f"Đã cập nhật {modified} đơn hàng.")
+
+
+@router.get("/categories", response_model=list[AdminCategoryResponse])
+async def list_admin_categories(
+    _: UserResponse = Depends(require_admin_permission("products:view", "products:manage")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> list[AdminCategoryResponse]:
+    return await repository.list_categories()
+
+
+@router.post("/categories", response_model=AdminCategoryResponse)
+async def create_admin_category(
+    payload: AdminCategoryUpsertRequest,
+    _: UserResponse = Depends(require_admin_permission("products:manage")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> AdminCategoryResponse:
+    if not payload.label.strip() or not payload.category.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vui lòng nhập tên hiển thị và giá trị danh mục.",
+        )
+    try:
+        return await repository.create_category(payload)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+
+@router.put("/categories/{category_id}", response_model=AdminCategoryResponse)
+async def replace_admin_category(
+    category_id: str,
+    payload: AdminCategoryUpsertRequest,
+    _: UserResponse = Depends(require_admin_permission("products:manage")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> AdminCategoryResponse:
+    if not payload.label.strip() or not payload.category.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vui lòng nhập tên hiển thị và giá trị danh mục.",
+        )
+    try:
+        category = await repository.replace_category(category_id, payload)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+    if category is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy danh mục.",
+        )
+    return category
+
+
+@router.delete("/categories/{category_id}", response_model=AdminActionResponse)
+async def delete_admin_category(
+    category_id: str,
+    _: UserResponse = Depends(require_admin_permission("products:manage")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> AdminActionResponse:
+    deleted = await repository.delete_category(category_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy danh mục.",
+        )
+    return AdminActionResponse(message="Xóa danh mục thành công.")
 
 
 @router.get("/orders/excel-rows", response_model=list[AdminOrderExcelRow])
@@ -534,7 +606,13 @@ async def replace_admin_ingredient(
     _: UserResponse = Depends(require_admin_permission("inventory:manage")),
     repository: AdminRepository = Depends(get_admin_repository),
 ) -> AdminIngredientResponse:
-    ingredient = await repository.replace_ingredient(ingredient_id, payload)
+    try:
+        ingredient = await repository.replace_ingredient(ingredient_id, payload)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
+        ) from error
     if ingredient is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
