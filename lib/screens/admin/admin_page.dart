@@ -641,10 +641,12 @@ class _CategoriesManagementSection extends StatelessWidget {
               'Ảnh',
               'Tên hiển thị',
               'Giá trị',
+              'Loại',
+              'Hiển thị web',
               'Thứ tự',
               'Thao tác'
             ],
-            widths: const [1, 3, 3, 1, 3],
+            widths: const [1, 3, 3, 2, 2, 1, 3],
           ),
           const SizedBox(height: 10),
           if (state.categories.isEmpty)
@@ -1054,6 +1056,10 @@ class _RecipesManagementSection extends StatelessWidget {
           ],
           if (state.canManageRecipes) ...[
             _MiniActionButton(
+              label: 'Đồng bộ',
+              onTap: state.isUpdating ? null : state.syncRecipes,
+            ),
+            _MiniActionButton(
               label: 'Nhập Excel',
               onTap: state.isUpdating ? null : () => _importRecipes(context),
             ),
@@ -1069,135 +1075,7 @@ class _RecipesManagementSection extends StatelessWidget {
       ),
       child: state.recipes.isEmpty
           ? const _EmptyAdminState(message: 'Chưa có công thức nào.')
-          : Column(
-              children: state.recipes.map((recipe) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border:
-                          Border.all(color: const Color(0xFFE5E7EB), width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          recipe.productTitle,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: AdminColors.textDark,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _recipeYieldLabel(recipe),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AdminColors.textSoft,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          recipe.recipeType == 'semi_finished'
-                              ? 'Loại: Bán thành phẩm'
-                              : 'Loại: Thành phẩm',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: recipe.recipeType == 'semi_finished'
-                                ? AdminColors.orange
-                                : AdminColors.blue,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Cost theo mẻ: ${_formatCurrency(recipe.totalCost)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AdminColors.green,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Cost / ${recipe.yieldUnit}: ${_formatCurrency(recipe.costPerUnit)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AdminColors.blue,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Lợi nhuận gộp ước tính: ${_formatCurrency(recipe.grossProfitEstimate)} • ${recipe.grossMarginPercent.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AdminColors.green,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ...recipe.ingredients.map((ingredient) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Text(
-                              '• ${ingredient.ingredientName}: ${ingredient.quantity} ${ingredient.unit} / mẻ • hao hụt ${ingredient.wastePercent}%'
-                              '${ingredient.sourceType == 'recipe' ? ' • bán thành phẩm' : ''}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          );
-                        }),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _MiniActionButton(
-                              label: 'Sửa',
-                              onTap: state.canManageRecipes
-                                  ? () => context.goNamed(
-                                        AppRouteNames.adminRecipeForm,
-                                        queryParameters: {
-                                          'id': recipe.id,
-                                          'sidebar': '5'
-                                        },
-                                      )
-                                  : null,
-                            ),
-                            _MiniActionButton(
-                              label: 'Copy',
-                              onTap: state.canManageRecipes
-                                  ? () => _openCopyRecipeDialog(
-                                      context, state, recipe)
-                                  : null,
-                            ),
-                            _MiniActionButton(
-                              label: 'Xóa',
-                              onTap: !state.canManageRecipes || state.isUpdating
-                                  ? null
-                                  : () => _confirmDangerAction(
-                                        context,
-                                        message:
-                                            'Xóa công thức của "${recipe.productTitle}"?',
-                                        onConfirm: () =>
-                                            state.deleteRecipe(recipe),
-                                      ),
-                              backgroundColor: AdminColors.red,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(growable: false),
-            ),
+          : _RecipeGroups(recipes: state.recipes, state: state),
     );
   }
 
@@ -2472,15 +2350,45 @@ class _AdminCategoryRow extends StatelessWidget {
           ),
           Expanded(
             flex: 3,
-            child: Text(
-              category.label,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: Text(
+                category.label,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
             ),
           ),
           Expanded(
               flex: 3,
               child: Text(category.category,
                   style: const TextStyle(fontSize: 12))),
+          Expanded(
+            flex: 2,
+            child: Text(
+              category.isSemiFinished ? 'Bán TP' : 'Thành phẩm',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: category.isSemiFinished
+                    ? const Color(0xFFD97706)
+                    : const Color(0xFF2563EB),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              category.isVisibleOnWeb ? 'Có' : 'Nội bộ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: category.isVisibleOnWeb
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFD97706),
+              ),
+            ),
+          ),
           Expanded(
               flex: 1,
               child: Text('${category.sortOrder}',
@@ -2515,35 +2423,35 @@ class _CategoryImageThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = (imageUrl ?? '').trim();
-    const size = 42.0;
+
     if (url.isEmpty) {
-      return Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+      return AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: const Icon(Icons.image_outlined,
+              size: 18, color: AdminColors.textSoft),
         ),
-        child: const Icon(Icons.image_outlined,
-            size: 18, color: AdminColors.textSoft),
       );
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        url,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          width: size,
-          height: size,
-          alignment: Alignment.center,
-          color: const Color(0xFFFCEAEA),
-          child: const Icon(Icons.broken_image_outlined,
-              size: 18, color: AdminColors.red),
+    return AspectRatio(
+      aspectRatio: 1,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            alignment: Alignment.center,
+            color: const Color(0xFFFCEAEA),
+            child: const Icon(Icons.broken_image_outlined,
+                size: 18, color: AdminColors.red),
+          ),
         ),
       ),
     );
@@ -3614,6 +3522,32 @@ class _MobileAdminCategoriesSection extends StatelessWidget {
                                       style: const TextStyle(fontSize: 12)),
                                   const SizedBox(height: 4),
                                   Text(
+                                    category.isSemiFinished
+                                        ? 'Loại: Bán thành phẩm'
+                                        : 'Loại: Thành phẩm',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: category.isSemiFinished
+                                          ? const Color(0xFFD97706)
+                                          : const Color(0xFF2563EB),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    category.isVisibleOnWeb
+                                        ? 'Hiển thị web'
+                                        : 'Ẩn khỏi web',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: category.isVisibleOnWeb
+                                          ? const Color(0xFF16A34A)
+                                          : const Color(0xFFD97706),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
                                     'Thứ tự: ${category.sortOrder}',
                                     style: const TextStyle(fontSize: 12),
                                   ),
@@ -3969,138 +3903,496 @@ class _MobileAdminRecipesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SectionCard(
       title: 'Quản lý công thức',
-      action: _MiniActionButton(
-        label: 'Tạo',
-        onTap: state.canManageRecipes
-            ? () => context.goNamed(
-                  AppRouteNames.adminRecipeForm,
-                  queryParameters: const {'sidebar': '5'},
-                )
-            : null,
+      action: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _MiniActionButton(
+            label: 'Đồng bộ',
+            onTap: state.canManageRecipes && !state.isUpdating
+                ? state.syncRecipes
+                : null,
+          ),
+          _MiniActionButton(
+            label: 'Tạo',
+            onTap: state.canManageRecipes
+                ? () => context.goNamed(
+                      AppRouteNames.adminRecipeForm,
+                      queryParameters: const {'sidebar': '5'},
+                    )
+                : null,
+          ),
+        ],
       ),
       child: state.recipes.isEmpty
           ? const _EmptyAdminState(message: 'Chưa có công thức nào.')
-          : Column(
-              children: state.recipes.map((recipe) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(recipe.productTitle,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AdminColors.textDark)),
-                        const SizedBox(height: 4),
-                        Text(_recipeYieldLabel(recipe),
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AdminColors.textSoft,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        Text(
-                            'Cost theo mẻ: ${_formatCurrency(recipe.totalCost)}',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AdminColors.green,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        Text(
-                            'Cost / ${recipe.yieldUnit}: ${_formatCurrency(recipe.costPerUnit)}',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AdminColors.blue,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        Text(
-                          recipe.recipeType == 'semi_finished'
-                              ? 'Loại: Bán thành phẩm'
-                              : 'Loại: Thành phẩm',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: recipe.recipeType == 'semi_finished'
-                                ? AdminColors.orange
-                                : AdminColors.blue,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Lợi nhuận gộp: ${_formatCurrency(recipe.grossProfitEstimate)} • ${recipe.grossMarginPercent.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: AdminColors.green,
-                              fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 6),
-                        ...recipe.ingredients.map((ingredient) => Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(
-                                '• ${ingredient.ingredientName}: ${ingredient.quantity} ${ingredient.unit} / mẻ • hao hụt ${ingredient.wastePercent}%'
-                                '${ingredient.sourceType == 'recipe' ? ' • bán thành phẩm' : ''}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            )),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MiniActionButton(
-                                label: 'Sửa',
-                                onTap: state.canManageRecipes
-                                    ? () => context.goNamed(
-                                          AppRouteNames.adminRecipeForm,
-                                          queryParameters: {
-                                            'id': recipe.id,
-                                            'sidebar': '5'
-                                          },
-                                        )
-                                    : null,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _MiniActionButton(
-                                label: 'Copy',
-                                onTap: state.canManageRecipes
-                                    ? () => _openCopyRecipeDialog(
-                                        context, state, recipe)
-                                    : null,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _MiniActionButton(
-                                label: 'Xóa',
-                                onTap: state.isUpdating
-                                    ? null
-                                    : () => _confirmDangerAction(
-                                          context,
-                                          message:
-                                              'Xóa công thức của "${recipe.productTitle}"?',
-                                          onConfirm: () =>
-                                              state.deleteRecipe(recipe),
-                                        ),
-                                backgroundColor: AdminColors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(growable: false),
-            ),
+          : _RecipeGroups(recipes: state.recipes, state: state),
     );
   }
+}
+
+class _RecipeGroups extends StatelessWidget {
+  const _RecipeGroups({
+    required this.recipes,
+    required this.state,
+  });
+
+  final List<AdminRecipeModel> recipes;
+  final AdminState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final finishedRecipes = recipes
+        .where((recipe) => recipe.recipeType != 'semi_finished')
+        .toList(growable: false);
+    final semiFinishedRecipes = recipes
+        .where((recipe) => recipe.recipeType == 'semi_finished')
+        .toList(growable: false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _RecipeGroupSection(
+          title: 'Thành phẩm',
+          count: finishedRecipes.length,
+          accentColor: AdminColors.blue,
+          emptyMessage: 'Chưa có công thức thành phẩm.',
+          recipes: finishedRecipes,
+          state: state,
+        ),
+        const SizedBox(height: 14),
+        _RecipeGroupSection(
+          title: 'Bán thành phẩm',
+          count: semiFinishedRecipes.length,
+          accentColor: AdminColors.orange,
+          emptyMessage: 'Chưa có công thức bán thành phẩm.',
+          recipes: semiFinishedRecipes,
+          state: state,
+        ),
+      ],
+    );
+  }
+}
+
+class _RecipeGroupSection extends StatelessWidget {
+  const _RecipeGroupSection({
+    required this.title,
+    required this.count,
+    required this.accentColor,
+    required this.emptyMessage,
+    required this.recipes,
+    required this.state,
+  });
+
+  final String title;
+  final int count;
+  final Color accentColor;
+  final String emptyMessage;
+  final List<AdminRecipeModel> recipes;
+  final AdminState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 18,
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: AdminColors.textDark,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  color: accentColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (recipes.isEmpty)
+          Text(
+            emptyMessage,
+            style: const TextStyle(
+              color: AdminColors.textSoft,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          )
+        else
+          ...recipes.map(
+            (recipe) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _RecipeCard(recipe: recipe, state: state),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _RecipeCard extends StatelessWidget {
+  const _RecipeCard({
+    required this.recipe,
+    required this.state,
+  });
+
+  final AdminRecipeModel recipe;
+  final AdminState state;
+
+  bool get _isSemiFinished => recipe.recipeType == 'semi_finished';
+  List<AdminRecipeIngredientModel> get _semiFinishedIngredients =>
+      recipe.ingredients
+          .where((ingredient) => ingredient.sourceType == 'recipe')
+          .toList(growable: false);
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor = _isSemiFinished ? AdminColors.orange : AdminColors.blue;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _isSemiFinished ? const Color(0xFFFFFBF5) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border:
+            Border.all(color: accentColor.withValues(alpha: 0.28), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            recipe.productTitle,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: AdminColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _recipeYieldLabel(recipe),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AdminColors.textSoft,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _isSemiFinished ? 'Loại: Bán thành phẩm' : 'Loại: Thành phẩm',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: accentColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Cost theo mẻ: ${_formatCurrency(recipe.totalCost)}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AdminColors.green,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Cost / ${recipe.yieldUnit}: ${_formatCurrency(recipe.costPerUnit)}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AdminColors.blue,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Giá bán / ${recipe.yieldUnit}: ${_formatCurrency(recipe.sellingPrice)}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AdminColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Lợi nhuận gộp ước tính: ${_formatCurrency(recipe.grossProfitEstimate)} • ${recipe.grossMarginPercent.toStringAsFixed(1)}%',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AdminColors.green,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...recipe.ingredients.map((ingredient) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '• ${ingredient.ingredientName}: ${ingredient.quantity} ${ingredient.unit} / mẻ • hao hụt ${ingredient.wastePercent}%'
+                '${ingredient.sourceType == 'recipe' ? ' • bán thành phẩm' : ''}',
+                style: const TextStyle(fontSize: 12),
+              ),
+            );
+          }),
+          if (_semiFinishedIngredients.length >= 2) ...[
+            const SizedBox(height: 8),
+            _RecipeOptionCostPanel(
+              recipe: recipe,
+              semiFinishedIngredients: _semiFinishedIngredients,
+            ),
+          ],
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniActionButton(
+                label: 'Sửa',
+                onTap: state.canManageRecipes
+                    ? () => context.goNamed(
+                          AppRouteNames.adminRecipeForm,
+                          queryParameters: {'id': recipe.id, 'sidebar': '5'},
+                        )
+                    : null,
+              ),
+              _MiniActionButton(
+                label: 'Copy',
+                onTap: state.canManageRecipes
+                    ? () => _openCopyRecipeDialog(context, state, recipe)
+                    : null,
+              ),
+              _MiniActionButton(
+                label: 'Xóa',
+                onTap: !state.canManageRecipes || state.isUpdating
+                    ? null
+                    : () => _confirmDangerAction(
+                          context,
+                          message:
+                              'Xóa công thức của "${recipe.productTitle}"?',
+                          onConfirm: () => state.deleteRecipe(recipe),
+                        ),
+                backgroundColor: AdminColors.red,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecipeOptionCostPanel extends StatelessWidget {
+  const _RecipeOptionCostPanel({
+    required this.recipe,
+    required this.semiFinishedIngredients,
+  });
+
+  final AdminRecipeModel recipe;
+  final List<AdminRecipeIngredientModel> semiFinishedIngredients;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalSemiCostPerUnit = semiFinishedIngredients.fold<int>(
+      0,
+      (sum, ingredient) => sum + _ingredientCostPerUnit(ingredient),
+    );
+    final optionalIngredients = semiFinishedIngredients
+        .where(_isOptionalCombineIngredient)
+        .toList(growable: false);
+    final optionIngredients = optionalIngredients.isNotEmpty
+        ? optionalIngredients
+        : semiFinishedIngredients;
+    final singleChoiceMultiplier =
+        optionalIngredients.isEmpty ? optionIngredients.length : 1;
+    final options = <_RecipeCostOption>[
+      _RecipeCostOption(
+        label: 'Tất cả',
+        description: semiFinishedIngredients
+            .map((ingredient) => ingredient.ingredientName)
+            .join(', '),
+        costPerUnit: recipe.costPerUnit,
+        delta: 0,
+        isDefault: true,
+      ),
+      ...optionIngredients.map((ingredient) {
+        final keptCost = _ingredientCostPerUnit(ingredient);
+        final delta = optionalIngredients.isNotEmpty
+            ? -keptCost
+            : (keptCost * singleChoiceMultiplier) - totalSemiCostPerUnit;
+        final nextCost = recipe.costPerUnit + delta;
+        final labelSuffix =
+            singleChoiceMultiplier > 1 ? ' (x$singleChoiceMultiplier)' : '';
+        return _RecipeCostOption(
+          label: optionalIngredients.isNotEmpty
+              ? 'Không ${ingredient.ingredientName}'
+              : 'Chỉ ${ingredient.ingredientName}$labelSuffix',
+          description: optionalIngredients.isNotEmpty
+              ? 'Giữ các bán thành phẩm còn lại'
+              : 'Dùng $singleChoiceMultiplier phần ${ingredient.ingredientName}',
+          costPerUnit: nextCost < 0 ? 0 : nextCost,
+          delta: delta,
+        );
+      }),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFD8E3F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Option tính cost',
+            style: TextStyle(
+              color: AdminColors.textDark,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: options.map((option) {
+              final optionSellingPrice = (recipe.sellingPrice + option.delta)
+                  .clamp(0, 1 << 31)
+                  .toInt();
+
+              return Container(
+                width: 220,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color:
+                      option.isDefault ? const Color(0xFFEFF6FF) : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: option.isDefault
+                        ? AdminColors.blue
+                        : const Color(0xFFE5E7EB),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      option.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AdminColors.textDark,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      option.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AdminColors.textSoft,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Cost / ${recipe.yieldUnit}: ${_formatCurrency(option.costPerUnit)}',
+                      style: const TextStyle(
+                        color: AdminColors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Giá bán / ${recipe.yieldUnit}: ${_formatCurrency(optionSellingPrice)}',
+                      style: const TextStyle(
+                        color: AdminColors.textDark,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (!option.isDefault) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Chênh lệch: ${_formatSignedCurrency(option.delta)}',
+                        style: TextStyle(
+                          color: option.delta < 0
+                              ? AdminColors.orange
+                              : AdminColors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(growable: false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _ingredientCostPerUnit(AdminRecipeIngredientModel ingredient) {
+    final yieldQuantity = recipe.yieldQuantity <= 0 ? 1 : recipe.yieldQuantity;
+    return (ingredient.lineCost / yieldQuantity).round();
+  }
+
+  bool _isOptionalCombineIngredient(AdminRecipeIngredientModel ingredient) {
+    final name = ingredient.ingredientName.toLowerCase();
+    return name.contains('phủ') ||
+        name.contains('topping') ||
+        name.contains('trang trí');
+  }
+}
+
+class _RecipeCostOption {
+  const _RecipeCostOption({
+    required this.label,
+    required this.description,
+    required this.costPerUnit,
+    required this.delta,
+    this.isDefault = false,
+  });
+
+  final String label;
+  final String description;
+  final int costPerUnit;
+  final int delta;
+  final bool isDefault;
 }
 
 String _recipeYieldLabel(AdminRecipeModel recipe) {
@@ -4980,6 +5272,11 @@ BoxDecoration _box({double borderWidth = 2, double radius = 10}) =>
 String _formatCurrency(int amount) =>
     '${amount.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}đ';
 
+String _formatSignedCurrency(int amount) {
+  final sign = amount > 0 ? '+' : '';
+  return '$sign${_formatCurrency(amount)}';
+}
+
 Color _statusColor(String status) {
   final normalized = status.toLowerCase();
   if (normalized.contains('mới')) return const Color(0xFF2563EB);
@@ -5055,66 +5352,99 @@ Future<void> _showCategoryDialog(
       TextEditingController(text: category?.imageUrl ?? '');
   final sortOrderController = TextEditingController(
       text: '${category?.sortOrder ?? state.categories.length}');
+  var isSemiFinished = category?.isSemiFinished ?? false;
+  var isVisibleOnWeb = category?.isVisibleOnWeb ?? true;
   final isEdit = category != null;
 
   final draft = await showDialog<AdminCategoryDraft>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(isEdit ? 'Sửa danh mục' : 'Thêm danh mục'),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: labelController,
-              decoration: const InputDecoration(labelText: 'Tên hiển thị'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: categoryController,
-              decoration: const InputDecoration(labelText: 'Giá trị danh mục'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: imageUrlController,
-              decoration: const InputDecoration(labelText: 'URL hình ảnh'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: sortOrderController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Thứ tự'),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Hủy'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final label = labelController.text.trim();
-            final value = categoryController.text.trim();
-            if (label.isEmpty || value.isEmpty) {
-              return;
-            }
-            Navigator.of(context).pop(
-              AdminCategoryDraft(
-                label: label,
-                category: value,
-                imageUrl: imageUrlController.text.trim().isEmpty
-                    ? null
-                    : imageUrlController.text.trim(),
-                sortOrder: int.tryParse(sortOrderController.text.trim()) ?? 0,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setDialogState) => AlertDialog(
+        title: Text(isEdit ? 'Sửa danh mục' : 'Thêm danh mục'),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelController,
+                decoration: const InputDecoration(labelText: 'Tên hiển thị'),
               ),
-            );
-          },
-          child: const Text('Lưu'),
+              const SizedBox(height: 10),
+              TextField(
+                controller: categoryController,
+                decoration:
+                    const InputDecoration(labelText: 'Giá trị danh mục'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: imageUrlController,
+                decoration: const InputDecoration(labelText: 'URL hình ảnh'),
+              ),
+              const SizedBox(height: 10),
+              CheckboxListTile(
+                value: isSemiFinished,
+                onChanged: (value) {
+                  setDialogState(() {
+                    isSemiFinished = value ?? false;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Danh mục bán thành phẩm'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              const SizedBox(height: 10),
+              CheckboxListTile(
+                value: isVisibleOnWeb,
+                onChanged: (value) {
+                  setDialogState(() {
+                    isVisibleOnWeb = value ?? true;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Hiển thị trên web'),
+                subtitle:
+                    const Text('Tắt nếu muốn ẩn danh mục thường trên web'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: sortOrderController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Thứ tự'),
+              ),
+            ],
+          ),
         ),
-      ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final label = labelController.text.trim();
+              final value = categoryController.text.trim();
+              if (label.isEmpty || value.isEmpty) {
+                return;
+              }
+              Navigator.of(context).pop(
+                AdminCategoryDraft(
+                  label: label,
+                  category: value,
+                  imageUrl: imageUrlController.text.trim().isEmpty
+                      ? null
+                      : imageUrlController.text.trim(),
+                  isSemiFinished: isSemiFinished,
+                  isVisibleOnWeb: isVisibleOnWeb,
+                  sortOrder: int.tryParse(sortOrderController.text.trim()) ?? 0,
+                ),
+              );
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
     ),
   );
 

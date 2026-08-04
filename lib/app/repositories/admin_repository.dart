@@ -8,39 +8,50 @@ abstract class AdminRepository {
   Future<List<AdminOrderModel>> fetchOrders();
   Future<AdminOrderAdvanceCheckModel> fetchOrderAdvanceCheck(String orderId);
   Future<List<AdminOrderExcelRow>> fetchOrderExcelRows();
-  Future<AdminBulkImportResultModel> importOrderExcelRows(List<AdminOrderExcelRow> rows);
+  Future<AdminBulkImportResultModel> importOrderExcelRows(
+      List<AdminOrderExcelRow> rows);
   Future<AdminOrderModel> updateOrderStatus(String orderId, String status);
   Future<String> bulkUpdateOrders(List<String> orderIds, String status);
   Future<List<AdminProductModel>> fetchProducts();
   Future<List<AdminCategoryModel>> fetchCategories();
   Future<AdminCategoryModel> createCategory(AdminCategoryDraft draft);
-  Future<AdminCategoryModel> updateCategory(String categoryId, AdminCategoryDraft draft);
+  Future<AdminCategoryModel> updateCategory(
+      String categoryId, AdminCategoryDraft draft);
   Future<void> deleteCategory(String categoryId);
   Future<List<AdminProductExcelRow>> fetchProductExcelRows();
-  Future<AdminBulkImportResultModel> importProductExcelRows(List<AdminProductExcelRow> rows);
-  Future<AdminProductModel> updateProductStock(int productId, String stockStatus);
-  Future<String> bulkUpdateProductStocks(List<int> productIds, String stockStatus);
+  Future<AdminBulkImportResultModel> importProductExcelRows(
+      List<AdminProductExcelRow> rows);
+  Future<AdminProductModel> updateProductStock(
+      int productId, String stockStatus);
+  Future<String> bulkUpdateProductStocks(
+      List<int> productIds, String stockStatus);
   Future<MenuProductDetail> fetchProductDetail(int productId);
   Future<MenuProductDetail> createProduct(AdminProductDraft draft);
-  Future<MenuProductDetail> updateProduct(int productId, AdminProductDraft draft);
+  Future<MenuProductDetail> updateProduct(
+      int productId, AdminProductDraft draft);
   Future<void> deleteProduct(int productId);
   Future<List<AdminCustomerModel>> fetchCustomers();
   Future<List<AdminCustomerExcelRow>> fetchCustomerExcelRows();
-  Future<AdminBulkImportResultModel> importCustomerExcelRows(List<AdminCustomerExcelRow> rows);
+  Future<AdminBulkImportResultModel> importCustomerExcelRows(
+      List<AdminCustomerExcelRow> rows);
   Future<AdminCustomerModel> fetchCustomer(String customerId);
-  Future<AdminCustomerModel> updateCustomer(String customerId, AdminCustomerDraft draft);
+  Future<AdminCustomerModel> updateCustomer(
+      String customerId, AdminCustomerDraft draft);
   Future<List<AdminVoucherModel>> fetchVouchers();
   Future<List<AdminVoucherExcelRow>> fetchVoucherExcelRows();
-  Future<AdminBulkImportResultModel> importVoucherExcelRows(List<AdminVoucherExcelRow> rows);
+  Future<AdminBulkImportResultModel> importVoucherExcelRows(
+      List<AdminVoucherExcelRow> rows);
   Future<AdminVoucherModel> createVoucher(AdminVoucherDraft draft);
   Future<AdminVoucherModel> updateVoucher(String code, AdminVoucherDraft draft);
   Future<void> deleteVoucher(String code);
   Future<List<AdminTestimonialModel>> fetchTestimonials();
-  Future<AdminTestimonialModel> updateTestimonialVisibility(String id, bool isVisible);
+  Future<AdminTestimonialModel> updateTestimonialVisibility(
+      String id, bool isVisible);
   Future<void> deleteTestimonial(String id);
   Future<List<AdminContentDocumentModel>> fetchContents();
   Future<AdminContentDocumentModel> fetchContent(String key);
-  Future<AdminContentDocumentModel> updateContent(String key, String jsonContent);
+  Future<AdminContentDocumentModel> updateContent(
+      String key, String jsonContent);
   Future<List<AdminIngredientModel>> fetchIngredients();
   Future<List<AdminInventoryTransactionModel>> fetchInventoryTransactions();
   Future<List<AdminProductCostReportModel>> fetchProductCostReports();
@@ -49,18 +60,23 @@ abstract class AdminRepository {
   Future<void> deleteReview(int productId, String createdAt);
   Future<String> uploadImage(List<int> bytes, String filename, String mimeType);
   Future<List<AdminIngredientExcelRow>> fetchIngredientExcelRows();
-  Future<AdminBulkImportResultModel> importIngredientExcelRows(List<AdminIngredientExcelRow> rows);
+  Future<AdminBulkImportResultModel> importIngredientExcelRows(
+      List<AdminIngredientExcelRow> rows);
   Future<AdminIngredientModel> fetchIngredient(String ingredientId);
   Future<AdminIngredientModel> createIngredient(AdminIngredientDraft draft);
-  Future<AdminIngredientModel> updateIngredientInfo(String ingredientId, AdminIngredientDraft draft);
+  Future<AdminIngredientModel> updateIngredientInfo(
+      String ingredientId, AdminIngredientDraft draft);
   Future<void> deleteIngredient(String ingredientId);
   Future<List<AdminRecipeModel>> fetchRecipes();
   Future<List<AdminRecipeExcelRow>> fetchRecipeExcelRows();
-  Future<AdminBulkImportResultModel> importRecipeExcelRows(List<AdminRecipeExcelRow> rows);
+  Future<AdminBulkImportResultModel> importRecipeExcelRows(
+      List<AdminRecipeExcelRow> rows);
   Future<AdminRecipeModel> fetchRecipe(String recipeId);
   Future<AdminRecipeOptionsModel> fetchRecipeOptions({String? recipeId});
   Future<AdminRecipeModel> createRecipe(AdminRecipeDraft draft);
-  Future<AdminRecipeModel> updateRecipe(String recipeId, AdminRecipeDraft draft);
+  Future<AdminRecipeModel> updateRecipe(
+      String recipeId, AdminRecipeDraft draft);
+  Future<List<AdminRecipeModel>> syncRecipes();
   Future<AdminRecipeModel> copyRecipe(String recipeId, int productId);
   Future<void> deleteRecipe(String recipeId);
   Future<AdminIngredientModel> updateIngredient(
@@ -107,13 +123,15 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<List<AdminOrderModel>>(
       '/admin/orders',
       requiresAuth: true,
-      decoder: (json) => readList(_unwrapListPayload(json), AdminOrderModel.fromJson),
+      decoder: (json) =>
+          readList(_unwrapListPayload(json), AdminOrderModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<AdminOrderAdvanceCheckModel> fetchOrderAdvanceCheck(String orderId) async {
+  Future<AdminOrderAdvanceCheckModel> fetchOrderAdvanceCheck(
+      String orderId) async {
     final response = await apiClient.get<AdminOrderAdvanceCheckModel>(
       '/admin/orders/$orderId/advance-check',
       requiresAuth: true,
@@ -145,7 +163,9 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.post<AdminBulkImportResultModel>(
       '/admin/orders/excel-import',
       requiresAuth: true,
-      body: {'items': rows.map((item) => item.toJson()).toList(growable: false)},
+      body: {
+        'items': rows.map((item) => item.toJson()).toList(growable: false)
+      },
       decoder: (json) => readItem(
         _unwrapItemPayload(json),
         AdminBulkImportResultModel.fromJson,
@@ -155,12 +175,14 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
   }
 
   @override
-  Future<AdminOrderModel> updateOrderStatus(String orderId, String status) async {
+  Future<AdminOrderModel> updateOrderStatus(
+      String orderId, String status) async {
     final response = await apiClient.patch<AdminOrderModel>(
       '/admin/orders/$orderId',
       requiresAuth: true,
       body: {'status': status},
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminOrderModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminOrderModel.fromJson),
     );
     return response.data;
   }
@@ -171,7 +193,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       '/admin/orders/bulk-status',
       requiresAuth: true,
       body: {'orderIds': orderIds, 'status': status},
-      decoder: (json) => Map<String, dynamic>.from(_unwrapItemPayload(json) as Map),
+      decoder: (json) =>
+          Map<String, dynamic>.from(_unwrapItemPayload(json) as Map),
     );
     return (response.data['message'] ?? '').toString();
   }
@@ -181,7 +204,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<List<AdminProductModel>>(
       '/admin/products',
       requiresAuth: true,
-      decoder: (json) => readList(_unwrapListPayload(json), AdminProductModel.fromJson),
+      decoder: (json) =>
+          readList(_unwrapListPayload(json), AdminProductModel.fromJson),
     );
     return response.data;
   }
@@ -240,23 +264,27 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
   }
 
   @override
-  Future<AdminProductModel> updateProductStock(int productId, String stockStatus) async {
+  Future<AdminProductModel> updateProductStock(
+      int productId, String stockStatus) async {
     final response = await apiClient.patch<AdminProductModel>(
       '/admin/products/$productId',
       requiresAuth: true,
       body: {'stockStatus': stockStatus},
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminProductModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminProductModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<String> bulkUpdateProductStocks(List<int> productIds, String stockStatus) async {
+  Future<String> bulkUpdateProductStocks(
+      List<int> productIds, String stockStatus) async {
     final response = await apiClient.post<Map<String, dynamic>>(
       '/admin/products/bulk-stock',
       requiresAuth: true,
       body: {'productIds': productIds, 'stockStatus': stockStatus},
-      decoder: (json) => Map<String, dynamic>.from(_unwrapItemPayload(json) as Map),
+      decoder: (json) =>
+          Map<String, dynamic>.from(_unwrapItemPayload(json) as Map),
     );
     return (response.data['message'] ?? '').toString();
   }
@@ -297,7 +325,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<MenuProductDetail>(
       '/admin/products/$productId',
       requiresAuth: true,
-      decoder: (json) => readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
     );
     return response.data;
   }
@@ -308,18 +337,21 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       '/admin/products',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<MenuProductDetail> updateProduct(int productId, AdminProductDraft draft) async {
+  Future<MenuProductDetail> updateProduct(
+      int productId, AdminProductDraft draft) async {
     final response = await apiClient.put<MenuProductDetail>(
       '/admin/products/$productId',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), MenuProductDetail.fromJson),
     );
     return response.data;
   }
@@ -338,7 +370,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<List<AdminCustomerModel>>(
       '/admin/customers',
       requiresAuth: true,
-      decoder: (json) => readList(_unwrapListPayload(json), AdminCustomerModel.fromJson),
+      decoder: (json) =>
+          readList(_unwrapListPayload(json), AdminCustomerModel.fromJson),
     );
     return response.data;
   }
@@ -363,7 +396,9 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.post<AdminBulkImportResultModel>(
       '/admin/customers/excel-import',
       requiresAuth: true,
-      body: {'items': rows.map((item) => item.toJson()).toList(growable: false)},
+      body: {
+        'items': rows.map((item) => item.toJson()).toList(growable: false)
+      },
       decoder: (json) => readItem(
         _unwrapItemPayload(json),
         AdminBulkImportResultModel.fromJson,
@@ -377,18 +412,21 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<AdminCustomerModel>(
       '/admin/customers/$customerId',
       requiresAuth: true,
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminCustomerModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminCustomerModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<AdminCustomerModel> updateCustomer(String customerId, AdminCustomerDraft draft) async {
+  Future<AdminCustomerModel> updateCustomer(
+      String customerId, AdminCustomerDraft draft) async {
     final response = await apiClient.put<AdminCustomerModel>(
       '/admin/customers/$customerId',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminCustomerModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminCustomerModel.fromJson),
     );
     return response.data;
   }
@@ -398,7 +436,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<List<AdminVoucherModel>>(
       '/admin/vouchers',
       requiresAuth: true,
-      decoder: (json) => readList(_unwrapListPayload(json), AdminVoucherModel.fromJson),
+      decoder: (json) =>
+          readList(_unwrapListPayload(json), AdminVoucherModel.fromJson),
     );
     return response.data;
   }
@@ -423,7 +462,9 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.post<AdminBulkImportResultModel>(
       '/admin/vouchers/excel-import',
       requiresAuth: true,
-      body: {'items': rows.map((item) => item.toJson()).toList(growable: false)},
+      body: {
+        'items': rows.map((item) => item.toJson()).toList(growable: false)
+      },
       decoder: (json) => readItem(
         _unwrapItemPayload(json),
         AdminBulkImportResultModel.fromJson,
@@ -438,18 +479,21 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       '/admin/vouchers',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminVoucherModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminVoucherModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<AdminVoucherModel> updateVoucher(String code, AdminVoucherDraft draft) async {
+  Future<AdminVoucherModel> updateVoucher(
+      String code, AdminVoucherDraft draft) async {
     final response = await apiClient.put<AdminVoucherModel>(
       '/admin/vouchers/$code',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminVoucherModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminVoucherModel.fromJson),
     );
     return response.data;
   }
@@ -512,7 +556,13 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       return response.data;
     } catch (_) {
       final items = <AdminContentDocumentModel>[];
-      for (final key in const ['home', 'story', 'contact', 'login', 'register']) {
+      for (final key in const [
+        'home',
+        'story',
+        'contact',
+        'login',
+        'register'
+      ]) {
         try {
           items.add(await fetchContent(key));
         } catch (_) {}
@@ -529,20 +579,21 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<AdminContentDocumentModel>(
       '/admin/contents/$key',
       requiresAuth: true,
-      decoder: (json) =>
-          readItem(_unwrapItemPayload(json), AdminContentDocumentModel.fromJson),
+      decoder: (json) => readItem(
+          _unwrapItemPayload(json), AdminContentDocumentModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<AdminContentDocumentModel> updateContent(String key, String jsonContent) async {
+  Future<AdminContentDocumentModel> updateContent(
+      String key, String jsonContent) async {
     final response = await apiClient.put<AdminContentDocumentModel>(
       '/admin/contents/$key',
       requiresAuth: true,
       body: {'jsonContent': jsonContent},
-      decoder: (json) =>
-          readItem(_unwrapItemPayload(json), AdminContentDocumentModel.fromJson),
+      decoder: (json) => readItem(
+          _unwrapItemPayload(json), AdminContentDocumentModel.fromJson),
     );
     return response.data;
   }
@@ -552,13 +603,15 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<List<AdminIngredientModel>>(
       '/admin/ingredients',
       requiresAuth: true,
-      decoder: (json) => readList(_unwrapListPayload(json), AdminIngredientModel.fromJson),
+      decoder: (json) =>
+          readList(_unwrapListPayload(json), AdminIngredientModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<List<AdminInventoryTransactionModel>> fetchInventoryTransactions() async {
+  Future<List<AdminInventoryTransactionModel>>
+      fetchInventoryTransactions() async {
     final response = await apiClient.get<List<AdminInventoryTransactionModel>>(
       '/admin/inventory-transactions',
       requiresAuth: true,
@@ -598,7 +651,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
   }
 
   @override
-  Future<String> uploadImage(List<int> bytes, String filename, String mimeType) async {
+  Future<String> uploadImage(
+      List<int> bytes, String filename, String mimeType) async {
     final url = await apiClient.uploadFile(
       '/admin/upload-image',
       bytes: bytes,
@@ -669,29 +723,34 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<AdminIngredientModel>(
       '/admin/ingredients/$ingredientId',
       requiresAuth: true,
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<AdminIngredientModel> createIngredient(AdminIngredientDraft draft) async {
+  Future<AdminIngredientModel> createIngredient(
+      AdminIngredientDraft draft) async {
     final response = await apiClient.post<AdminIngredientModel>(
       '/admin/ingredients',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<AdminIngredientModel> updateIngredientInfo(String ingredientId, AdminIngredientDraft draft) async {
+  Future<AdminIngredientModel> updateIngredientInfo(
+      String ingredientId, AdminIngredientDraft draft) async {
     final response = await apiClient.put<AdminIngredientModel>(
       '/admin/ingredients/$ingredientId',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
     );
     return response.data;
   }
@@ -710,7 +769,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.get<List<AdminRecipeModel>>(
       '/admin/recipes',
       requiresAuth: true,
-      decoder: (json) => readList(_unwrapListPayload(json), AdminRecipeModel.fromJson),
+      decoder: (json) =>
+          readList(_unwrapListPayload(json), AdminRecipeModel.fromJson),
     );
     return response.data;
   }
@@ -735,7 +795,9 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     final response = await apiClient.post<AdminBulkImportResultModel>(
       '/admin/recipes/excel-import',
       requiresAuth: true,
-      body: {'items': rows.map((item) => item.toJson()).toList(growable: false)},
+      body: {
+        'items': rows.map((item) => item.toJson()).toList(growable: false)
+      },
       decoder: (json) => readItem(
         _unwrapItemPayload(json),
         AdminBulkImportResultModel.fromJson,
@@ -763,7 +825,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       queryParameters: {
         if (recipeId != null && recipeId.isNotEmpty) 'recipe_id': recipeId,
       },
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminRecipeOptionsModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminRecipeOptionsModel.fromJson),
     );
     return response.data;
   }
@@ -774,19 +837,34 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
       '/admin/recipes',
       requiresAuth: true,
       body: draft.toJson(),
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminRecipeModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminRecipeModel.fromJson),
     );
     return response.data;
   }
 
   @override
-  Future<AdminRecipeModel> updateRecipe(String recipeId, AdminRecipeDraft draft) async {
+  Future<AdminRecipeModel> updateRecipe(
+      String recipeId, AdminRecipeDraft draft) async {
     final response = await apiClient.put<AdminRecipeModel>(
       '/admin/recipes/$recipeId',
       requiresAuth: true,
       body: draft.toJson(),
       decoder: (json) =>
           readItem(_unwrapItemPayload(json), AdminRecipeModel.fromJson),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<List<AdminRecipeModel>> syncRecipes() async {
+    final response = await apiClient.post<List<AdminRecipeModel>>(
+      '/admin/recipes/sync',
+      requiresAuth: true,
+      decoder: (json) => readList(
+        _unwrapListPayload(json),
+        AdminRecipeModel.fromJson,
+      ),
     );
     return response.data;
   }
@@ -825,7 +903,8 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
         'quantityDelta': quantityDelta,
         if (lowStockThreshold != null) 'lowStockThreshold': lowStockThreshold,
       },
-      decoder: (json) => readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminIngredientModel.fromJson),
     );
     return response.data;
   }

@@ -121,6 +121,8 @@ class MenuProduct {
     required this.category,
     required this.description,
     required this.images,
+    this.ingredientsText = '',
+    this.optionGroups = const [],
     this.averageRating = 0,
     this.reviewCount = 0,
     this.mooncakeConfig,
@@ -133,6 +135,8 @@ class MenuProduct {
   final String category;
   final String description;
   final List<String> images;
+  final String ingredientsText;
+  final List<ProductOptionGroup> optionGroups;
   final double averageRating;
   final int reviewCount;
   final MooncakeProductConfig? mooncakeConfig;
@@ -149,6 +153,12 @@ class MenuProduct {
       images: rawImages is List
           ? rawImages.map((item) => item.toString()).toList(growable: false)
           : const [],
+      ingredientsText: (json['ingredientsText'] ?? '').toString(),
+      optionGroups: ((json['optionGroups'] as List?) ?? const [])
+          .map((item) => ProductOptionGroup.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ))
+          .toList(growable: false),
       averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0,
       reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
       mooncakeConfig: json['mooncakeConfig'] is Map<String, dynamic>
@@ -168,9 +178,75 @@ class MenuProduct {
       'category': category,
       'description': description,
       'images': images,
+      'ingredientsText': ingredientsText,
+      'optionGroups': optionGroups.map((item) => item.toJson()).toList(),
       'averageRating': averageRating,
       'reviewCount': reviewCount,
       'mooncakeConfig': mooncakeConfig?.toJson(),
+    };
+  }
+}
+
+class ProductOptionGroup {
+  const ProductOptionGroup({
+    required this.id,
+    required this.label,
+    required this.options,
+  });
+
+  final String id;
+  final String label;
+  final List<ProductOptionItem> options;
+
+  factory ProductOptionGroup.fromJson(Map<String, dynamic> json) {
+    return ProductOptionGroup(
+      id: (json['id'] ?? '').toString(),
+      label: (json['label'] ?? '').toString(),
+      options: ((json['options'] as List?) ?? const [])
+          .map((item) => ProductOptionItem.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ))
+          .toList(growable: false),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'label': label,
+      'options': options.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class ProductOptionItem {
+  const ProductOptionItem({
+    required this.id,
+    required this.label,
+    this.priceDelta = 0,
+    this.isDefault = false,
+  });
+
+  final String id;
+  final String label;
+  final int priceDelta;
+  final bool isDefault;
+
+  factory ProductOptionItem.fromJson(Map<String, dynamic> json) {
+    return ProductOptionItem(
+      id: (json['id'] ?? '').toString(),
+      label: (json['label'] ?? '').toString(),
+      priceDelta: (json['priceDelta'] as num?)?.toInt() ?? 0,
+      isDefault: json['isDefault'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'label': label,
+      'priceDelta': priceDelta,
+      'isDefault': isDefault,
     };
   }
 }
@@ -392,6 +468,8 @@ class MenuProductDetail extends MenuProduct {
     required this.relatedProducts,
     super.averageRating = 0,
     super.reviewCount = 0,
+    super.ingredientsText,
+    super.optionGroups,
     super.mooncakeConfig,
   });
 
@@ -414,6 +492,12 @@ class MenuProductDetail extends MenuProduct {
       description: (json['description'] ?? '').toString(),
       images: ((json['images'] as List?) ?? const [])
           .map((item) => item.toString())
+          .toList(growable: false),
+      ingredientsText: (json['ingredientsText'] ?? '').toString(),
+      optionGroups: ((json['optionGroups'] as List?) ?? const [])
+          .map((item) => ProductOptionGroup.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ))
           .toList(growable: false),
       sku: (json['sku'] ?? '').toString(),
       stockStatus: (json['stockStatus'] ?? '').toString(),

@@ -22,9 +22,24 @@ class MenuProductResponse(ApiModel):
     category: str
     description: str
     images: List[str]
+    ingredientsText: str = ""
+    optionGroups: List["ProductOptionGroup"] = []
     averageRating: float = 0
     reviewCount: int = 0
     mooncakeConfig: Optional["MooncakeProductConfig"] = None
+
+
+class ProductOptionItem(ApiModel):
+    id: str
+    label: str
+    priceDelta: int = 0
+    isDefault: bool = False
+
+
+class ProductOptionGroup(ApiModel):
+    id: str
+    label: str
+    options: List[ProductOptionItem]
 
 
 class MooncakeEggOption(ApiModel):

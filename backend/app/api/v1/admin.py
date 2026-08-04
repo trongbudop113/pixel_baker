@@ -820,6 +820,20 @@ async def get_admin_recipe_options(
     return await repository.get_recipe_options_for_edit(recipe_id)
 
 
+@router.post("/recipes/sync", response_model=list[AdminRecipeResponse])
+async def sync_admin_recipes(
+    _: UserResponse = Depends(require_admin_permission("recipes:manage")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> list[AdminRecipeResponse]:
+    try:
+        return await repository.sync_recipes()
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
+        ) from error
+
+
 @router.get("/recipes/{recipe_id}", response_model=AdminRecipeResponse)
 async def get_admin_recipe(
     recipe_id: str,

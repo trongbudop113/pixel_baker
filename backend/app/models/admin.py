@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from app.models.common import ApiModel
 
@@ -60,6 +60,7 @@ class AdminProductResponse(ApiModel):
     priceValue: int
     stockStatus: str
     imageUrl: Optional[str] = None
+    isSemiFinishedCategory: bool = False
 
 
 class AdminCategoryResponse(ApiModel):
@@ -67,6 +68,8 @@ class AdminCategoryResponse(ApiModel):
     label: str
     category: str
     imageUrl: Optional[str] = None
+    isSemiFinished: bool = False
+    isVisibleOnWeb: bool = True
     sortOrder: int = 0
 
 
@@ -74,6 +77,8 @@ class AdminCategoryUpsertRequest(ApiModel):
     label: str
     category: str
     imageUrl: Optional[str] = None
+    isSemiFinished: bool = False
+    isVisibleOnWeb: bool = True
     sortOrder: int = 0
 
 
@@ -98,6 +103,8 @@ class AdminProductUpsertRequest(ApiModel):
     storageNote: str
     deliveryNote: str
     detailBullets: List[str]
+    ingredientsText: str = ""
+    optionGroups: List[Dict[str, Any]] = []
 
 
 class AdminProductExcelRow(ApiModel):
@@ -113,6 +120,8 @@ class AdminProductExcelRow(ApiModel):
     storageNote: str
     deliveryNote: str
     detailBullets: str
+    ingredientsText: str = ""
+    optionGroupsJson: str = "[]"
 
 
 class AdminVoucherExcelRow(ApiModel):
@@ -229,6 +238,7 @@ class AdminRecipeResponse(ApiModel):
     ingredients: List[AdminRecipeIngredientResponse]
     totalCost: int
     costPerUnit: int
+    sellingPrice: int = 0
     grossProfitEstimate: int = 0
     grossMarginPercent: float = 0
     createdAt: str

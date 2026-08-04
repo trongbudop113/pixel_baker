@@ -1006,14 +1006,15 @@ class _FilterChip extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if ((imageUrl ?? '').trim().isNotEmpty) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(7),
-              child: Image.network(
-                imageUrl!.trim(),
-                width: 22,
-                height: 22,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            SizedBox.square(
+              dimension: 22,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Image.network(
+                  imageUrl!.trim(),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
             ),
             const SizedBox(height: 2),

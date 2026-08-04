@@ -137,7 +137,8 @@ class _WebProductDetail extends StatelessWidget {
                           children: [
                             Expanded(flex: 6, child: _gallery(state)),
                             const SizedBox(width: 14),
-                            Expanded(flex: 6, child: _infoPanel(context, state)),
+                            Expanded(
+                                flex: 6, child: _infoPanel(context, state)),
                           ],
                         ),
                         const SizedBox(height: 14),
@@ -148,7 +149,8 @@ class _WebProductDetail extends StatelessWidget {
                         _relatedPanel(context, state),
                         const SizedBox(height: 12),
                         PixelFooter(
-                          label: 'PIXEL BAKERY | ${state.product!.title.toUpperCase()}',
+                          label:
+                              'PIXEL BAKERY | ${state.product!.title.toUpperCase()}',
                         ),
                       ],
                     ),
@@ -227,7 +229,8 @@ class _WebProductDetail extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: () => _shareProduct(context, product.id, product.title),
+                onPressed: () =>
+                    _shareProduct(context, product.id, product.title),
                 icon: const Icon(Icons.share_rounded),
                 tooltip: 'Chia sẻ sản phẩm',
                 color: ProductDetailColors.blue,
@@ -272,9 +275,17 @@ class _WebProductDetail extends StatelessWidget {
           const SizedBox(height: 12),
           _txt(product.description, ProductDetailColors.gray, 14,
               FontWeight.w500),
+          if (product.ingredientsText.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _line('Thành phần', product.ingredientsText),
+          ],
           if (s.isMooncake) ...[
             const SizedBox(height: 14),
             _mooncakeConfigurator(context, s),
+          ],
+          if (s.hasProductOptions) ...[
+            const SizedBox(height: 14),
+            _productOptionsConfigurator(context, s),
           ],
           const SizedBox(height: 14),
           _line('Danh mục', product.category),
@@ -366,7 +377,8 @@ class _WebProductDetail extends StatelessWidget {
           _txt('Tùy chọn bánh trung thu', ProductDetailColors.blue, 15,
               FontWeight.w900),
           const SizedBox(height: 10),
-          _txt('Chọn khối lượng', ProductDetailColors.gray, 12, FontWeight.w800),
+          _txt(
+              'Chọn khối lượng', ProductDetailColors.gray, 12, FontWeight.w800),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -395,6 +407,58 @@ class _WebProductDetail extends StatelessWidget {
               );
             }).toList(growable: false),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _productOptionsConfigurator(
+      BuildContext context, ProductDetailState s) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5FAFF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFB8D7F3), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _txt('Tùy chọn sản phẩm', ProductDetailColors.blue, 15,
+              FontWeight.w900),
+          const SizedBox(height: 10),
+          ...s.optionGroups.map((group) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _txt(group.label, ProductDetailColors.gray, 12,
+                      FontWeight.w800),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: group.options.map((option) {
+                      final selected =
+                          s.selectedOptionForGroup(group)?.id == option.id;
+                      final priceNote = option.priceDelta == 0
+                          ? ''
+                          : option.priceDelta > 0
+                              ? ' +${_formatCurrency(option.priceDelta)}'
+                              : ' -${_formatCurrency(option.priceDelta.abs())}';
+                      return _optionChip(
+                        '${option.label}$priceNote',
+                        selected: selected,
+                        onTap: () => s.selectProductOption(group.id, option.id),
+                      );
+                    }).toList(growable: false),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -447,8 +511,9 @@ class _WebProductDetail extends StatelessWidget {
                   return const SizedBox(height: 8);
                 }
                 final review = state.product!.reviews[index ~/ 2];
-                final accent =
-                    index == 0 ? ProductDetailColors.red : ProductDetailColors.blue;
+                final accent = index == 0
+                    ? ProductDetailColors.red
+                    : ProductDetailColors.blue;
                 return _review(context, state, review, accent);
               }),
           ],
@@ -489,7 +554,8 @@ class _WebProductDetail extends StatelessWidget {
         ),
       );
 
-  Widget _review(BuildContext context, ProductDetailState s, MenuReviewItem review, Color accent) {
+  Widget _review(BuildContext context, ProductDetailState s,
+      MenuReviewItem review, Color accent) {
     final currentUserId = AppServices.instance.authSession.currentUser?.id;
     final isOwn = currentUserId != null && review.userId == currentUserId;
     return Container(
@@ -527,7 +593,8 @@ class _WebProductDetail extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          _txt('”${review.content}”', ProductDetailColors.gray, 13, FontWeight.w500),
+          _txt('”${review.content}”', ProductDetailColors.gray, 13,
+              FontWeight.w500),
           if (review.mediaUrls.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
@@ -557,7 +624,9 @@ class _WebProductDetail extends StatelessWidget {
             SizedBox(
                 width: 90,
                 child: _txt(k, ProductDetailColors.gray, 13, FontWeight.w700)),
-            Expanded(child: _txt(v, Theme.of(context).colorScheme.onSurface, 13, FontWeight.w600)),
+            Expanded(
+                child: _txt(v, Theme.of(context).colorScheme.onSurface, 13,
+                    FontWeight.w600)),
           ],
         ),
       );
@@ -590,10 +659,14 @@ class _WebProductDetail extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: selected ? ProductDetailColors.blue : Theme.of(context).cardColor,
+              color: selected
+                  ? ProductDetailColors.blue
+                  : Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: selected ? ProductDetailColors.blue : ProductDetailColors.gray,
+                color: selected
+                    ? ProductDetailColors.blue
+                    : ProductDetailColors.gray,
                 width: 2,
               ),
             ),
@@ -621,7 +694,8 @@ class _WebProductDetail extends StatelessWidget {
         ),
       );
 
-  Widget _ctaMini(String text, Color bg, {VoidCallback? onTap}) => GestureDetector(
+  Widget _ctaMini(String text, Color bg, {VoidCallback? onTap}) =>
+      GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -674,7 +748,9 @@ class _WebProductDetail extends StatelessWidget {
             Icon(Icons.star, size: 14, color: Colors.amber.shade700),
             const SizedBox(width: 4),
             _txt(
-              rating <= 0 ? 'Mới' : '${rating.toStringAsFixed(1)} ($reviewCount)',
+              rating <= 0
+                  ? 'Mới'
+                  : '${rating.toStringAsFixed(1)} ($reviewCount)',
               Colors.amber.shade900,
               11,
               FontWeight.w800,
@@ -715,11 +791,16 @@ class _WebProductDetail extends StatelessWidget {
   }
 
   String _buildDetailedDescription(MenuProduct product) {
+    final ingredients = product.ingredientsText.trim();
     if (product is MenuProductDetail && product.detailBullets.isNotEmpty) {
-      return product.detailBullets.map((item) => '• $item').join('\n');
+      return [
+        ...product.detailBullets.map((item) => '• $item'),
+        if (ingredients.isNotEmpty) '• Thành phần: $ingredients',
+      ].join('\n');
     }
     return '• Danh mục: ${product.category}\n'
         '• ${product.description}\n'
+        '${ingredients.isNotEmpty ? '• Thành phần: $ingredients\n' : ''}'
         '• Bộ ảnh sản phẩm gồm ${product.images.length} góc chụp.\n'
         '• Giá niêm yết: ${product.price}.';
   }
@@ -749,7 +830,8 @@ class _MobileProductDetail extends StatelessWidget {
       animation: state,
       builder: (context, _) {
         if (state.isLoading) {
-          return _ProductDetailLoading(showTopHeader: showTopHeader, mobile: true);
+          return _ProductDetailLoading(
+              showTopHeader: showTopHeader, mobile: true);
         }
 
         if (state.product == null) {
@@ -839,24 +921,30 @@ class _MobileProductDetail extends StatelessWidget {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: _mTxt(product.title, ProductDetailColors.red,
-                                        22, FontWeight.w900),
+                                    child: _mTxt(
+                                        product.title,
+                                        ProductDetailColors.red,
+                                        22,
+                                        FontWeight.w900),
                                   ),
                                   IconButton(
-                                    onPressed: () => _shareProduct(context, product.id, product.title),
-                                    icon: const Icon(Icons.share_rounded, size: 20),
+                                    onPressed: () => _shareProduct(
+                                        context, product.id, product.title),
+                                    icon: const Icon(Icons.share_rounded,
+                                        size: 20),
                                     tooltip: 'Chia sẻ',
                                     color: ProductDetailColors.blue,
                                   ),
                                   AnimatedBuilder(
-                                    animation: AppServices.instance.wishlistSession,
+                                    animation:
+                                        AppServices.instance.wishlistSession,
                                     builder: (context, _) {
-                                      final isFavorite = AppServices.instance
-                                          .wishlistSession
+                                      final isFavorite = AppServices
+                                          .instance.wishlistSession
                                           .contains(product.id);
                                       return IconButton(
-                                        onPressed: () => AppServices.instance
-                                            .wishlistSession
+                                        onPressed: () => AppServices
+                                            .instance.wishlistSession
                                             .toggle(product.id),
                                         icon: Icon(
                                           isFavorite
@@ -872,7 +960,10 @@ class _MobileProductDetail extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              _mTxt(state.displayPrice, ProductDetailColors.green, 24,
+                              _mTxt(
+                                  state.displayPrice,
+                                  ProductDetailColors.green,
+                                  24,
                                   FontWeight.w900),
                               const SizedBox(height: 6),
                               Wrap(
@@ -886,15 +977,34 @@ class _MobileProductDetail extends StatelessWidget {
                                     12,
                                     FontWeight.w700,
                                   ),
-                                  _ratingChip(product.averageRating, product.reviewCount),
+                                  _ratingChip(product.averageRating,
+                                      product.reviewCount),
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              _mTxt(product.description,
-                                  ProductDetailColors.gray, 12, FontWeight.w500),
+                              _mTxt(
+                                  product.description,
+                                  ProductDetailColors.gray,
+                                  12,
+                                  FontWeight.w500),
+                              if (product.ingredientsText
+                                  .trim()
+                                  .isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                _mTxt(
+                                    'Thành phần: ${product.ingredientsText}',
+                                    ProductDetailColors.gray,
+                                    12,
+                                    FontWeight.w700),
+                              ],
                               if (state.isMooncake) ...[
                                 const SizedBox(height: 10),
                                 _mobileMooncakeConfigurator(context, state),
+                              ],
+                              if (state.hasProductOptions) ...[
+                                const SizedBox(height: 10),
+                                _mobileProductOptionsConfigurator(
+                                    context, state),
                               ],
                             ],
                           ),
@@ -984,11 +1094,13 @@ class _MobileProductDetail extends StatelessWidget {
                                 )
                               else
                                 ...product.reviews.take(2).map(
-                                  (item) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: _review(context, state, item, ProductDetailColors.blue),
-                                  ),
-                                ),
+                                      (item) => Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8),
+                                        child: _review(context, state, item,
+                                            ProductDetailColors.blue),
+                                      ),
+                                    ),
                               _ctaMini(
                                 'Viết đánh giá',
                                 ProductDetailColors.blue,
@@ -997,14 +1109,15 @@ class _MobileProductDetail extends StatelessWidget {
                             ],
                           ),
                         ),
-                      const SizedBox(height: 12),
-                      PixelFooter(
-                        mobile: true,
-                        label: 'PIXEL BAKERY | ${state.product!.title.toUpperCase()}',
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        PixelFooter(
+                          mobile: true,
+                          label:
+                              'PIXEL BAKERY | ${state.product!.title.toUpperCase()}',
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 ),
               ],
             ),
@@ -1013,7 +1126,6 @@ class _MobileProductDetail extends StatelessWidget {
       },
     );
   }
-
 
   Widget _mobileCard({required Widget child}) => Builder(
         builder: (context) => Container(
@@ -1078,6 +1190,60 @@ class _MobileProductDetail extends StatelessWidget {
     );
   }
 
+  Widget _mobileProductOptionsConfigurator(
+    BuildContext context,
+    ProductDetailState s,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5FAFF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFB8D7F3), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _mTxt('Tùy chọn sản phẩm', ProductDetailColors.blue, 13,
+              FontWeight.w900),
+          const SizedBox(height: 8),
+          ...s.optionGroups.map((group) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _mTxt(group.label, ProductDetailColors.gray, 12,
+                      FontWeight.w800),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: group.options.map((option) {
+                      final selected =
+                          s.selectedOptionForGroup(group)?.id == option.id;
+                      final priceNote = option.priceDelta == 0
+                          ? ''
+                          : option.priceDelta > 0
+                              ? ' +${_formatCurrency(option.priceDelta)}'
+                              : ' -${_formatCurrency(option.priceDelta.abs())}';
+                      return _mobileOptionChip(
+                        '${option.label}$priceNote',
+                        selected: selected,
+                        onTap: () => s.selectProductOption(group.id, option.id),
+                      );
+                    }).toList(growable: false),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _qtyBtn(String text, VoidCallback onTap) => Builder(
         builder: (context) => GestureDetector(
           onTap: onTap,
@@ -1109,7 +1275,8 @@ class _MobileProductDetail extends StatelessWidget {
         ),
       );
 
-  Widget _ctaMini(String text, Color bg, {VoidCallback? onTap}) => GestureDetector(
+  Widget _ctaMini(String text, Color bg, {VoidCallback? onTap}) =>
+      GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1133,10 +1300,14 @@ class _MobileProductDetail extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
-              color: selected ? ProductDetailColors.blue : Theme.of(context).cardColor,
+              color: selected
+                  ? ProductDetailColors.blue
+                  : Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: selected ? ProductDetailColors.blue : ProductDetailColors.gray,
+                color: selected
+                    ? ProductDetailColors.blue
+                    : ProductDetailColors.gray,
                 width: 2,
               ),
             ),
@@ -1174,7 +1345,8 @@ class _MobileProductDetail extends StatelessWidget {
         style: TextStyle(color: color, fontSize: size, fontWeight: fw),
       );
 
-  Widget _review(BuildContext context, ProductDetailState s, MenuReviewItem review, Color accent) {
+  Widget _review(BuildContext context, ProductDetailState s,
+      MenuReviewItem review, Color accent) {
     final currentUserId = AppServices.instance.authSession.currentUser?.id;
     final isOwn = currentUserId != null && review.userId == currentUserId;
     return Container(
@@ -1212,7 +1384,8 @@ class _MobileProductDetail extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          _mTxt('”${review.content}”', ProductDetailColors.gray, 12, FontWeight.w500),
+          _mTxt('”${review.content}”', ProductDetailColors.gray, 12,
+              FontWeight.w500),
         ],
       ),
     );
@@ -1230,7 +1403,9 @@ class _MobileProductDetail extends StatelessWidget {
             Icon(Icons.star, size: 14, color: Colors.amber.shade700),
             const SizedBox(width: 4),
             _mTxt(
-              rating <= 0 ? 'Mới' : '${rating.toStringAsFixed(1)} ($reviewCount)',
+              rating <= 0
+                  ? 'Mới'
+                  : '${rating.toStringAsFixed(1)} ($reviewCount)',
               Colors.amber.shade900,
               11,
               FontWeight.w800,
@@ -1253,11 +1428,16 @@ class _MobileProductDetail extends StatelessWidget {
   }
 
   String _buildDetailedDescription(MenuProduct product) {
+    final ingredients = product.ingredientsText.trim();
     if (product is MenuProductDetail && product.detailBullets.isNotEmpty) {
-      return product.detailBullets.map((item) => '• $item').join('\n');
+      return [
+        ...product.detailBullets.map((item) => '• $item'),
+        if (ingredients.isNotEmpty) '• Thành phần: $ingredients',
+      ].join('\n');
     }
     return '• Danh mục: ${product.category}\n'
         '• ${product.description}\n'
+        '${ingredients.isNotEmpty ? '• Thành phần: $ingredients\n' : ''}'
         '• Bộ ảnh sản phẩm gồm ${product.images.length} góc chụp.\n'
         '• Giá niêm yết: ${product.price}.';
   }
@@ -1348,7 +1528,8 @@ Future<void> _showMooncakeBoxSelectorDialog(
                           Expanded(
                             child: Text(
                               '${selectedBox.label} • ${selectedBox.cakeCount} bánh',
-                              style: const TextStyle(fontWeight: FontWeight.w800),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w800),
                             ),
                           ),
                           TextButton(
@@ -1383,7 +1564,8 @@ Future<void> _showMooncakeBoxSelectorDialog(
                             children: [
                               Text(
                                 'Bánh ${index + 1}',
-                                style: const TextStyle(fontWeight: FontWeight.w800),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w800),
                               ),
                               const SizedBox(height: 10),
                               Row(
@@ -1417,7 +1599,8 @@ Future<void> _showMooncakeBoxSelectorDialog(
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: DropdownButtonFormField<int>(
-                                      value: state.boxSelections[index].eggCount,
+                                      value:
+                                          state.boxSelections[index].eggCount,
                                       decoration: const InputDecoration(
                                         labelText: 'Số trứng',
                                         border: OutlineInputBorder(),
@@ -1823,7 +2006,8 @@ class _RelatedCard extends StatelessWidget {
 // ─── Share helper ─────────────────────────────────────────────────────────────
 
 void _shareProduct(BuildContext context, int productId, String title) {
-  final url = '${Uri.base.origin}${Uri.base.path}#${AppRoutePaths.productDetail}?id=$productId';
+  final url =
+      '${Uri.base.origin}${Uri.base.path}#${AppRoutePaths.productDetail}?id=$productId';
 
   if (kIsWeb) {
     try {

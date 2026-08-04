@@ -1,6 +1,6 @@
 SHELL := /bin/zsh
 
-ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ROOT_DIR := $(CURDIR)/
 BACKEND_DIR := $(ROOT_DIR)backend
 BACKEND_HOST := 0.0.0.0
 BACKEND_PORT := 8000
@@ -12,7 +12,7 @@ BACKEND_VENV_DIR := $(BACKEND_DIR)/.venv
 BACKEND_PYTHON := $(BACKEND_VENV_DIR)/bin/python
 BACKEND_PIP := $(BACKEND_VENV_DIR)/bin/pip
 
-.PHONY: help install bootstrap-env mongo-up mongo-down obs-up obs-down backend-install backend-run backend-start backend-stop frontend-run import-home import-menu import-auth-pages import-contact import-story run run-app stop
+.PHONY: help install bootstrap-env mongo-up mongo-down obs-up obs-down backend-install backend-run backend-start backend-stop frontend-run flutter-web frontend-build import-home import-menu import-auth-pages import-contact import-story run run-app stop
 
 help:
 	@echo "Targets:"
@@ -26,6 +26,8 @@ help:
 	@echo "  make backend-start  - run FastAPI backend in background"
 	@echo "  make backend-stop   - stop background FastAPI backend"
 	@echo "  make frontend-run   - run Flutter web app with API_BASE_URL"
+	@echo "  make flutter-web    - alias for frontend-run"
+	@echo "  make frontend-build - build Flutter web release output"
 	@echo "  make import-home    - import backend/data/home_page.json into MongoDB"
 	@echo "  make import-menu    - import backend/data/menu_page.json into MongoDB"
 	@echo "  make import-auth-pages - import backend/data/login_page.json and register_page.json into MongoDB"
@@ -92,6 +94,11 @@ backend-stop:
 
 frontend-run:
 	cd "$(ROOT_DIR)" && flutter run -d $(FRONTEND_DEVICE) --dart-define=API_BASE_URL=$(API_BASE_URL)
+
+flutter-web: frontend-run
+
+frontend-build:
+	cd "$(ROOT_DIR)" && flutter build web --release --dart-define=API_BASE_URL=$(API_BASE_URL)
 
 import-home: bootstrap-env
 	cd "$(BACKEND_DIR)" && "$(BACKEND_PYTHON)" scripts/import_home_page.py

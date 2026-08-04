@@ -264,6 +264,7 @@ class AdminProductModel {
     required this.priceValue,
     required this.stockStatus,
     this.imageUrl,
+    this.isSemiFinishedCategory = false,
   });
 
   final int id;
@@ -272,6 +273,7 @@ class AdminProductModel {
   final int priceValue;
   final String stockStatus;
   final String? imageUrl;
+  final bool isSemiFinishedCategory;
 
   factory AdminProductModel.fromJson(Map<String, dynamic> json) {
     return AdminProductModel(
@@ -281,6 +283,7 @@ class AdminProductModel {
       priceValue: (json['priceValue'] as num?)?.toInt() ?? 0,
       stockStatus: (json['stockStatus'] ?? '').toString(),
       imageUrl: json['imageUrl']?.toString(),
+      isSemiFinishedCategory: json['isSemiFinishedCategory'] as bool? ?? false,
     );
   }
 
@@ -292,6 +295,7 @@ class AdminProductModel {
       priceValue: priceValue,
       stockStatus: stockStatus ?? this.stockStatus,
       imageUrl: imageUrl ?? this.imageUrl,
+      isSemiFinishedCategory: isSemiFinishedCategory,
     );
   }
 }
@@ -302,6 +306,8 @@ class AdminCategoryModel {
     required this.label,
     required this.category,
     this.imageUrl,
+    required this.isSemiFinished,
+    required this.isVisibleOnWeb,
     required this.sortOrder,
   });
 
@@ -309,6 +315,8 @@ class AdminCategoryModel {
   final String label;
   final String category;
   final String? imageUrl;
+  final bool isSemiFinished;
+  final bool isVisibleOnWeb;
   final int sortOrder;
 
   factory AdminCategoryModel.fromJson(Map<String, dynamic> json) {
@@ -317,6 +325,8 @@ class AdminCategoryModel {
       label: (json['label'] ?? '').toString(),
       category: (json['category'] ?? '').toString(),
       imageUrl: json['imageUrl']?.toString(),
+      isSemiFinished: json['isSemiFinished'] as bool? ?? false,
+      isVisibleOnWeb: json['isVisibleOnWeb'] as bool? ?? true,
       sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
     );
   }
@@ -327,12 +337,16 @@ class AdminCategoryDraft {
     required this.label,
     required this.category,
     this.imageUrl,
+    this.isSemiFinished = false,
+    this.isVisibleOnWeb = true,
     required this.sortOrder,
   });
 
   final String label;
   final String category;
   final String? imageUrl;
+  final bool isSemiFinished;
+  final bool isVisibleOnWeb;
   final int sortOrder;
 
   factory AdminCategoryDraft.fromModel(AdminCategoryModel category) {
@@ -340,6 +354,8 @@ class AdminCategoryDraft {
       label: category.label,
       category: category.category,
       imageUrl: category.imageUrl,
+      isSemiFinished: category.isSemiFinished,
+      isVisibleOnWeb: category.isVisibleOnWeb,
       sortOrder: category.sortOrder,
     );
   }
@@ -349,6 +365,8 @@ class AdminCategoryDraft {
       'label': label,
       'category': category,
       'imageUrl': imageUrl,
+      'isSemiFinished': isSemiFinished,
+      'isVisibleOnWeb': isVisibleOnWeb,
       'sortOrder': sortOrder,
     };
   }
@@ -846,6 +864,8 @@ class AdminProductExcelRow {
     required this.storageNote,
     required this.deliveryNote,
     required this.detailBullets,
+    this.ingredientsText = '',
+    this.optionGroupsJson = '[]',
   });
 
   final int? id;
@@ -860,6 +880,8 @@ class AdminProductExcelRow {
   final String storageNote;
   final String deliveryNote;
   final String detailBullets;
+  final String ingredientsText;
+  final String optionGroupsJson;
 
   factory AdminProductExcelRow.fromJson(Map<String, dynamic> json) {
     return AdminProductExcelRow(
@@ -875,6 +897,8 @@ class AdminProductExcelRow {
       storageNote: (json['storageNote'] ?? '').toString(),
       deliveryNote: (json['deliveryNote'] ?? '').toString(),
       detailBullets: (json['detailBullets'] ?? '').toString(),
+      ingredientsText: (json['ingredientsText'] ?? '').toString(),
+      optionGroupsJson: (json['optionGroupsJson'] ?? '[]').toString(),
     );
   }
 
@@ -892,6 +916,8 @@ class AdminProductExcelRow {
       'storageNote': storageNote,
       'deliveryNote': deliveryNote,
       'detailBullets': detailBullets,
+      'ingredientsText': ingredientsText,
+      'optionGroupsJson': optionGroupsJson,
     };
   }
 }
@@ -945,6 +971,7 @@ class AdminRecipeModel {
     required this.ingredients,
     required this.totalCost,
     required this.costPerUnit,
+    required this.sellingPrice,
     required this.grossProfitEstimate,
     required this.grossMarginPercent,
     required this.createdAt,
@@ -959,6 +986,7 @@ class AdminRecipeModel {
   final List<AdminRecipeIngredientModel> ingredients;
   final int totalCost;
   final int costPerUnit;
+  final int sellingPrice;
   final int grossProfitEstimate;
   final double grossMarginPercent;
   final String createdAt;
@@ -978,6 +1006,7 @@ class AdminRecipeModel {
           .toList(growable: false),
       totalCost: (json['totalCost'] as num?)?.toInt() ?? 0,
       costPerUnit: (json['costPerUnit'] as num?)?.toInt() ?? 0,
+      sellingPrice: (json['sellingPrice'] as num?)?.toInt() ?? 0,
       grossProfitEstimate: (json['grossProfitEstimate'] as num?)?.toInt() ?? 0,
       grossMarginPercent: (json['grossMarginPercent'] as num?)?.toDouble() ?? 0,
       createdAt: (json['createdAt'] ?? '').toString(),
@@ -1444,6 +1473,8 @@ class AdminProductDraft {
     required this.storageNote,
     required this.deliveryNote,
     required this.detailBullets,
+    this.ingredientsText = '',
+    this.optionGroups = const [],
   });
 
   final String title;
@@ -1457,6 +1488,8 @@ class AdminProductDraft {
   final String storageNote;
   final String deliveryNote;
   final List<String> detailBullets;
+  final String ingredientsText;
+  final List<ProductOptionGroup> optionGroups;
 
   factory AdminProductDraft.fromDetail(MenuProductDetail detail) {
     return AdminProductDraft(
@@ -1471,6 +1504,8 @@ class AdminProductDraft {
       storageNote: detail.storageNote,
       deliveryNote: detail.deliveryNote,
       detailBullets: detail.detailBullets,
+      ingredientsText: detail.ingredientsText,
+      optionGroups: detail.optionGroups,
     );
   }
 
@@ -1487,6 +1522,8 @@ class AdminProductDraft {
       'storageNote': storageNote,
       'deliveryNote': deliveryNote,
       'detailBullets': detailBullets,
+      'ingredientsText': ingredientsText,
+      'optionGroups': optionGroups.map((item) => item.toJson()).toList(),
     };
   }
 }

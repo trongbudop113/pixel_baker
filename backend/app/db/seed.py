@@ -85,11 +85,59 @@ async def _seed_menu_page(database) -> None:
                     "label": str(category.get("label") or category_value).strip(),
                     "category": category_value,
                     "imageUrl": category.get("imageUrl"),
+                    "isSemiFinished": category.get("isSemiFinished", False),
+                    "isVisibleOnWeb": category.get("isVisibleOnWeb", True),
                     "sortOrder": index,
                 }
             },
             upsert=True,
         )
+
+    existing_category_values = {
+        str(item.get("category") or "").strip()
+        for item in await category_collection.find({}, {"category": 1}).to_list(length=500)
+    }
+    next_sort_order = len(existing_category_values)
+    for product in document.get("products", []):
+        category_value = str(product.get("category") or "").strip()
+        if (
+            not category_value
+            or category_value.lower() == "all"
+            or category_value in existing_category_values
+        ):
+            continue
+        await category_collection.update_one(
+            {"id": _slugify(category_value)},
+            {
+                "$setOnInsert": {
+                    "id": _slugify(category_value),
+                    "label": category_value,
+                    "category": category_value,
+                    "imageUrl": None,
+                    "isSemiFinished": False,
+                    "isVisibleOnWeb": True,
+                    "sortOrder": next_sort_order,
+                }
+            },
+            upsert=True,
+        )
+        existing_category_values.add(category_value)
+        next_sort_order += 1
+
+    await category_collection.update_many(
+        {
+            "$or": [
+                {"label": "Bán thành phẩm"},
+                {"category": {"$in": ["haft", "semi_finished"]}},
+            ]
+        },
+        {
+            "$set": {
+                "isSemiFinished": True,
+                "isVisibleOnWeb": False,
+            }
+        },
+    )
 
 
 async def _seed_auth_pages(database) -> None:

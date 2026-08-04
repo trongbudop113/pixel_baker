@@ -41,7 +41,47 @@ class _ResponsiveAdminRecipeFormScreenState
       TextEditingController(text: '10');
   final List<_RecipeIngredientRowState> _ingredientRows = [];
 
-  bool get _isEditMode => widget.recipeId != null && widget.recipeId!.isNotEmpty;
+  bool get _isEditMode =>
+      widget.recipeId != null && widget.recipeId!.isNotEmpty;
+  AdminProductModel? get _selectedProduct {
+    final options = _options;
+    final selectedId = _selectedProductId;
+    if (options == null || selectedId == null) {
+      return null;
+    }
+    for (final product in options.products) {
+      if (product.id == selectedId) {
+        return product;
+      }
+    }
+    return null;
+  }
+
+  bool get _isSelectedSemiFinishedProduct =>
+      _selectedProduct?.isSemiFinishedCategory ?? false;
+
+  List<AdminProductModel> _filteredProducts(AdminRecipeOptionsModel options) {
+    final shouldShowSemiFinished = _selectedRecipeType == 'semi_finished';
+    return options.products
+        .where(
+          (product) => product.isSemiFinishedCategory == shouldShowSemiFinished,
+        )
+        .toList(growable: false);
+  }
+
+  void _applyRecipeType(String recipeType) {
+    _selectedRecipeType = recipeType;
+    final options = _options;
+    if (options == null) {
+      return;
+    }
+    final products = _filteredProducts(options);
+    final hasSelectedProduct =
+        products.any((product) => product.id == _selectedProductId);
+    if (!hasSelectedProduct) {
+      _selectedProductId = products.isNotEmpty ? products.first.id : null;
+    }
+  }
 
   @override
   void initState() {
@@ -60,16 +100,16 @@ class _ResponsiveAdminRecipeFormScreenState
 
   Future<void> _loadOptions() async {
     try {
-      final options = await _repository.fetchRecipeOptions(recipeId: widget.recipeId);
+      final options =
+          await _repository.fetchRecipeOptions(recipeId: widget.recipeId);
       AdminRecipeModel? recipe;
       if (_isEditMode) {
         recipe = await _repository.fetchRecipe(widget.recipeId!);
       }
       setState(() {
         _options = options;
-        _selectedProductId = recipe?.productId ??
-            (options.products.isNotEmpty ? options.products.first.id : null);
         if (recipe != null) {
+          _selectedProductId = recipe.productId;
           _selectedRecipeType = recipe.recipeType;
           _selectedYieldUnit = recipe.yieldUnit;
           _yieldQuantityController.text = recipe.yieldQuantity.toString();
@@ -94,6 +134,15 @@ class _ResponsiveAdminRecipeFormScreenState
               ),
             );
         }
+        final selectedProduct = _selectedProduct;
+        if (selectedProduct != null) {
+          _selectedRecipeType = selectedProduct.isSemiFinishedCategory
+              ? 'semi_finished'
+              : 'finished';
+        }
+        if (recipe == null) {
+          _applyRecipeType(_selectedRecipeType);
+        }
         _isLoading = false;
       });
     } catch (_) {
@@ -106,7 +155,8 @@ class _ResponsiveAdminRecipeFormScreenState
 
   Future<void> _submit() async {
     final productId = _selectedProductId;
-    final yieldQuantity = int.tryParse(_yieldQuantityController.text.trim()) ?? 0;
+    final yieldQuantity =
+        int.tryParse(_yieldQuantityController.text.trim()) ?? 0;
     if (productId == null) {
       setState(() {
         _message = 'Không còn sản phẩm nào để tạo công thức.';
@@ -160,7 +210,9 @@ class _ResponsiveAdminRecipeFormScreenState
     try {
       final draft = AdminRecipeDraft(
         productId: productId,
-        recipeType: _selectedRecipeType,
+        recipeType: _isSelectedSemiFinishedProduct
+            ? 'semi_finished'
+            : _selectedRecipeType,
         yieldQuantity: yieldQuantity,
         yieldUnit: _selectedYieldUnit,
         ingredients: ingredients,
@@ -282,6 +334,11 @@ class _ResponsiveAdminRecipeFormScreenState
     if (options == null) {
       return _banner('Không thể tải dữ liệu.');
     }
+    final products = _filteredProducts(options);
+    final productValue =
+        products.any((product) => product.id == _selectedProductId)
+            ? _selectedProductId
+            : null;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -292,31 +349,6 @@ class _ResponsiveAdminRecipeFormScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Tên công thức',
-            style: TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<int>(
-            value: _selectedProductId,
-            items: options.products.map((product) {
-              return DropdownMenuItem<int>(
-                value: product.id,
-                child: Text('${product.title} • ${product.category}'),
-              );
-            }).toList(growable: false),
-            onChanged: (value) => setState(() => _selectedProductId = value),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
           const Text(
             'Loại công thức',
             style: TextStyle(
@@ -340,7 +372,7 @@ class _ResponsiveAdminRecipeFormScreenState
             ],
             onChanged: (value) {
               if (value == null) return;
-              setState(() => _selectedRecipeType = value);
+              setState(() => _applyRecipeType(value));
             },
             decoration: InputDecoration(
               border: OutlineInputBorder(
@@ -348,6 +380,50 @@ class _ResponsiveAdminRecipeFormScreenState
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          const Text(
+            'Tên công thức',
+            style: TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<int>(
+            value: productValue,
+            items: products.map((product) {
+              final categoryNote =
+                  product.isSemiFinishedCategory ? ' • Bán thành phẩm' : '';
+              return DropdownMenuItem<int>(
+                value: product.id,
+                child:
+                    Text('${product.title} • ${product.category}$categoryNote'),
+              );
+            }).toList(growable: false),
+            onChanged: (value) => setState(() => _selectedProductId = value),
+            decoration: InputDecoration(
+              hintText: products.isEmpty
+                  ? (_selectedRecipeType == 'semi_finished'
+                      ? 'Chưa có sản phẩm bán thành phẩm'
+                      : 'Chưa có sản phẩm thành phẩm')
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          if (_selectedRecipeType == 'semi_finished') ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Danh sách chỉ hiển thị sản phẩm thuộc danh mục bán thành phẩm.',
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           const Text(
             'Thành phẩm theo mẻ',
@@ -463,17 +539,24 @@ class _ResponsiveAdminRecipeFormScreenState
                   ),
                   const SizedBox(width: 12),
                   SizedBox(
-                    width: 130,
+                    width: 168,
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: row.sourceType,
                       items: const [
                         DropdownMenuItem(
                           value: 'ingredient',
-                          child: Text('Nguyên liệu'),
+                          child: Text(
+                            'Nguyên liệu',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         DropdownMenuItem(
                           value: 'recipe',
-                          child: Text('Bán thành phẩm'),
+                          child: Text(
+                            'Bán thành phẩm',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                       onChanged: (value) {
@@ -539,7 +622,7 @@ class _ResponsiveAdminRecipeFormScreenState
           }),
         ],
       ),
-      );
+    );
   }
 
   AdminIngredientModel? _findIngredient(
@@ -562,7 +645,8 @@ class _ResponsiveAdminRecipeFormScreenState
       return options.recipeReferences.map((recipe) {
         return DropdownMenuItem<String>(
           value: recipe.id,
-          child: Text('${recipe.productTitle} • ${recipe.yieldQuantity} ${recipe.yieldUnit}'),
+          child: Text(
+              '${recipe.productTitle} • ${recipe.yieldQuantity} ${recipe.yieldUnit}'),
         );
       }).toList(growable: false);
     }

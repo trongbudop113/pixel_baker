@@ -29,6 +29,8 @@ class AdminExcelCore {
     'storageNote',
     'deliveryNote',
     'detailBullets',
+    'ingredientsText',
+    'optionGroupsJson',
   ];
 
   static const List<String> _ingredientHeaders = [
@@ -108,6 +110,8 @@ class AdminExcelCore {
         TextCellValue(row.storageNote),
         TextCellValue(row.deliveryNote),
         TextCellValue(row.detailBullets),
+        TextCellValue(row.ingredientsText),
+        TextCellValue(row.optionGroupsJson),
       ]);
     }
     await _downloadExcel(
@@ -252,6 +256,9 @@ class AdminExcelCore {
         storageNote: 'Bảo quản lạnh',
         deliveryNote: 'Giao trong ngày',
         detailBullets: 'Mềm mịn | Ít ngọt',
+        ingredientsText: 'Bột mì, trứng, sữa, dâu tươi',
+        optionGroupsJson:
+            '[{"id":"sauce","label":"Chọn sốt","options":[{"id":"both","label":"2 loại sốt","priceDelta":0,"isDefault":true},{"id":"cheese","label":"Sốt phô mai","priceDelta":-5000}]}]',
       ),
     ]);
   }
@@ -466,6 +473,8 @@ class AdminExcelCore {
       storageNote: row['storageNote']?.trim() ?? '',
       deliveryNote: row['deliveryNote']?.trim() ?? '',
       detailBullets: row['detailBullets']?.trim() ?? '',
+      ingredientsText: row['ingredientsText']?.trim() ?? '',
+      optionGroupsJson: row['optionGroupsJson']?.trim() ?? '[]',
     );
   }
 

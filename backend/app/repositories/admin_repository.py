@@ -532,6 +532,11 @@ class AdminRepository:
                 storageNote=str(document.get("storageNote") or ""),
                 deliveryNote=str(document.get("deliveryNote") or ""),
                 detailBullets=self._join_excel_list(document.get("detailBullets")),
+                ingredientsText=str(document.get("ingredientsText") or ""),
+                optionGroupsJson=json.dumps(
+                    document.get("optionGroups", []),
+                    ensure_ascii=False,
+                ),
             )
             for document in documents
         ]
@@ -549,9 +554,16 @@ class AdminRepository:
         product_id: int,
         payload: AdminProductUpdateRequest,
     ) -> Optional[AdminProductResponse]:
+        document = await self._products.find_one({"id": product_id})
+        if document is None:
+            return None
+        stock_status = await self._product_stock_status_for_category(
+            str(document.get("category") or ""),
+            payload.stockStatus,
+        )
         await self._products.update_one(
             {"id": product_id},
-            {"$set": {"stockStatus": payload.stockStatus}},
+            {"$set": {"stockStatus": stock_status}},
         )
         document = await self._products.find_one({"id": product_id})
         if document is None:
@@ -565,8 +577,15 @@ class AdminRepository:
         )
 
     async def bulk_update_product_stock(self, product_ids: list[int], stock_status: str) -> int:
+        semi_finished_categories = {
+            str(item.get("category") or "")
+            for item in await self._categories.find({"isSemiFinished": True}).to_list(length=500)
+        }
+        query: dict = {"id": {"$in": product_ids}}
+        if semi_finished_categories:
+            query["category"] = {"$nin": list(semi_finished_categories)}
         result = await self._products.update_many(
-            {"id": {"$in": product_ids}},
+            query,
             {"$set": {"stockStatus": stock_status}},
         )
         return int(result.modified_count or 0)
@@ -577,7 +596,7 @@ class AdminRepository:
     ) -> dict:
         latest = await self._products.find_one(sort=[("id", -1)])
         next_id = int(latest.get("id") or 0) + 1 if latest else 1
-        document = self._build_product_document(payload, product_id=next_id)
+        document = await self._build_product_document(payload, product_id=next_id)
         await self._products.insert_one(document)
         created = await self._products.find_one({"id": next_id})
         if created is None:
@@ -612,7 +631,7 @@ class AdminRepository:
 
             if existing is not None:
                 target_id = int(existing.get("id") or 0)
-                document = self._build_product_document(
+                document = await self._build_product_document(
                     payload,
                     product_id=target_id,
                     existing=existing,
@@ -624,7 +643,7 @@ class AdminRepository:
             if target_id <= 0 or await self._products.find_one({"id": target_id}) is not None:
                 target_id = next_id
             next_id = max(next_id, target_id + 1)
-            document = self._build_product_document(payload, product_id=target_id)
+            document = await self._build_product_document(payload, product_id=target_id)
             await self._products.insert_one(document)
             created_count += 1
 
@@ -647,7 +666,7 @@ class AdminRepository:
         existing = await self._products.find_one({"id": product_id})
         if existing is None:
             return None
-        document = self._build_product_document(
+        document = await self._build_product_document(
             payload,
             product_id=product_id,
             existing=existing,
@@ -1142,7 +1161,11 @@ class AdminRepository:
             raise ValueError("Giá không hợp lệ.")
         if price_unit_quantity <= 0:
             raise ValueError("Đơn vị phải lớn hơn 0.")
-        unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
+        unit_price = self._calculate_ingredient_unit_price(
+            price,
+            price_unit_quantity,
+            conversion_factor,
+        )
         document = {
             "id": self._slugify(payload.name),
             "name": payload.name.strip(),
@@ -1214,7 +1237,11 @@ class AdminRepository:
                 standard_unit, conversion_factor = self._normalize_unit(payload.unit)
                 price = self._payload_ingredient_price(payload)
                 price_unit_quantity = self._payload_ingredient_price_unit_quantity(payload)
-                unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
+                unit_price = self._calculate_ingredient_unit_price(
+                    price,
+                    price_unit_quantity,
+                    conversion_factor,
+                )
                 document = {
                     "id": lookup_id,
                     "name": payload.name,
@@ -1242,7 +1269,11 @@ class AdminRepository:
             standard_unit, conversion_factor = self._normalize_unit(payload.unit)
             price = self._payload_ingredient_price(payload)
             price_unit_quantity = self._payload_ingredient_price_unit_quantity(payload)
-            unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
+            unit_price = self._calculate_ingredient_unit_price(
+                price,
+                price_unit_quantity,
+                conversion_factor,
+            )
             await self._ingredients.update_one(
                 {"id": lookup_id},
                 {
@@ -1297,7 +1328,11 @@ class AdminRepository:
             raise ValueError("Giá không hợp lệ.")
         if price_unit_quantity <= 0:
             raise ValueError("Đơn vị phải lớn hơn 0.")
-        unit_price = self._calculate_ingredient_unit_price(price, price_unit_quantity)
+        unit_price = self._calculate_ingredient_unit_price(
+            price,
+            price_unit_quantity,
+            conversion_factor,
+        )
         await self._ingredients.update_one(
             {"id": ingredient_id},
             {
@@ -1352,6 +1387,12 @@ class AdminRepository:
         product_documents = await self._products.find({}).sort("title", 1).to_list(length=500)
         ingredient_documents = await self._ingredients.find({}).sort("name", 1).to_list(length=500)
         recipe_documents = await self._recipes.find({}).sort("createdAt", -1).to_list(length=500)
+        category_documents = await self._categories.find({}).to_list(length=500)
+        semi_finished_categories = {
+            str(document.get("category") or "")
+            for document in category_documents
+            if bool(document.get("isSemiFinished"))
+        }
         return AdminRecipeOptionsResponse(
             products=[
                 AdminProductResponse(
@@ -1360,6 +1401,9 @@ class AdminRepository:
                     category=str(document.get("category") or ""),
                     priceValue=int(document.get("priceValue") or 0),
                     stockStatus=str(document.get("stockStatus") or ""),
+                    imageUrl=((document.get("images") or [None])[0]),
+                    isSemiFinishedCategory=str(document.get("category") or "")
+                    in semi_finished_categories,
                 )
                 for document in product_documents
                 if int(document.get("id") or 0) not in product_ids_with_recipe
@@ -1430,6 +1474,100 @@ class AdminRepository:
     async def delete_recipe(self, recipe_id: str) -> bool:
         result = await self._recipes.delete_one({"id": recipe_id})
         return result.deleted_count > 0
+
+    async def sync_recipes(self) -> list[AdminRecipeResponse]:
+        documents = await self._recipes.find({}, {"id": 1}).to_list(length=500)
+        synced: set[str] = set()
+        for document in documents:
+            recipe_id = str(document.get("id") or "")
+            if recipe_id:
+                await self._sync_recipe_by_id(recipe_id, synced, set())
+        return await self.list_recipes()
+
+    async def _sync_recipe_by_id(
+        self,
+        recipe_id: str,
+        synced: set[str],
+        syncing: set[str],
+    ) -> Optional[dict]:
+        if recipe_id in synced:
+            return await self._recipes.find_one({"id": recipe_id})
+        if recipe_id in syncing:
+            raise ValueError("Công thức có vòng lặp bán thành phẩm.")
+
+        document = await self._recipes.find_one({"id": recipe_id})
+        if document is None:
+            return None
+
+        syncing.add(recipe_id)
+        for ingredient in document.get("ingredients", []):
+            if str(ingredient.get("sourceType") or "ingredient") == "recipe":
+                child_recipe_id = str(ingredient.get("ingredientId") or "")
+                if child_recipe_id:
+                    await self._sync_recipe_by_id(child_recipe_id, synced, syncing)
+
+        await self._restore_missing_recipe_ingredients(document)
+        payload = AdminRecipeCreateRequest(
+            productId=int(document.get("productId") or 0),
+            recipeType=str(document.get("recipeType") or "finished"),
+            yieldQuantity=int(document.get("yieldQuantity") or 0),
+            yieldUnit=str(document.get("yieldUnit") or ""),
+            ingredients=[
+                AdminRecipeIngredientInput(
+                    ingredientId=str(item.get("ingredientId") or ""),
+                    sourceType=str(item.get("sourceType") or "ingredient"),
+                    quantity=int(item.get("quantity") or 0),
+                    wastePercent=int(item.get("wastePercent") or 0),
+                )
+                for item in document.get("ingredients", [])
+            ],
+        )
+        updated_document = await self._build_recipe_document(
+            payload=payload,
+            recipe_id=recipe_id,
+            created_at=str(document.get("createdAt") or datetime.now(timezone.utc).isoformat()),
+        )
+        await self._recipes.update_one({"id": recipe_id}, {"$set": updated_document})
+        syncing.remove(recipe_id)
+        synced.add(recipe_id)
+        return updated_document
+
+    async def _restore_missing_recipe_ingredients(self, recipe_document: dict) -> None:
+        for item in recipe_document.get("ingredients", []):
+            if str(item.get("sourceType") or "ingredient") != "ingredient":
+                continue
+            ingredient_id = str(item.get("ingredientId") or "").strip()
+            if not ingredient_id:
+                continue
+            if await self._ingredients.find_one({"id": ingredient_id}) is not None:
+                continue
+
+            ingredient_name = str(item.get("ingredientName") or ingredient_id).strip()
+            unit = str(item.get("unit") or "g").strip().lower()
+            standard_unit, conversion_factor = self._normalize_unit(unit)
+            unit_price = max(1, int(item.get("unitPrice") or 1))
+            now = datetime.now(timezone.utc).isoformat()
+            await self._ingredients.insert_one(
+                {
+                    "id": ingredient_id,
+                    "name": ingredient_name,
+                    "category": "restored",
+                    "unit": unit,
+                    "standardUnit": standard_unit,
+                    "conversionFactor": conversion_factor,
+                    "price": unit_price,
+                    "priceUnitQuantity": 1,
+                    "unitPrice": unit_price,
+                    "availableQuantity": 0,
+                    "availableNormalizedQuantity": 0,
+                    "lowStockThreshold": 0,
+                    "lowStockThresholdNormalized": 0,
+                    "status": self._ingredient_status(0, 0),
+                    "lastUpdatedAt": now,
+                    "restoredFromRecipeId": str(recipe_document.get("id") or ""),
+                    "restoredFromRecipeTitle": str(recipe_document.get("productTitle") or ""),
+                }
+            )
 
     async def copy_recipe(self, recipe_id: str, payload: AdminRecipeCopyRequest) -> AdminRecipeResponse:
         source = await self._recipes.find_one({"id": recipe_id})
@@ -2120,8 +2258,14 @@ class AdminRepository:
             return "Sắp hết"
         return "Đủ hàng"
 
-    def _calculate_ingredient_unit_price(self, price: int, price_unit_quantity: int) -> int:
+    def _calculate_ingredient_unit_price(
+        self,
+        price: int,
+        price_unit_quantity: int,
+        conversion_factor: int = 1,
+    ) -> int:
         basis = max(1, int(price_unit_quantity or 1))
+        basis *= max(1, int(conversion_factor or 1))
         return max(0, round(int(price or 0) / basis))
 
     def _payload_ingredient_price(self, payload: AdminIngredientUpsertRequest) -> int:
@@ -2143,11 +2287,19 @@ class AdminRepository:
         return max(1, int(document.get("priceUnitQuantity") or 1))
 
     def _ingredient_unit_price(self, document) -> int:
+        if document.get("price") is not None:
+            _, conversion_factor = self._normalize_unit(str(document.get("unit") or ""))
+            return self._calculate_ingredient_unit_price(
+                self._ingredient_price(document),
+                self._ingredient_price_unit_quantity(document),
+                int(document.get("conversionFactor") or conversion_factor),
+            )
         if document.get("unitPrice") is not None:
             return int(document.get("unitPrice") or 0)
         return self._calculate_ingredient_unit_price(
             self._ingredient_price(document),
             self._ingredient_price_unit_quantity(document),
+            int(document.get("conversionFactor") or 1),
         )
 
     def _map_ingredient(self, document) -> AdminIngredientResponse:
@@ -2204,6 +2356,7 @@ class AdminRepository:
             ingredients=ingredients,
             totalCost=int(document.get("totalCost") or 0),
             costPerUnit=int(document.get("costPerUnit") or 0),
+            sellingPrice=product_price,
             grossProfitEstimate=gross_profit,
             grossMarginPercent=gross_margin,
             createdAt=str(document.get("createdAt") or ""),
@@ -2221,6 +2374,14 @@ class AdminRepository:
             raise ValueError("Product not found.")
         if int(payload.yieldQuantity or 0) <= 0:
             raise ValueError("Yield quantity must be greater than zero.")
+        product_category = str(product.get("category") or "")
+        product_category_document = await self._categories.find_one({"category": product_category})
+        recipe_type = (
+            "semi_finished"
+            if product_category_document is not None
+            and bool(product_category_document.get("isSemiFinished"))
+            else payload.recipeType.strip() or "finished"
+        )
 
         ingredient_ids = [item.ingredientId for item in payload.ingredients if item.sourceType == "ingredient"]
         ingredient_documents = await self._ingredients.find(
@@ -2249,12 +2410,11 @@ class AdminRepository:
                 ingredient = mapped_ingredients.get(item.ingredientId)
                 if ingredient is None:
                     raise ValueError("Ingredient not found.")
-                factor = int(ingredient.get("conversionFactor") or self._normalize_unit(str(ingredient.get("unit") or ""))[1])
-                raw_unit_price = self._ingredient_unit_price(ingredient)
-                unit_price = max(1, round(raw_unit_price / factor)) if factor > 1 else raw_unit_price
-                normalized_quantity = int(item.quantity or 0) * factor
+                standard_unit, _ = self._normalize_unit(str(ingredient.get("unit") or ""))
+                unit_price = self._ingredient_unit_price(ingredient)
+                normalized_quantity = int(item.quantity or 0)
                 ingredient_name = str(ingredient.get("name") or "")
-                unit = str(ingredient.get("unit") or "")
+                unit = str(ingredient.get("standardUnit") or standard_unit)
             effective_normalized_quantity = math.ceil(
                 normalized_quantity * (100 + int(item.wastePercent or 0)) / 100
             )
@@ -2280,7 +2440,7 @@ class AdminRepository:
             "id": recipe_id,
             "productId": payload.productId,
             "productTitle": str(product.get("title") or ""),
-            "recipeType": payload.recipeType.strip() or "finished",
+            "recipeType": recipe_type,
             "yieldQuantity": yield_quantity,
             "yieldUnit": payload.yieldUnit.strip(),
             "ingredients": recipe_ingredients,
@@ -2414,6 +2574,10 @@ class AdminRepository:
             storageNote=row.storageNote.strip(),
             deliveryNote=row.deliveryNote.strip(),
             detailBullets=self._split_excel_list(row.detailBullets),
+            ingredientsText=row.ingredientsText.strip(),
+            optionGroups=json.loads(row.optionGroupsJson or "[]")
+            if (row.optionGroupsJson or "").strip()
+            else [],
         )
 
     def _map_category_response(self, document: dict) -> AdminCategoryResponse:
@@ -2422,6 +2586,8 @@ class AdminRepository:
             label=str(document.get("label") or ""),
             category=str(document.get("category") or ""),
             imageUrl=document.get("imageUrl"),
+            isSemiFinished=bool(document.get("isSemiFinished", False)),
+            isVisibleOnWeb=bool(document.get("isVisibleOnWeb", True)),
             sortOrder=int(document.get("sortOrder") or 0),
         )
 
@@ -2439,10 +2605,22 @@ class AdminRepository:
             "label": label,
             "category": category,
             "imageUrl": payload.imageUrl.strip() if payload.imageUrl else None,
+            "isSemiFinished": bool(payload.isSemiFinished),
+            "isVisibleOnWeb": bool(payload.isVisibleOnWeb),
             "sortOrder": int(payload.sortOrder or 0),
         }
 
-    def _build_product_document(
+    async def _product_stock_status_for_category(
+        self,
+        category: str,
+        requested_status: str,
+    ) -> str:
+        category_document = await self._categories.find_one({"category": category.strip()})
+        if category_document and bool(category_document.get("isSemiFinished", False)):
+            return "Tạm ẩn"
+        return requested_status.strip()
+
+    async def _build_product_document(
         self,
         payload: AdminProductUpsertRequest,
         *,
@@ -2452,8 +2630,13 @@ class AdminRepository:
         price_value = int(payload.priceValue or 0)
         images = [item.strip() for item in payload.images if item.strip()]
         detail_bullets = [item.strip() for item in payload.detailBullets if item.strip()]
+        option_groups = self._normalize_product_option_groups(payload.optionGroups)
         existing_reviews = list(existing.get("reviews", [])) if existing else []
         existing_related = list(existing.get("relatedProductIds", [])) if existing else []
+        stock_status = await self._product_stock_status_for_category(
+            payload.category,
+            payload.stockStatus,
+        )
         return {
             "id": product_id,
             "title": payload.title.strip(),
@@ -2463,14 +2646,72 @@ class AdminRepository:
             "description": payload.description.strip(),
             "images": images,
             "sku": payload.sku.strip(),
-            "stockStatus": payload.stockStatus.strip(),
+            "stockStatus": stock_status,
             "weight": payload.weight.strip(),
             "storageNote": payload.storageNote.strip(),
             "deliveryNote": payload.deliveryNote.strip(),
             "detailBullets": detail_bullets,
+            "ingredientsText": payload.ingredientsText.strip(),
+            "optionGroups": option_groups,
             "reviews": existing_reviews,
             "relatedProductIds": existing_related,
         }
+
+    def _normalize_product_option_groups(self, raw_groups: list[dict]) -> list[dict]:
+        groups: list[dict] = []
+        for group_index, raw_group in enumerate(raw_groups or []):
+            if not isinstance(raw_group, dict):
+                continue
+            raw_options = raw_group.get("options")
+            if not isinstance(raw_options, list):
+                continue
+            label = str(raw_group.get("label") or "").strip()
+            group_id = str(raw_group.get("id") or "").strip()
+            if not label:
+                continue
+            if not group_id:
+                group_id = self._slugify(label) or f"group-{group_index + 1}"
+
+            options: list[dict] = []
+            default_index = -1
+            for option_index, raw_option in enumerate(raw_options):
+                if not isinstance(raw_option, dict):
+                    continue
+                option_label = str(raw_option.get("label") or "").strip()
+                option_id = str(raw_option.get("id") or "").strip()
+                if not option_label:
+                    continue
+                if not option_id:
+                    option_id = self._slugify(option_label) or f"option-{option_index + 1}"
+                try:
+                    price_delta = int(raw_option.get("priceDelta") or 0)
+                except (TypeError, ValueError):
+                    price_delta = 0
+                is_default = bool(raw_option.get("isDefault", False))
+                if is_default and default_index == -1:
+                    default_index = len(options)
+                options.append(
+                    {
+                        "id": option_id,
+                        "label": option_label,
+                        "priceDelta": price_delta,
+                        "isDefault": is_default,
+                    }
+                )
+            if not options:
+                continue
+            if default_index == -1:
+                default_index = 0
+            for index, option in enumerate(options):
+                option["isDefault"] = index == default_index
+            groups.append(
+                {
+                    "id": group_id,
+                    "label": label,
+                    "options": options,
+                }
+            )
+        return groups
 
 
 def get_admin_repository() -> AdminRepository:

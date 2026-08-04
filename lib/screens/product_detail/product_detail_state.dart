@@ -45,6 +45,7 @@ class ProductDetailViewState {
     this.selectedEggCount,
     this.selectedBoxCode,
     this.boxSelections = const [],
+    this.selectedOptionIds = const {},
   });
 
   final MenuProductDetail? product;
@@ -57,6 +58,7 @@ class ProductDetailViewState {
   final int? selectedEggCount;
   final String? selectedBoxCode;
   final List<MooncakeBoxSelection> boxSelections;
+  final Map<String, String> selectedOptionIds;
 
   ProductDetailViewState copyWith({
     MenuProductDetail? product,
@@ -69,6 +71,7 @@ class ProductDetailViewState {
     int? selectedEggCount,
     String? selectedBoxCode,
     List<MooncakeBoxSelection>? boxSelections,
+    Map<String, String>? selectedOptionIds,
     bool clearErrorMessage = false,
   }) {
     return ProductDetailViewState(
@@ -83,6 +86,7 @@ class ProductDetailViewState {
       selectedEggCount: selectedEggCount ?? this.selectedEggCount,
       selectedBoxCode: selectedBoxCode ?? this.selectedBoxCode,
       boxSelections: boxSelections ?? this.boxSelections,
+      selectedOptionIds: selectedOptionIds ?? this.selectedOptionIds,
     );
   }
 
@@ -98,12 +102,12 @@ class ProductDetailViewState {
         other.selectedWeightCode == selectedWeightCode &&
         other.selectedEggCount == selectedEggCount &&
         other.selectedBoxCode == selectedBoxCode &&
-        _listEquals(other.boxSelections, boxSelections);
+        _listEquals(other.boxSelections, boxSelections) &&
+        _mapEquals(other.selectedOptionIds, selectedOptionIds);
   }
 
   @override
-  int get hashCode =>
-      Object.hash(
+  int get hashCode => Object.hash(
         product,
         qty,
         selectedImage,
@@ -114,6 +118,7 @@ class ProductDetailViewState {
         selectedEggCount,
         selectedBoxCode,
         Object.hashAll(boxSelections),
+        Object.hashAll(selectedOptionIds.entries),
       );
 }
 
@@ -148,6 +153,10 @@ class ProductDetailState
   int? get selectedEggCount => state.selectedEggCount;
   String? get selectedBoxCode => state.selectedBoxCode;
   List<MooncakeBoxSelection> get boxSelections => state.boxSelections;
+  Map<String, String> get selectedOptionIds => state.selectedOptionIds;
+  List<ProductOptionGroup> get optionGroups =>
+      product?.optionGroups ?? const [];
+  bool get hasProductOptions => optionGroups.isNotEmpty;
 
   MooncakeWeightOption? get selectedWeightOption {
     final config = mooncakeConfig;
@@ -193,12 +202,28 @@ class ProductDetailState
     return null;
   }
 
-  int get total => isMooncake
-      ? (selectedEggOption?.priceValue ?? product?.priceValue ?? 0) * qty
-      : (product?.priceValue ?? 0) * qty;
+  int get _selectedOptionDelta {
+    var totalDelta = 0;
+    for (final group in optionGroups) {
+      final option = selectedOptionForGroup(group);
+      if (option != null) {
+        totalDelta += option.priceDelta;
+      }
+    }
+    return totalDelta;
+  }
 
-  String get displayPrice =>
-      isMooncake ? (selectedEggOption?.price ?? product?.price ?? '') : (product?.price ?? '');
+  int get _singleUnitPrice {
+    final basePrice = isMooncake
+        ? selectedEggOption?.priceValue ?? product?.priceValue ?? 0
+        : product?.priceValue ?? 0;
+    final value = basePrice + _selectedOptionDelta;
+    return value < 0 ? 0 : value;
+  }
+
+  int get total => _singleUnitPrice * qty;
+
+  String get displayPrice => formatCurrency(_singleUnitPrice);
 
   int get selectedBoxTotal {
     final box = selectedBoxOption;
@@ -208,10 +233,9 @@ class ProductDetailState
     var totalPrice = box.packagePriceValue;
     for (final selection in boxSelections) {
       totalPrice += _resolveEggOption(
-                selection.weightCode,
-                selection.eggCount,
-              )
-              ?.priceValue ??
+            selection.weightCode,
+            selection.eggCount,
+          )?.priceValue ??
           0;
     }
     return totalPrice;
@@ -232,9 +256,11 @@ class ProductDetailState
           isLoading: false,
           selectedImage: 0,
           selectedWeightCode: _defaultWeightCode(product),
-          selectedEggCount: _defaultEggCount(product, _defaultWeightCode(product)),
+          selectedEggCount:
+              _defaultEggCount(product, _defaultWeightCode(product)),
           selectedBoxCode: null,
           boxSelections: const [],
+          selectedOptionIds: _defaultOptionSelections(product),
           clearErrorMessage: true,
         ),
       );
@@ -280,12 +306,37 @@ class ProductDetailState
     update((current) => current.copyWith(selectedEggCount: count));
   }
 
+  void selectProductOption(String groupId, String optionId) {
+    update(
+      (current) => current.copyWith(
+        selectedOptionIds: {
+          ...current.selectedOptionIds,
+          groupId: optionId,
+        },
+      ),
+    );
+  }
+
+  ProductOptionItem? selectedOptionForGroup(ProductOptionGroup group) {
+    final selectedId = selectedOptionIds[group.id];
+    for (final option in group.options) {
+      if (option.id == selectedId) {
+        return option;
+      }
+    }
+    return group.options.firstWhere(
+      (option) => option.isDefault,
+      orElse: () => group.options.first,
+    );
+  }
+
   void prepareBoxSelection(String boxCode) {
     final config = mooncakeConfig;
     if (config == null) {
       return;
     }
-    final box = config.boxOptions.where((item) => item.code == boxCode).firstOrNull;
+    final box =
+        config.boxOptions.where((item) => item.code == boxCode).firstOrNull;
     final defaultWeight = selectedWeightCode ?? _defaultWeightCode(product);
     final defaultEgg = _defaultEggCount(product, defaultWeight);
     if (box == null || defaultWeight == null || defaultEgg == null) {
@@ -345,26 +396,45 @@ class ProductDetailState
     if (currentProduct == null) {
       return null;
     }
-    if (!isMooncake || weight == null || egg == null) {
+    final selectedOptions = [
+      for (final group in optionGroups)
+        if (selectedOptionForGroup(group) != null)
+          MapEntry(group, selectedOptionForGroup(group)!),
+    ];
+    if ((!isMooncake || weight == null || egg == null) &&
+        selectedOptions.isEmpty) {
       return CartItem.fromMenuProduct(currentProduct, quantity: qty);
+    }
+    final variantParts = <String>[];
+    final variantLabels = <String>[];
+    if (isMooncake && weight != null && egg != null) {
+      variantParts.add('single:${weight.code}:${egg.count}');
+      variantLabels.add('${weight.label} • ${egg.label}');
+    }
+    for (final entry in selectedOptions) {
+      variantParts.add('${entry.key.id}:${entry.value.id}');
+      variantLabels.add('${entry.key.label}: ${entry.value.label}');
     }
     return CartItem(
       productId: currentProduct.id,
       title: currentProduct.title,
-      price: egg.price,
-      priceValue: egg.priceValue,
+      price: formatCurrency(_singleUnitPrice),
+      priceValue: _singleUnitPrice,
       category: currentProduct.category,
-      imageUrl: currentProduct.images.isEmpty ? '' : currentProduct.images.first,
+      imageUrl:
+          currentProduct.images.isEmpty ? '' : currentProduct.images.first,
       quantity: qty,
-      variantKey: 'single:${weight.code}:${egg.count}',
-      variantLabel: '${weight.label} • ${egg.label}',
+      variantKey: variantParts.join('|'),
+      variantLabel: variantLabels.join(' • '),
     );
   }
 
   CartItem? buildBoxCartItem() {
     final currentProduct = product;
     final box = selectedBoxOption;
-    if (currentProduct == null || box == null || boxSelections.length != box.cakeCount) {
+    if (currentProduct == null ||
+        box == null ||
+        boxSelections.length != box.cakeCount) {
       return null;
     }
     final summary = <String>[];
@@ -392,14 +462,17 @@ class ProductDetailState
         for (final selection in boxSelections)
           (() {
             final weight = _weightOptionByCode(selection.weightCode)!;
-            final egg = _resolveEggOption(selection.weightCode, selection.eggCount)!;
+            final egg =
+                _resolveEggOption(selection.weightCode, selection.eggCount)!;
             return CartBoxItem(
               productId: currentProduct.id,
               title: currentProduct.title,
               variantLabel: '${weight.label} • ${egg.label}',
               price: egg.price,
               priceValue: egg.priceValue,
-              imageUrl: currentProduct.images.isEmpty ? '' : currentProduct.images.first,
+              imageUrl: currentProduct.images.isEmpty
+                  ? ''
+                  : currentProduct.images.first,
             );
           })(),
       ],
@@ -472,6 +545,21 @@ class ProductDetailState
     return options.first.code;
   }
 
+  Map<String, String> _defaultOptionSelections(MenuProductDetail? product) {
+    final selections = <String, String>{};
+    for (final group in product?.optionGroups ?? const <ProductOptionGroup>[]) {
+      if (group.options.isEmpty) {
+        continue;
+      }
+      final defaultOption = group.options.firstWhere(
+        (option) => option.isDefault,
+        orElse: () => group.options.first,
+      );
+      selections[group.id] = defaultOption.id;
+    }
+    return selections;
+  }
+
   int? _defaultEggCount(MenuProductDetail? product, String? weightCode) {
     if (product == null || weightCode == null) {
       return null;
@@ -525,6 +613,18 @@ bool _listEquals<T>(List<T> a, List<T> b) {
   }
   for (var i = 0; i < a.length; i++) {
     if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool _mapEquals<K, V>(Map<K, V> a, Map<K, V> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (final entry in a.entries) {
+    if (b[entry.key] != entry.value) {
       return false;
     }
   }

@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/models/admin_models.dart';
+import '../../app/models/menu_models.dart';
+import '../../app/network/api_exception.dart';
 import '../../app/repositories/admin_repository.dart';
 import '../../app/services/app_services.dart';
 import '../../app/routing/app_router.dart';
@@ -28,6 +31,9 @@ class ResponsiveAdminProductFormScreen extends StatefulWidget {
 
 class _ResponsiveAdminProductFormScreenState
     extends State<ResponsiveAdminProductFormScreen> {
+  static const String _optionGroupsJsonHint =
+      '[{"id":"sauce","label":"Chọn sốt","options":[{"id":"both","label":"2 loại sốt","priceDelta":0,"isDefault":true},{"id":"cheese","label":"Sốt phô mai","priceDelta":-5000},{"id":"egg","label":"Sốt dầu trứng","priceDelta":-3000}]}]';
+
   final AdminRepository _repository = AppServices.instance.adminRepository;
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
@@ -39,6 +45,8 @@ class _ResponsiveAdminProductFormScreenState
   final _deliveryNoteController = TextEditingController();
   final _imagesController = TextEditingController();
   final _detailBulletsController = TextEditingController();
+  final _ingredientsTextController = TextEditingController();
+  final _optionGroupsController = TextEditingController();
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -48,6 +56,22 @@ class _ResponsiveAdminProductFormScreenState
   String? _selectedCategory;
 
   bool get _isEditMode => widget.productId != null;
+
+  AdminCategoryModel? get _selectedCategoryModel {
+    final selected = (_selectedCategory ?? '').trim();
+    if (selected.isEmpty) {
+      return null;
+    }
+    for (final category in _categories) {
+      if (category.category.trim() == selected) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  bool get _isSelectedSemiFinishedCategory =>
+      _selectedCategoryModel?.isSemiFinished ?? false;
 
   @override
   void initState() {
@@ -70,6 +94,8 @@ class _ResponsiveAdminProductFormScreenState
     _deliveryNoteController.dispose();
     _imagesController.dispose();
     _detailBulletsController.dispose();
+    _ingredientsTextController.dispose();
+    _optionGroupsController.dispose();
     super.dispose();
   }
 
@@ -132,17 +158,34 @@ class _ResponsiveAdminProductFormScreenState
     _deliveryNoteController.text = draft.deliveryNote;
     _imagesController.text = draft.images.join('\n');
     _detailBulletsController.text = draft.detailBullets.join('\n');
+    _ingredientsTextController.text = draft.ingredientsText;
+    _optionGroupsController.text = draft.optionGroups.isEmpty
+        ? ''
+        : const JsonEncoder.withIndent('  ').convert(
+            draft.optionGroups.map((item) => item.toJson()).toList(),
+          );
   }
 
   AdminProductDraft? _buildDraft() {
     final title = _titleController.text.trim();
     final category = (_selectedCategory ?? '').trim();
-    final description = _descriptionController.text.trim();
+    final description = _isSelectedSemiFinishedCategory
+        ? ''
+        : _descriptionController.text.trim();
     final sku = _skuController.text.trim();
-    final stockStatus = _stockStatusController.text.trim();
+    final stockStatus = _isSelectedSemiFinishedCategory
+        ? 'Tạm ẩn'
+        : _stockStatusController.text.trim();
     final weight = _weightController.text.trim();
-    final storageNote = _storageNoteController.text.trim();
-    final deliveryNote = _deliveryNoteController.text.trim();
+    final storageNote = _isSelectedSemiFinishedCategory
+        ? ''
+        : _storageNoteController.text.trim();
+    final deliveryNote = _isSelectedSemiFinishedCategory
+        ? ''
+        : _deliveryNoteController.text.trim();
+    final ingredientsText = _isSelectedSemiFinishedCategory
+        ? ''
+        : _ingredientsTextController.text.trim();
     final priceValue = int.tryParse(_priceController.text.trim());
     final images = _imagesController.text
         .split('\n')
@@ -154,20 +197,30 @@ class _ResponsiveAdminProductFormScreenState
         .map((item) => item.trim())
         .where((item) => item.isNotEmpty)
         .toList(growable: false);
+    final optionGroups = _isSelectedSemiFinishedCategory
+        ? const <ProductOptionGroup>[]
+        : _parseOptionGroupsJson();
+    if (optionGroups == null) {
+      return null;
+    }
 
-    if (title.isEmpty ||
-        category.isEmpty ||
-        description.isEmpty ||
-        sku.isEmpty ||
-        stockStatus.isEmpty ||
-        weight.isEmpty ||
-        storageNote.isEmpty ||
-        deliveryNote.isEmpty ||
-        priceValue == null ||
-        priceValue <= 0 ||
-        images.isEmpty) {
+    final missingFields = <String>[
+      if (title.isEmpty) 'Tên sản phẩm',
+      if (category.isEmpty) 'Danh mục',
+      if (!_isSelectedSemiFinishedCategory && description.isEmpty) 'Mô tả',
+      if (sku.isEmpty) 'SKU',
+      if (stockStatus.isEmpty) 'Trạng thái',
+      if (weight.isEmpty) 'Khối lượng',
+      if (!_isSelectedSemiFinishedCategory && storageNote.isEmpty)
+        'Ghi chú bảo quản',
+      if (!_isSelectedSemiFinishedCategory && deliveryNote.isEmpty)
+        'Ghi chú giao hàng',
+      if (priceValue == null || priceValue <= 0) 'Giá',
+      if (images.isEmpty) 'Ảnh',
+    ];
+    if (missingFields.isNotEmpty) {
       setState(() {
-        _message = 'Vui lòng nhập đầy đủ thông tin sản phẩm.';
+        _message = 'Vui lòng nhập: ${missingFields.join(', ')}.';
         _isSuccess = false;
       });
       return null;
@@ -176,7 +229,7 @@ class _ResponsiveAdminProductFormScreenState
     return AdminProductDraft(
       title: title,
       category: category,
-      priceValue: priceValue,
+      priceValue: priceValue!,
       description: description,
       images: images,
       sku: sku,
@@ -185,7 +238,37 @@ class _ResponsiveAdminProductFormScreenState
       storageNote: storageNote,
       deliveryNote: deliveryNote,
       detailBullets: detailBullets,
+      ingredientsText: ingredientsText,
+      optionGroups: optionGroups,
     );
+  }
+
+  List<ProductOptionGroup>? _parseOptionGroupsJson() {
+    final raw = _optionGroupsController.text.trim();
+    if (raw.isEmpty) {
+      return const [];
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        throw const FormatException('root must be list');
+      }
+      return decoded
+          .map(
+            (item) => ProductOptionGroup.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .where((group) => group.label.trim().isNotEmpty)
+          .toList(growable: false);
+    } catch (_) {
+      setState(() {
+        _message =
+            'Tùy chọn sản phẩm phải là JSON array hợp lệ. Ví dụ: [{"id":"sauce","label":"Chọn sốt","options":[{"id":"both","label":"2 loại sốt","priceDelta":0,"isDefault":true}]}]';
+        _isSuccess = false;
+      });
+      return null;
+    }
   }
 
   Future<void> _submit() async {
@@ -218,6 +301,12 @@ class _ResponsiveAdminProductFormScreenState
         AppRouteNames.admin,
         queryParameters: {'sidebar': '${widget.returnSidebarIndex}'},
       );
+    } on ApiException catch (error) {
+      setState(() {
+        _isSaving = false;
+        _message = error.message;
+        _isSuccess = false;
+      });
     } catch (_) {
       setState(() {
         _isSaving = false;
@@ -288,7 +377,8 @@ class _ResponsiveAdminProductFormScreenState
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 900;
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: Container(
         width: isMobile ? 390 : 1200,
         padding: EdgeInsets.all(isMobile ? 12 : 24),
@@ -304,7 +394,8 @@ class _ResponsiveAdminProductFormScreenState
                 const SizedBox(height: 12),
               ],
               if (_isLoading)
-                const Center(child: Padding(
+                const Center(
+                    child: Padding(
                   padding: EdgeInsets.all(24),
                   child: CircularProgressIndicator(),
                 ))
@@ -369,6 +460,7 @@ class _ResponsiveAdminProductFormScreenState
       );
 
   List<Widget> _desktopFields() {
+    final showWebSaleFields = !_isSelectedSemiFinishedCategory;
     return [
       Row(
         children: [
@@ -380,33 +472,55 @@ class _ResponsiveAdminProductFormScreenState
       const SizedBox(height: 12),
       Row(
         children: [
-          Expanded(child: _field('Giá', _priceController, keyboardType: TextInputType.number)),
+          Expanded(
+              child: _field('Giá', _priceController,
+                  keyboardType: TextInputType.number)),
           const SizedBox(width: 12),
           Expanded(child: _field('SKU', _skuController)),
-          const SizedBox(width: 12),
-          Expanded(child: _field('Trạng thái', _stockStatusController)),
+          if (showWebSaleFields) ...[
+            const SizedBox(width: 12),
+            Expanded(child: _field('Trạng thái', _stockStatusController)),
+          ],
         ],
       ),
       const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(child: _field('Khối lượng', _weightController)),
-          const SizedBox(width: 12),
-          Expanded(child: _field('Ghi chú bảo quản', _storageNoteController)),
-        ],
-      ),
-      const SizedBox(height: 12),
-      _field('Ghi chú giao hàng', _deliveryNoteController),
-      const SizedBox(height: 12),
-      _field('Mô tả', _descriptionController, maxLines: 4),
-      const SizedBox(height: 12),
+      if (showWebSaleFields) ...[
+        Row(
+          children: [
+            Expanded(child: _field('Khối lượng', _weightController)),
+            const SizedBox(width: 12),
+            Expanded(child: _field('Ghi chú bảo quản', _storageNoteController)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _field('Ghi chú giao hàng', _deliveryNoteController),
+        const SizedBox(height: 12),
+        _field('Mô tả', _descriptionController, maxLines: 4),
+        const SizedBox(height: 12),
+        _field('Thành phần', _ingredientsTextController, maxLines: 3),
+        const SizedBox(height: 12),
+      ] else ...[
+        _field('Khối lượng', _weightController),
+        const SizedBox(height: 12),
+      ],
       _imageField(),
       const SizedBox(height: 12),
-      _field('Điểm nổi bật, mỗi dòng 1 ý', _detailBulletsController, maxLines: 5),
+      _field('Điểm nổi bật, mỗi dòng 1 ý', _detailBulletsController,
+          maxLines: 5),
+      if (showWebSaleFields) ...[
+        const SizedBox(height: 12),
+        _field(
+          'Tùy chọn sản phẩm (JSON)',
+          _optionGroupsController,
+          maxLines: 8,
+          hintText: _optionGroupsJsonHint,
+        ),
+      ],
     ];
   }
 
   List<Widget> _mobileFields() {
+    final showWebSaleFields = !_isSelectedSemiFinishedCategory;
     return [
       _field('Tên sản phẩm', _titleController),
       const SizedBox(height: 12),
@@ -415,20 +529,36 @@ class _ResponsiveAdminProductFormScreenState
       _field('Giá', _priceController, keyboardType: TextInputType.number),
       const SizedBox(height: 12),
       _field('SKU', _skuController),
-      const SizedBox(height: 12),
-      _field('Trạng thái', _stockStatusController),
+      if (showWebSaleFields) ...[
+        const SizedBox(height: 12),
+        _field('Trạng thái', _stockStatusController),
+      ],
       const SizedBox(height: 12),
       _field('Khối lượng', _weightController),
-      const SizedBox(height: 12),
-      _field('Ghi chú bảo quản', _storageNoteController),
-      const SizedBox(height: 12),
-      _field('Ghi chú giao hàng', _deliveryNoteController),
-      const SizedBox(height: 12),
-      _field('Mô tả', _descriptionController, maxLines: 4),
+      if (showWebSaleFields) ...[
+        const SizedBox(height: 12),
+        _field('Ghi chú bảo quản', _storageNoteController),
+        const SizedBox(height: 12),
+        _field('Ghi chú giao hàng', _deliveryNoteController),
+        const SizedBox(height: 12),
+        _field('Mô tả', _descriptionController, maxLines: 4),
+        const SizedBox(height: 12),
+        _field('Thành phần', _ingredientsTextController, maxLines: 3),
+      ],
       const SizedBox(height: 12),
       _imageField(),
       const SizedBox(height: 12),
-      _field('Điểm nổi bật, mỗi dòng 1 ý', _detailBulletsController, maxLines: 5),
+      _field('Điểm nổi bật, mỗi dòng 1 ý', _detailBulletsController,
+          maxLines: 5),
+      if (showWebSaleFields) ...[
+        const SizedBox(height: 12),
+        _field(
+          'Tùy chọn sản phẩm (JSON)',
+          _optionGroupsController,
+          maxLines: 8,
+          hintText: _optionGroupsJsonHint,
+        ),
+      ],
     ];
   }
 
@@ -461,7 +591,8 @@ class _ResponsiveAdminProductFormScreenState
           ],
         ),
         const SizedBox(height: 6),
-        _field('Danh sách ảnh, mỗi dòng 1 URL hoặc data URL', _imagesController, maxLines: 5),
+        _field('Danh sách ảnh, mỗi dòng 1 URL hoặc data URL', _imagesController,
+            maxLines: 5),
         if (images.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(
@@ -490,9 +621,11 @@ class _ResponsiveAdminProductFormScreenState
   Widget _categoryDropdown() {
     final values = <String>{
       for (final item in _categories) item.category,
-      if ((_selectedCategory ?? '').trim().isNotEmpty) _selectedCategory!.trim(),
+      if ((_selectedCategory ?? '').trim().isNotEmpty)
+        _selectedCategory!.trim(),
     }.toList(growable: false);
-    final selected = values.contains(_selectedCategory) ? _selectedCategory : null;
+    final selected =
+        values.contains(_selectedCategory) ? _selectedCategory : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -521,6 +654,9 @@ class _ResponsiveAdminProductFormScreenState
               : (value) {
                   setState(() {
                     _selectedCategory = value;
+                    if (_isSelectedSemiFinishedCategory) {
+                      _stockStatusController.text = 'Tạm ẩn';
+                    }
                   });
                 },
           decoration: InputDecoration(
@@ -531,6 +667,17 @@ class _ResponsiveAdminProductFormScreenState
             fillColor: Colors.white,
           ),
         ),
+        if (_isSelectedSemiFinishedCategory) ...[
+          const SizedBox(height: 6),
+          const Text(
+            'Danh mục bán thành phẩm sẽ tự đặt sản phẩm ở trạng thái Tạm ẩn.',
+            style: TextStyle(
+              color: Color(0xFFD97706),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -538,7 +685,14 @@ class _ResponsiveAdminProductFormScreenState
   String _categoryLabel(String value) {
     for (final item in _categories) {
       if (item.category == value) {
-        return item.label;
+        final badges = [
+          if (item.isSemiFinished) 'bán TP',
+          if (!item.isVisibleOnWeb) 'ẩn web',
+        ];
+        if (badges.isEmpty) {
+          return item.label;
+        }
+        return '${item.label} (${badges.join(', ')})';
       }
     }
     return value;
@@ -549,6 +703,7 @@ class _ResponsiveAdminProductFormScreenState
     TextEditingController controller, {
     TextInputType? keyboardType,
     int maxLines = 1,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,6 +722,7 @@ class _ResponsiveAdminProductFormScreenState
           keyboardType: keyboardType,
           maxLines: maxLines,
           decoration: InputDecoration(
+            hintText: hintText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -584,13 +740,15 @@ class _ResponsiveAdminProductFormScreenState
           color: _isSuccess ? const Color(0xFFEFF8F1) : const Color(0xFFFCEAEA),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: _isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFE53935),
+            color:
+                _isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFE53935),
           ),
         ),
         child: Text(
           _message!,
           style: TextStyle(
-            color: _isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFE53935),
+            color:
+                _isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFE53935),
             fontWeight: FontWeight.w700,
           ),
         ),
