@@ -1995,6 +1995,7 @@ class AdminRepository:
         created_count = 0
         updated_count = 0
         errors: list[AdminImportValidationError] = []
+        parsed_rows: list[dict] = []
         for index, row in enumerate(rows, start=2):
             try:
                 raw_ingredients = json.loads(row.ingredientsJson or "[]")
@@ -2023,11 +2024,29 @@ class AdminRepository:
                 yieldUnit=row.yieldUnit.strip(),
                 ingredients=ingredients,
             )
+            parsed_rows.append(
+                {
+                    "rowNumber": index,
+                    "row": row,
+                    "payload": payload,
+                    "recipeId": row.id.strip() if row.id else "",
+                    "recipeReferences": {
+                        item.ingredientId
+                        for item in ingredients
+                        if str(item.sourceType or "ingredient").strip().lower() == "recipe"
+                    },
+                }
+            )
+
+        for entry in self._sort_recipe_import_rows(parsed_rows):
+            row = entry["row"]
+            payload = entry["payload"]
+            recipe_id = entry["recipeId"]
             try:
-                if row.id:
-                    updated = await self.update_recipe(row.id.strip(), payload)
+                if recipe_id:
+                    updated = await self.update_recipe(recipe_id, payload)
                     if updated is None:
-                        await self.create_recipe(payload)
+                        await self._create_recipe_with_import_id(recipe_id, payload)
                         created_count += 1
                     else:
                         updated_count += 1
@@ -2040,7 +2059,14 @@ class AdminRepository:
                         await self.update_recipe(str(existing.get("id") or ""), payload)
                         updated_count += 1
             except ValueError as error:
-                errors.append(self._import_error(index, "recipe", str(error), row.id or str(row.productId)))
+                errors.append(
+                    self._import_error(
+                        entry["rowNumber"],
+                        "recipe",
+                        str(error),
+                        recipe_id or str(row.productId),
+                    )
+                )
         return await self._build_import_result(
             entity_type="recipe",
             created_count=created_count,
@@ -2048,6 +2074,49 @@ class AdminRepository:
             errors=errors,
             success_message="Đã import công thức thành công.",
         )
+
+    def _sort_recipe_import_rows(self, rows: list[dict]) -> list[dict]:
+        sorted_rows: list[dict] = []
+        remaining = list(rows)
+        while remaining:
+            remaining_ids = {
+                str(item.get("recipeId") or "")
+                for item in remaining
+                if str(item.get("recipeId") or "")
+            }
+            ready = [
+                item
+                for item in remaining
+                if not (set(item.get("recipeReferences") or set()) & remaining_ids)
+            ]
+            if not ready:
+                ready = [remaining[0]]
+            for item in ready:
+                sorted_rows.append(item)
+                remaining.remove(item)
+        return sorted_rows
+
+    async def _create_recipe_with_import_id(
+        self,
+        recipe_id: str,
+        payload: AdminRecipeCreateRequest,
+    ) -> AdminRecipeResponse:
+        duplicate = await self._recipes.find_one(
+            {"productId": payload.productId, "id": {"$ne": recipe_id}}
+        )
+        if duplicate is not None:
+            await self._recipes.delete_one({"id": str(duplicate.get("id") or "")})
+        document = await self._build_recipe_document(
+            payload=payload,
+            recipe_id=recipe_id,
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+        await self._recipes.update_one(
+            {"id": recipe_id},
+            {"$set": document},
+            upsert=True,
+        )
+        return self._map_recipe(document)
 
     async def list_import_audit_logs(self) -> list[AdminImportAuditLogResponse]:
         documents = await self._import_audit_logs.find({}).sort("createdAt", -1).to_list(length=100)
