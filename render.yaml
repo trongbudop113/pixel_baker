@@ -51,3 +51,9 @@ services:
         sync: false
       - key: SMTP_FROM_NAME
         value: Pixel Bakery
+      - key: IMAGE_STORAGE_PROVIDER
+        value: local
+      - key: GOOGLE_DRIVE_FOLDER_ID
+        sync: false
+      - key: GOOGLE_DRIVE_SERVICE_ACCOUNT_BASE64
+        sync: false

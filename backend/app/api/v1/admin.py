@@ -1,5 +1,4 @@
 import os
-import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
@@ -59,6 +58,7 @@ from app.models.menu import MenuProductDetailResponse
 from app.models.auth import UserResponse
 from app.repositories.admin_repository import AdminRepository, get_admin_repository
 from app.repositories.user_repository import UserRepository, get_user_repository
+from app.services.image_storage import image_storage
 
 router = APIRouter()
 
@@ -506,13 +506,18 @@ async def upload_product_image(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ảnh không được vượt quá 5MB.",
         )
-    ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    os.makedirs(_UPLOADS_DIR, exist_ok=True)
-    filepath = os.path.join(_UPLOADS_DIR, filename)
-    with open(filepath, "wb") as f:
-        f.write(contents)
-    return AdminActionResponse(message=f"/uploads/{filename}")
+    try:
+        stored = await image_storage(_UPLOADS_DIR).save(
+            contents=contents,
+            original_filename=file.filename or "image.jpg",
+            content_type=file.content_type or "image/jpeg",
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Không thể lưu ảnh: {error}",
+        ) from error
+    return AdminActionResponse(message=stored.url)
 
 
 @router.get("/reviews", response_model=list[AdminProductReviewResponse])

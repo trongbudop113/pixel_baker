@@ -8,3 +8,5 @@ passlib[bcrypt]>=1.7.4,<2.0.0
 email-validator>=2.2.0,<3.0.0
 python-multipart>=0.0.9,<1.0.0
 aiosmtplib>=3.0.0,<4.0.0
+google-api-python-client>=2.140.0,<3.0.0
+google-auth>=2.34.0,<3.0.0

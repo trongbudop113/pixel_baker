@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_from_name: str = "Pixel Bakery"
+    image_storage_provider: str = "local"
+    google_drive_folder_id: str = ""
+    google_drive_service_account_json: str = ""
+    google_drive_service_account_base64: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

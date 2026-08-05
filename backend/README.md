@@ -74,6 +74,24 @@ Stop it with:
 make obs-down
 ```
 
+## Google Drive image storage
+
+Uploads use local `/uploads` by default. To store new admin-uploaded images in Google Drive, create a Google Cloud service account, enable the Google Drive API, share the target Drive folder with the service account email, then set these backend env vars:
+
+```bash
+IMAGE_STORAGE_PROVIDER=google_drive
+GOOGLE_DRIVE_FOLDER_ID=<drive-folder-id>
+GOOGLE_DRIVE_SERVICE_ACCOUNT_BASE64=<base64-service-account-json>
+```
+
+On macOS, create the base64 value with:
+
+```bash
+base64 -i service-account.json | tr -d '\n'
+```
+
+Uploaded files are made public read-only and the API returns an image URL that can be saved directly into product/category image fields.
+
 ## Import home page data
 
 Home page content is stored in:
