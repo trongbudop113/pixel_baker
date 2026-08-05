@@ -34,23 +34,28 @@ class ImageEditorDialog extends StatefulWidget {
 }
 
 class _ImageEditorDialogState extends State<ImageEditorDialog> {
-  late img.Image _original;
-  img.Image? _preview;
+  img.Image? _original;
   Uint8List? _previewBytes;
+  String? _errorMessage;
 
   ImageFilter _filter = ImageFilter.normal;
-  double _brightness = 0;   // -100 to 100
-  double _contrast = 0;     // -100 to 100
-  double _saturation = 0;   // -100 to 100
-  double _sharpness = 0;    // 0 to 100
-  int _rotation = 0;         // 0,90,180,270
+  double _brightness = 0; // -100 to 100
+  double _contrast = 0; // -100 to 100
+  double _saturation = 0; // -100 to 100
+  double _sharpness = 0; // 0 to 100
+  int _rotation = 0; // 0,90,180,270
   bool _flipH = false;
   bool _processing = false;
 
   @override
   void initState() {
     super.initState();
-    _original = img.decodeImage(widget.bytes)!;
+    _original = img.decodeImage(widget.bytes);
+    if (_original == null) {
+      _errorMessage =
+          'Không thể đọc định dạng ảnh này. Vui lòng chuyển ảnh sang JPG, PNG hoặc WebP rồi upload lại.';
+      return;
+    }
     _applyEdits();
   }
 
@@ -67,19 +72,23 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
   }
 
   Future<void> _applyEdits() async {
+    if (_original == null) return;
     setState(() => _processing = true);
     final result = await _processImage();
     setState(() {
-      _preview = result;
       _previewBytes = Uint8List.fromList(img.encodeJpg(result, quality: 90));
       _processing = false;
     });
   }
 
   Future<img.Image> _processImage() async {
+    final original = _original;
+    if (original == null) {
+      throw StateError('Unsupported image format.');
+    }
     img.Image src = img.copyResize(
-      _original,
-      width: _original.width.clamp(1, 1200),
+      original,
+      width: original.width.clamp(1, 1200),
       interpolation: img.Interpolation.linear,
     );
 
@@ -128,7 +137,9 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
         for (var y = 0; y < src.height; y++) {
           for (var x = 0; x < src.width; x++) {
             final p = src.getPixel(x, y);
-            src.setPixelRgb(x, y,
+            src.setPixelRgb(
+              x,
+              y,
               (p.r * 1.15).clamp(0, 255).toInt(),
               p.g.toInt(),
               (p.b * 0.85).clamp(0, 255).toInt(),
@@ -142,7 +153,9 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
         for (var y = 0; y < src.height; y++) {
           for (var x = 0; x < src.width; x++) {
             final p = src.getPixel(x, y);
-            src.setPixelRgb(x, y,
+            src.setPixelRgb(
+              x,
+              y,
               (p.r * 0.85).clamp(0, 255).toInt(),
               p.g.toInt(),
               (p.b * 1.15).clamp(0, 255).toInt(),
@@ -171,6 +184,22 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
   }
 
   Widget _previewWidget() {
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            _errorMessage!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFB91C1C),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+    }
     if (_processing || _previewBytes == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -180,21 +209,29 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
     );
   }
 
-  Widget _slider(String label, double value, double min, double max, ValueChanged<double> onChanged) {
+  Widget _slider(String label, double value, double min, double max,
+      ValueChanged<double>? onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(label,
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
           const Spacer(),
-          Text(value.toStringAsFixed(0), style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Text(value.toStringAsFixed(0),
+              style: const TextStyle(fontSize: 11, color: Colors.grey)),
         ]),
         Slider(
           value: value,
           min: min,
           max: max,
-          onChanged: (v) { setState(() => onChanged(v)); },
-          onChangeEnd: (_) => _applyEdits(),
+          onChanged: onChanged == null
+              ? null
+              : (v) {
+                  setState(() => onChanged(v));
+                },
+          onChangeEnd: onChanged == null ? null : (_) => _applyEdits(),
           activeColor: const Color(0xFF1E88E5),
         ),
       ],
@@ -203,6 +240,7 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final canEdit = _errorMessage == null;
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -222,9 +260,15 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                 children: [
                   const Icon(Icons.tune_rounded, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
-                  const Text('Chỉnh sửa ảnh', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  const Text('Chỉnh sửa ảnh',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800)),
                   const Spacer(),
-                  IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close, color: Colors.white)),
+                  IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white)),
                 ],
               ),
             ),
@@ -249,17 +293,21 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Rotate & Flip
-                          const Text('Xoay & Lật', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                          const Text('Xoay & Lật',
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 8),
                           Row(
                             children: [
                               _iconBtn(Icons.rotate_left, 'Trái', () {
-                                setState(() => _rotation = (_rotation - 90 + 360) % 360);
+                                setState(() =>
+                                    _rotation = (_rotation - 90 + 360) % 360);
                                 _applyEdits();
                               }),
                               const SizedBox(width: 8),
                               _iconBtn(Icons.rotate_right, 'Phải', () {
-                                setState(() => _rotation = (_rotation + 90) % 360);
+                                setState(
+                                    () => _rotation = (_rotation + 90) % 360);
                                 _applyEdits();
                               }),
                               const SizedBox(width: 8),
@@ -272,7 +320,9 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                           const Divider(height: 24),
 
                           // Filters
-                          const Text('Bộ lọc màu', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                          const Text('Bộ lọc màu',
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 6,
@@ -285,16 +335,26 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                                   _applyEdits();
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: active ? const Color(0xFF1E88E5) : const Color(0xFFF0F4F8),
+                                    color: active
+                                        ? const Color(0xFF1E88E5)
+                                        : const Color(0xFFF0F4F8),
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: active ? const Color(0xFF1E88E5) : Colors.grey.shade300),
+                                    border: Border.all(
+                                        color: active
+                                            ? const Color(0xFF1E88E5)
+                                            : Colors.grey.shade300),
                                   ),
-                                  child: Text(f.label, style: TextStyle(
-                                    fontSize: 11, fontWeight: FontWeight.w700,
-                                    color: active ? Colors.white : Colors.black87,
-                                  )),
+                                  child: Text(f.label,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: active
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      )),
                                 ),
                               );
                             }).toList(),
@@ -303,20 +363,28 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
 
                           // Auto enhance button
                           GestureDetector(
-                            onTap: _autoEnhance,
+                            onTap: canEdit ? _autoEnhance : null,
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(colors: [Color(0xFF1E88E5), Color(0xFF00A86B)]),
+                                gradient: const LinearGradient(colors: [
+                                  Color(0xFF1E88E5),
+                                  Color(0xFF00A86B)
+                                ]),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.auto_fix_high_rounded, color: Colors.white, size: 16),
+                                  Icon(Icons.auto_fix_high_rounded,
+                                      color: Colors.white, size: 16),
                                   SizedBox(width: 6),
-                                  Text('✨ Tự động nâng cao', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+                                  Text('✨ Tự động nâng cao',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             ),
@@ -324,30 +392,45 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                           const Divider(height: 24),
 
                           // Adjustments
-                          const Text('Điều chỉnh thủ công', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                          const Text('Điều chỉnh thủ công',
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 4),
-                          _slider('Độ sáng', _brightness, -80, 80, (v) => _brightness = v),
-                          _slider('Độ tương phản', _contrast, -80, 80, (v) => _contrast = v),
-                          _slider('Độ bão hòa', _saturation, -80, 80, (v) => _saturation = v),
-                          _slider('Làm sắc nét', _sharpness, 0, 100, (v) => _sharpness = v),
+                          _slider('Độ sáng', _brightness, -80, 80,
+                              canEdit ? (v) => _brightness = v : null),
+                          _slider('Độ tương phản', _contrast, -80, 80,
+                              canEdit ? (v) => _contrast = v : null),
+                          _slider('Độ bão hòa', _saturation, -80, 80,
+                              canEdit ? (v) => _saturation = v : null),
+                          _slider('Làm sắc nét', _sharpness, 0, 100,
+                              canEdit ? (v) => _sharpness = v : null),
 
                           // Reset
                           const SizedBox(height: 8),
                           GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _filter = ImageFilter.normal;
-                                _brightness = 0; _contrast = 0; _saturation = 0;
-                                _sharpness = 0; _rotation = 0; _flipH = false;
-                              });
-                              _applyEdits();
-                            },
+                            onTap: canEdit
+                                ? () {
+                                    setState(() {
+                                      _filter = ImageFilter.normal;
+                                      _brightness = 0;
+                                      _contrast = 0;
+                                      _saturation = 0;
+                                      _sharpness = 0;
+                                      _rotation = 0;
+                                      _flipH = false;
+                                    });
+                                    _applyEdits();
+                                  }
+                                : null,
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.refresh_rounded, size: 14, color: Colors.grey),
+                                Icon(Icons.refresh_rounded,
+                                    size: 14, color: Colors.grey),
                                 SizedBox(width: 4),
-                                Text('Đặt lại', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                Text('Đặt lại',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.grey)),
                               ],
                             ),
                           ),
@@ -373,9 +456,11 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
-                    onPressed: _processing ? null : () {
-                      Navigator.of(context).pop(_previewBytes);
-                    },
+                    onPressed: _processing || _previewBytes == null
+                        ? null
+                        : () {
+                            Navigator.of(context).pop(_previewBytes);
+                          },
                     icon: const Icon(Icons.check_rounded, size: 16),
                     label: const Text('Áp dụng'),
                     style: ElevatedButton.styleFrom(
@@ -398,7 +483,8 @@ class _ImageEditorDialogState extends State<ImageEditorDialog> {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: 40, height: 40,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: const Color(0xFFF0F4F8),
             borderRadius: BorderRadius.circular(8),

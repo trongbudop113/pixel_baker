@@ -331,6 +331,10 @@ class _ResponsiveAdminProductFormScreenState
     for (final file in result.files) {
       final bytes = file.bytes;
       if (bytes == null) continue;
+      if (_isUnsupportedImage(file.name, file.extension)) {
+        failedFiles.add('${file.name} (HEIC/HEIF chưa được hỗ trợ)');
+        continue;
+      }
 
       // Open image editor dialog before uploading
       Uint8List finalBytes = bytes;
@@ -372,6 +376,11 @@ class _ResponsiveAdminProductFormScreenState
       );
     }
     setState(() {});
+  }
+
+  bool _isUnsupportedImage(String filename, String? extension) {
+    final ext = (extension ?? filename.split('.').last).trim().toLowerCase();
+    return ext == 'heic' || ext == 'heif';
   }
 
   @override
