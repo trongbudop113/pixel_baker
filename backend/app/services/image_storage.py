@@ -82,6 +82,14 @@ class GoogleDriveImageStorage:
                 "Google Drive từ chối upload. Nếu dùng service account, hãy lưu ảnh trong Shared Drive "
                 "hoặc dùng OAuth của tài khoản Google thật."
             ) from error
+        except Exception as error:
+            if "invalid_grant" in str(error):
+                raise RuntimeError(
+                    "Google Drive OAuth token không hợp lệ. Hãy kiểm tra "
+                    "GOOGLE_DRIVE_OAUTH_CLIENT_ID, GOOGLE_DRIVE_OAUTH_CLIENT_SECRET và "
+                    "GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN có cùng một OAuth client không."
+                ) from error
+            raise
         file_id = created["id"]
         try:
             service.permissions().create(
