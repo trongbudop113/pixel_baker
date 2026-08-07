@@ -73,6 +73,14 @@ class AdminCategoryResponse(ApiModel):
     sortOrder: int = 0
 
 
+class AdminDriveImageResponse(ApiModel):
+    id: str
+    name: str
+    url: str
+    thumbnailUrl: str
+    createdAt: str
+
+
 class AdminCategoryUpsertRequest(ApiModel):
     label: str
     category: str

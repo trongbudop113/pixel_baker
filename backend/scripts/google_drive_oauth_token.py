@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 
 
-SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 REDIRECT_URI = "http://localhost:8765/oauth2callback"
 
 

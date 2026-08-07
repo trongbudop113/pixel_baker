@@ -59,6 +59,7 @@ abstract class AdminRepository {
   Future<List<AdminProductReviewModel>> fetchReviews();
   Future<void> deleteReview(int productId, String createdAt);
   Future<String> uploadImage(List<int> bytes, String filename, String mimeType);
+  Future<List<AdminDriveImageModel>> fetchDriveImages();
   Future<List<AdminIngredientExcelRow>> fetchIngredientExcelRows();
   Future<AdminBulkImportResultModel> importIngredientExcelRows(
       List<AdminIngredientExcelRow> rows);
@@ -662,6 +663,19 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
     // Prepend base URL so the returned path becomes a full URL
     final base = apiClient.config.baseUrl.replaceAll(RegExp(r'/api/v1$'), '');
     return url.startsWith('http') ? url : '$base$url';
+  }
+
+  @override
+  Future<List<AdminDriveImageModel>> fetchDriveImages() async {
+    final response = await apiClient.get<List<AdminDriveImageModel>>(
+      '/admin/drive-images',
+      requiresAuth: true,
+      decoder: (json) => readList(
+        _unwrapListPayload(json),
+        AdminDriveImageModel.fromJson,
+      ),
+    );
+    return response.data;
   }
 
   @override

@@ -19,6 +19,7 @@ from app.models.admin import (
     AdminCustomerExcelRow,
     AdminCustomerSegmentItem,
     AdminCustomerUpdateRequest,
+    AdminDriveImageResponse,
     AdminIngredientExcelImportRequest,
     AdminIngredientExcelRow,
     AdminIngredientResponse,
@@ -60,6 +61,7 @@ from app.models.auth import UserResponse
 from app.repositories.admin_repository import AdminRepository, get_admin_repository
 from app.repositories.user_repository import UserRepository, get_user_repository
 from app.services.image_storage import image_storage
+from app.services.image_storage import list_drive_images
 
 router = APIRouter()
 
@@ -550,6 +552,19 @@ def _convert_heic_to_jpeg(contents: bytes) -> bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Không thể đọc ảnh HEIC/HEIF. Vui lòng thử ảnh khác hoặc đổi sang JPG.",
+        ) from error
+
+
+@router.get("/drive-images", response_model=list[AdminDriveImageResponse])
+async def list_admin_drive_images(
+    _: UserResponse = Depends(require_admin_permission("products:view", "products:manage")),
+) -> list[AdminDriveImageResponse]:
+    try:
+        return await list_drive_images()
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Không thể tải ảnh Google Drive: {error}",
         ) from error
 
 

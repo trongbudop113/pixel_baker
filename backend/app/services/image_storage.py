@@ -13,6 +13,15 @@ class StoredImage:
     url: str
 
 
+@dataclass(frozen=True)
+class DriveImage:
+    id: str
+    name: str
+    url: str
+    thumbnailUrl: str
+    createdAt: str
+
+
 class LocalImageStorage:
     def __init__(self, upload_dir: str):
         self._upload_dir = upload_dir
@@ -47,19 +56,10 @@ class GoogleDriveImageStorage:
         if not self._folder_id:
             raise RuntimeError("GOOGLE_DRIVE_FOLDER_ID is missing.")
 
-        from google.oauth2 import service_account
-        from googleapiclient.discovery import build
         from googleapiclient.errors import HttpError
         from googleapiclient.http import MediaIoBaseUpload
 
-        scopes = ["https://www.googleapis.com/auth/drive.file"]
-        credentials = _google_oauth_credentials(scopes)
-        if credentials is None:
-            credentials = service_account.Credentials.from_service_account_info(
-                _google_service_account_info(),
-                scopes=scopes,
-            )
-        service = build("drive", "v3", credentials=credentials, cache_discovery=False)
+        service = _google_drive_service()
         filename = _safe_image_filename(original_filename)
         media = MediaIoBaseUpload(
             io.BytesIO(contents),
@@ -112,11 +112,63 @@ def image_storage(upload_dir: str):
     return LocalImageStorage(upload_dir)
 
 
+async def list_drive_images(limit: int = 60) -> list[DriveImage]:
+    if not settings.google_drive_folder_id.strip():
+        raise RuntimeError("GOOGLE_DRIVE_FOLDER_ID is missing.")
+
+    service = _google_drive_service()
+    query = (
+        f"'{settings.google_drive_folder_id.strip()}' in parents "
+        "and trashed = false and mimeType contains 'image/'"
+    )
+    response = (
+        service.files()
+        .list(
+            q=query,
+            pageSize=max(1, min(limit, 100)),
+            orderBy="createdTime desc",
+            fields="files(id,name,mimeType,thumbnailLink,createdTime)",
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
+        )
+        .execute()
+    )
+    images: list[DriveImage] = []
+    for file in response.get("files", []):
+        file_id = str(file.get("id", "")).strip()
+        if not file_id:
+            continue
+        images.append(
+            DriveImage(
+                id=file_id,
+                name=str(file.get("name") or "Ảnh Google Drive"),
+                url=f"https://lh3.googleusercontent.com/d/{file_id}",
+                thumbnailUrl=str(file.get("thumbnailLink") or f"https://lh3.googleusercontent.com/d/{file_id}"),
+                createdAt=str(file.get("createdTime") or ""),
+            )
+        )
+    return images
+
+
 def _safe_image_filename(original_filename: str) -> str:
     ext = (original_filename or "image.jpg").rsplit(".", 1)[-1].lower()
     if ext not in {"jpg", "jpeg", "png", "webp", "gif"}:
         ext = "jpg"
     return f"{uuid.uuid4().hex}.{ext}"
+
+
+def _google_drive_service():
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+
+    scopes = ["https://www.googleapis.com/auth/drive"]
+    credentials = _google_oauth_credentials(scopes)
+    if credentials is None:
+        credentials = service_account.Credentials.from_service_account_info(
+            _google_service_account_info(),
+            scopes=scopes,
+        )
+    return build("drive", "v3", credentials=credentials, cache_discovery=False)
 
 
 def _google_service_account_info() -> dict:

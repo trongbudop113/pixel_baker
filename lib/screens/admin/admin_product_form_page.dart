@@ -50,6 +50,9 @@ class _ResponsiveAdminProductFormScreenState
 
   bool _isLoading = false;
   bool _isSaving = false;
+  bool _isUploadingImages = false;
+  int _uploadingImageIndex = 0;
+  int _uploadingImageTotal = 0;
   String? _message;
   bool _isSuccess = false;
   List<AdminCategoryModel> _categories = const [];
@@ -317,6 +320,7 @@ class _ResponsiveAdminProductFormScreenState
   }
 
   Future<void> _pickImages() async {
+    if (_isUploadingImages) return;
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
@@ -329,46 +333,62 @@ class _ResponsiveAdminProductFormScreenState
     final uploadedUrls = <String>[];
     final failedFiles = <String>[];
 
-    for (final file in result.files) {
-      final bytes = file.bytes;
-      if (bytes == null) continue;
+    setState(() {
+      _isUploadingImages = true;
+      _uploadingImageIndex = 0;
+      _uploadingImageTotal = result.files.length;
+    });
 
-      final isHeic = _isHeicImage(file.name, file.extension);
+    try {
+      for (var i = 0; i < result.files.length; i++) {
+        final file = result.files[i];
+        if (mounted) {
+          setState(() => _uploadingImageIndex = i + 1);
+        }
+        final bytes = file.bytes;
+        if (bytes == null) continue;
 
-      Uint8List finalBytes = bytes;
-      var mime = _imageMimeType(file.name, file.extension);
-      var fname = file.name;
+        final isHeic = _isHeicImage(file.name, file.extension);
 
-      // HEIC/HEIF is converted by the backend because Flutter web cannot decode it.
-      if (!isHeic && mounted) {
-        final edited = await showDialog<Uint8List>(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => ImageEditorDialog(bytes: bytes, filename: file.name),
-        );
-        if (edited == null) continue; // User cancelled
-        finalBytes = edited;
-        mime = 'image/jpeg'; // editor always outputs JPEG
-        fname = file.name.replaceAll(RegExp(r'\.[^.]+$'), '.jpg');
+        Uint8List finalBytes = bytes;
+        var mime = _imageMimeType(file.name, file.extension);
+        var fname = file.name;
+
+        // HEIC/HEIF is converted by the backend because Flutter web cannot decode it.
+        if (!isHeic && mounted) {
+          final edited = await showDialog<Uint8List>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) =>
+                ImageEditorDialog(bytes: bytes, filename: file.name),
+          );
+          if (edited == null) continue; // User cancelled
+          finalBytes = edited;
+          mime = 'image/jpeg'; // editor always outputs JPEG
+          fname = file.name.replaceAll(RegExp(r'\.[^.]+$'), '.jpg');
+        }
+
+        try {
+          final url = await repository.uploadImage(finalBytes, fname, mime);
+          uploadedUrls.add(url);
+        } on ApiException catch (error) {
+          failedFiles.add('${file.name} (${error.message})');
+        } catch (_) {
+          failedFiles.add(file.name);
+        }
       }
-
-      try {
-        final url = await repository.uploadImage(finalBytes, fname, mime);
-        uploadedUrls.add(url);
-      } on ApiException catch (error) {
-        failedFiles.add('${file.name} (${error.message})');
-      } catch (_) {
-        failedFiles.add(file.name);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImages = false;
+          _uploadingImageIndex = 0;
+          _uploadingImageTotal = 0;
+        });
       }
     }
 
     if (uploadedUrls.isNotEmpty) {
-      final existing = _imagesController.text
-          .split('\n')
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
-          .toList();
-      _imagesController.text = [...existing, ...uploadedUrls].join('\n');
+      _appendImageUrls(uploadedUrls);
     }
 
     if (failedFiles.isNotEmpty && mounted) {
@@ -385,6 +405,30 @@ class _ResponsiveAdminProductFormScreenState
   bool _isHeicImage(String filename, String? extension) {
     final ext = (extension ?? filename.split('.').last).trim().toLowerCase();
     return ext == 'heic' || ext == 'heif';
+  }
+
+  void _appendImageUrls(List<String> urls) {
+    final cleanUrls = urls
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList(growable: false);
+    if (cleanUrls.isEmpty) return;
+    final existing = _imagesController.text
+        .split('\n')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+    _imagesController.text = [...existing, ...cleanUrls].join('\n');
+    setState(() {});
+  }
+
+  Future<void> _selectDriveImages() async {
+    final selected = await showDialog<List<String>>(
+      context: context,
+      builder: (_) => const _DriveImagePickerDialog(),
+    );
+    if (selected == null || selected.isEmpty) return;
+    _appendImageUrls(selected);
   }
 
   String _imageMimeType(String filename, String? extension) {
@@ -609,12 +653,36 @@ class _ResponsiveAdminProductFormScreenState
               ),
             ),
             TextButton.icon(
-              onPressed: _pickImages,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Upload ảnh'),
+              onPressed: _isUploadingImages ? null : _selectDriveImages,
+              icon: const Icon(Icons.photo_library_outlined),
+              label: const Text('Chọn từ Drive'),
+            ),
+            const SizedBox(width: 6),
+            TextButton.icon(
+              onPressed: _isUploadingImages ? null : _pickImages,
+              icon: _isUploadingImages
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.upload_file),
+              label: Text(
+                _isUploadingImages
+                    ? 'Đang upload $_uploadingImageIndex/$_uploadingImageTotal'
+                    : 'Upload ảnh',
+              ),
             ),
           ],
         ),
+        if (_isUploadingImages) ...[
+          const SizedBox(height: 6),
+          LinearProgressIndicator(
+            value: _uploadingImageTotal == 0
+                ? null
+                : _uploadingImageIndex / _uploadingImageTotal,
+          ),
+        ],
         const SizedBox(height: 6),
         _field('Danh sách ảnh, mỗi dòng 1 URL hoặc data URL', _imagesController,
             maxLines: 5),
@@ -778,4 +846,235 @@ class _ResponsiveAdminProductFormScreenState
           ),
         ),
       );
+}
+
+class _DriveImagePickerDialog extends StatefulWidget {
+  const _DriveImagePickerDialog();
+
+  @override
+  State<_DriveImagePickerDialog> createState() =>
+      _DriveImagePickerDialogState();
+}
+
+class _DriveImagePickerDialogState extends State<_DriveImagePickerDialog> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<AdminDriveImageModel> _images = const [];
+  final Set<String> _selectedUrls = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImages();
+  }
+
+  Future<void> _loadImages() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final images =
+          await AppServices.instance.adminRepository.fetchDriveImages();
+      if (!mounted) return;
+      setState(() {
+        _images = images;
+        _isLoading = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Không thể tải danh sách ảnh Google Drive.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760, maxHeight: 620),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Chọn ảnh từ Google Drive',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _isLoading ? null : _loadImages,
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Tải lại',
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Đóng',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(child: _body()),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text(
+                    'Đã chọn ${_selectedUrls.length} ảnh',
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Hủy'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: _selectedUrls.isEmpty
+                        ? null
+                        : () => Navigator.of(context)
+                            .pop(_selectedUrls.toList(growable: false)),
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text('Thêm ảnh'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _body() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(
+        child: Text(
+          _errorMessage!,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFFE53935),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+    if (_images.isEmpty) {
+      return const Center(
+        child: Text(
+          'Chưa có ảnh nào trong folder Google Drive.',
+          style: TextStyle(
+            color: Color(0xFF6B7280),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+    return GridView.builder(
+      itemCount: _images.length,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 150,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.88,
+      ),
+      itemBuilder: (context, index) {
+        final image = _images[index];
+        final isSelected = _selectedUrls.contains(image.url);
+        return InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            setState(() {
+              if (isSelected) {
+                _selectedUrls.remove(image.url);
+              } else {
+                _selectedUrls.add(image.url);
+              }
+            });
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFF1E88E5)
+                    : const Color(0xFFE5E7EB),
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(7)),
+                    child: Image.network(
+                      image.thumbnailUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const ColoredBox(
+                        color: Color(0xFFF3F4F6),
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(7),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        size: 16,
+                        color: isSelected
+                            ? const Color(0xFF1E88E5)
+                            : const Color(0xFF9CA3AF),
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          image.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

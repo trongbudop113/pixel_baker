@@ -332,6 +332,32 @@ class AdminCategoryModel {
   }
 }
 
+class AdminDriveImageModel {
+  const AdminDriveImageModel({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.thumbnailUrl,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String name;
+  final String url;
+  final String thumbnailUrl;
+  final String createdAt;
+
+  factory AdminDriveImageModel.fromJson(Map<String, dynamic> json) {
+    return AdminDriveImageModel(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      url: (json['url'] ?? '').toString(),
+      thumbnailUrl: (json['thumbnailUrl'] ?? json['url'] ?? '').toString(),
+      createdAt: (json['createdAt'] ?? '').toString(),
+    );
+  }
+}
+
 class AdminCategoryDraft {
   const AdminCategoryDraft({
     required this.label,

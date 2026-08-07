@@ -92,7 +92,7 @@ On macOS, create the base64 value with:
 base64 -i service-account.json | tr -d '\n'
 ```
 
-For a normal Gmail/My Drive folder, use OAuth instead of a service account so uploads use the storage quota of your Google account:
+For a normal Gmail/My Drive folder, use OAuth instead of a service account so uploads use the storage quota of your Google account. OAuth uses the Google Drive scope so the admin UI can also list already uploaded images from the configured folder:
 
 ```bash
 IMAGE_STORAGE_PROVIDER=google_drive
