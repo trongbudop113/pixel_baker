@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
@@ -485,8 +486,15 @@ async def list_admin_product_cost_reports(
     return await repository.list_product_cost_reports()
 
 
-_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-_MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+}
+_MAX_IMAGE_SIZE = 15 * 1024 * 1024  # 15 MB
 _UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "uploads")
 
 
@@ -504,13 +512,19 @@ async def upload_product_image(
     if len(contents) > _MAX_IMAGE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ảnh không được vượt quá 5MB.",
+            detail="Ảnh không được vượt quá 15MB.",
         )
+    content_type = file.content_type or "image/jpeg"
+    filename = file.filename or "image.jpg"
+    if content_type in {"image/heic", "image/heif"}:
+        contents = _convert_heic_to_jpeg(contents)
+        content_type = "image/jpeg"
+        filename = f"{os.path.splitext(filename)[0]}.jpg"
     try:
         stored = await image_storage(_UPLOADS_DIR).save(
             contents=contents,
-            original_filename=file.filename or "image.jpg",
-            content_type=file.content_type or "image/jpeg",
+            original_filename=filename,
+            content_type=content_type,
         )
     except Exception as error:
         raise HTTPException(
@@ -518,6 +532,25 @@ async def upload_product_image(
             detail=f"Không thể lưu ảnh: {error}",
         ) from error
     return AdminActionResponse(message=stored.url)
+
+
+def _convert_heic_to_jpeg(contents: bytes) -> bytes:
+    try:
+        from PIL import Image
+        from pillow_heif import register_heif_opener
+
+        register_heif_opener()
+        with Image.open(BytesIO(contents)) as image:
+            image = image.convert("RGB")
+            image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+            output = BytesIO()
+            image.save(output, format="JPEG", quality=90, optimize=True)
+            return output.getvalue()
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Không thể đọc ảnh HEIC/HEIF. Vui lòng thử ảnh khác hoặc đổi sang JPG.",
+        ) from error
 
 
 @router.get("/reviews", response_model=list[AdminProductReviewResponse])

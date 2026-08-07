@@ -168,16 +168,19 @@ class ApiClient {
       'file',
       bytes,
       filename: filename,
-      contentType: MediaType.parse(mimeType.isNotEmpty ? mimeType : 'image/jpeg'),
+      contentType:
+          MediaType.parse(mimeType.isNotEmpty ? mimeType : 'image/jpeg'),
     ));
     final streamed = await request.send();
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
-      throw Exception('Upload failed: ${streamed.statusCode}');
+      final payload = _decodeBody(body);
+      throw _mapHttpError(streamed.statusCode, payload);
     }
     // response body: {"data":{"message":"/uploads/filename.jpg"}}
     final decoded = jsonDecode(body);
-    final msg = (decoded['data']?['message'] ?? decoded['message'] ?? '').toString();
+    final msg =
+        (decoded['data']?['message'] ?? decoded['message'] ?? '').toString();
     return msg;
   }
 
@@ -340,7 +343,8 @@ class ApiClient {
     buffer.write(' -X ${method.name.toUpperCase()}');
 
     for (final entry in headers.entries) {
-      buffer.write(" -H '${_escapeForSingleQuotes('${entry.key}: ${entry.value}')}'");
+      buffer.write(
+          " -H '${_escapeForSingleQuotes('${entry.key}: ${entry.value}')}'");
     }
 
     if (body != null && body.isNotEmpty) {

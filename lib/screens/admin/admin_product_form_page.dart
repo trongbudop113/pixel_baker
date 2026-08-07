@@ -319,7 +319,8 @@ class _ResponsiveAdminProductFormScreenState
   Future<void> _pickImages() async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
-      type: FileType.image,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'],
       withData: true,
     );
     if (result == null) return;
@@ -331,14 +332,15 @@ class _ResponsiveAdminProductFormScreenState
     for (final file in result.files) {
       final bytes = file.bytes;
       if (bytes == null) continue;
-      if (_isUnsupportedImage(file.name, file.extension)) {
-        failedFiles.add('${file.name} (HEIC/HEIF chưa được hỗ trợ)');
-        continue;
-      }
 
-      // Open image editor dialog before uploading
+      final isHeic = _isHeicImage(file.name, file.extension);
+
       Uint8List finalBytes = bytes;
-      if (mounted) {
+      var mime = _imageMimeType(file.name, file.extension);
+      var fname = file.name;
+
+      // HEIC/HEIF is converted by the backend because Flutter web cannot decode it.
+      if (!isHeic && mounted) {
         final edited = await showDialog<Uint8List>(
           context: context,
           barrierDismissible: false,
@@ -346,13 +348,15 @@ class _ResponsiveAdminProductFormScreenState
         );
         if (edited == null) continue; // User cancelled
         finalBytes = edited;
+        mime = 'image/jpeg'; // editor always outputs JPEG
+        fname = file.name.replaceAll(RegExp(r'\.[^.]+$'), '.jpg');
       }
 
-      const mime = 'image/jpeg'; // editor always outputs JPEG
-      final fname = file.name.replaceAll(RegExp(r'\.[^.]+$'), '.jpg');
       try {
         final url = await repository.uploadImage(finalBytes, fname, mime);
         uploadedUrls.add(url);
+      } on ApiException catch (error) {
+        failedFiles.add('${file.name} (${error.message})');
       } catch (_) {
         failedFiles.add(file.name);
       }
@@ -378,9 +382,21 @@ class _ResponsiveAdminProductFormScreenState
     setState(() {});
   }
 
-  bool _isUnsupportedImage(String filename, String? extension) {
+  bool _isHeicImage(String filename, String? extension) {
     final ext = (extension ?? filename.split('.').last).trim().toLowerCase();
     return ext == 'heic' || ext == 'heif';
+  }
+
+  String _imageMimeType(String filename, String? extension) {
+    final ext = (extension ?? filename.split('.').last).trim().toLowerCase();
+    return switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'gif' => 'image/gif',
+      'heic' => 'image/heic',
+      'heif' => 'image/heif',
+      _ => 'image/jpeg',
+    };
   }
 
   @override
