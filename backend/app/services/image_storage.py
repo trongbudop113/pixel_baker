@@ -49,6 +49,7 @@ class GoogleDriveImageStorage:
 
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
+        from googleapiclient.errors import HttpError
         from googleapiclient.http import MediaIoBaseUpload
 
         credentials = service_account.Credentials.from_service_account_info(
@@ -62,21 +63,34 @@ class GoogleDriveImageStorage:
             mimetype=content_type,
             resumable=False,
         )
-        created = (
-            service.files()
-            .create(
-                body={"name": filename, "parents": [self._folder_id]},
-                media_body=media,
-                fields="id",
+        try:
+            created = (
+                service.files()
+                .create(
+                    body={"name": filename, "parents": [self._folder_id]},
+                    media_body=media,
+                    fields="id",
+                    supportsAllDrives=True,
+                )
+                .execute()
             )
-            .execute()
-        )
+        except HttpError as error:
+            raise RuntimeError(
+                "Google Drive từ chối upload. Nếu dùng service account, hãy lưu ảnh trong Shared Drive "
+                "hoặc dùng OAuth của tài khoản Google thật."
+            ) from error
         file_id = created["id"]
-        service.permissions().create(
-            fileId=file_id,
-            body={"role": "reader", "type": "anyone"},
-            fields="id",
-        ).execute()
+        try:
+            service.permissions().create(
+                fileId=file_id,
+                body={"role": "reader", "type": "anyone"},
+                fields="id",
+                supportsAllDrives=True,
+            ).execute()
+        except HttpError as error:
+            raise RuntimeError(
+                "Không thể public ảnh trên Google Drive. Kiểm tra quyền share công khai của folder."
+            ) from error
         return StoredImage(url=f"https://lh3.googleusercontent.com/d/{file_id}")
 
 
