@@ -76,7 +76,9 @@ make obs-down
 
 ## Google Drive image storage
 
-Uploads use local `/uploads` by default. To store new admin-uploaded images in Google Drive, create a Google Cloud service account, enable the Google Drive API, share the target Drive folder with the service account email, then set these backend env vars:
+Uploads use local `/uploads` by default. To store new admin-uploaded images in Google Drive, set `IMAGE_STORAGE_PROVIDER=google_drive`.
+
+For a Google Workspace Shared Drive, create a Google Cloud service account, enable the Google Drive API, share the target Shared Drive folder with the service account email, then set:
 
 ```bash
 IMAGE_STORAGE_PROVIDER=google_drive
@@ -89,6 +91,27 @@ On macOS, create the base64 value with:
 ```bash
 base64 -i service-account.json | tr -d '\n'
 ```
+
+For a normal Gmail/My Drive folder, use OAuth instead of a service account so uploads use the storage quota of your Google account:
+
+```bash
+IMAGE_STORAGE_PROVIDER=google_drive
+GOOGLE_DRIVE_FOLDER_ID=<drive-folder-id>
+GOOGLE_DRIVE_OAUTH_CLIENT_ID=<oauth-client-id>
+GOOGLE_DRIVE_OAUTH_CLIENT_SECRET=<oauth-client-secret>
+GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN=<oauth-refresh-token>
+```
+
+If the OAuth variables are present, the backend uses OAuth automatically. Otherwise it falls back to the service account variables.
+
+To generate the refresh token locally, create an OAuth client in Google Cloud, add `http://localhost:8765/oauth2callback` as a redirect URI if using a Web client, then run:
+
+```bash
+cd backend
+python scripts/google_drive_oauth_token.py
+```
+
+Open the printed URL, approve Drive access, and copy the printed `GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN` into Render.
 
 Uploaded files are made public read-only and the API returns an image URL that can be saved directly into product/category image fields.
 

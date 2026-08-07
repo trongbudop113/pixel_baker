@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     google_drive_folder_id: str = ""
     google_drive_service_account_json: str = ""
     google_drive_service_account_base64: str = ""
+    google_drive_oauth_client_id: str = ""
+    google_drive_oauth_client_secret: str = ""
+    google_drive_oauth_refresh_token: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

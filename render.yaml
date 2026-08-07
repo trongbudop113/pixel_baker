@@ -57,3 +57,9 @@ services:
         sync: false
       - key: GOOGLE_DRIVE_SERVICE_ACCOUNT_BASE64
         sync: false
+      - key: GOOGLE_DRIVE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_DRIVE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN
+        sync: false

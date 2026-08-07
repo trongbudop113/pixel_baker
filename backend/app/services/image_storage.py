@@ -52,10 +52,13 @@ class GoogleDriveImageStorage:
         from googleapiclient.errors import HttpError
         from googleapiclient.http import MediaIoBaseUpload
 
-        credentials = service_account.Credentials.from_service_account_info(
-            _google_service_account_info(),
-            scopes=["https://www.googleapis.com/auth/drive.file"],
-        )
+        scopes = ["https://www.googleapis.com/auth/drive.file"]
+        credentials = _google_oauth_credentials(scopes)
+        if credentials is None:
+            credentials = service_account.Credentials.from_service_account_info(
+                _google_service_account_info(),
+                scopes=scopes,
+            )
         service = build("drive", "v3", credentials=credentials, cache_discovery=False)
         filename = _safe_image_filename(original_filename)
         media = MediaIoBaseUpload(
@@ -115,3 +118,24 @@ def _google_service_account_info() -> dict:
     if settings.google_drive_service_account_json.strip():
         return json.loads(settings.google_drive_service_account_json)
     raise RuntimeError("Google Drive service account credentials are missing.")
+
+
+def _google_oauth_credentials(scopes: list[str]):
+    if not settings.google_drive_oauth_refresh_token.strip():
+        return None
+    if (
+        not settings.google_drive_oauth_client_id.strip()
+        or not settings.google_drive_oauth_client_secret.strip()
+    ):
+        raise RuntimeError("Google Drive OAuth client id/secret are missing.")
+
+    from google.oauth2.credentials import Credentials
+
+    return Credentials(
+        token=None,
+        refresh_token=settings.google_drive_oauth_refresh_token.strip(),
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=settings.google_drive_oauth_client_id.strip(),
+        client_secret=settings.google_drive_oauth_client_secret.strip(),
+        scopes=scopes,
+    )
