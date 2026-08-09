@@ -183,9 +183,7 @@ class _ResponsiveAdminProductFormScreenState
     final storageNote = _isSelectedSemiFinishedCategory
         ? ''
         : _storageNoteController.text.trim();
-    final deliveryNote = _isSelectedSemiFinishedCategory
-        ? ''
-        : _deliveryNoteController.text.trim();
+    const deliveryNote = '';
     final ingredientsText = _isSelectedSemiFinishedCategory
         ? ''
         : _ingredientsTextController.text.trim();
@@ -218,8 +216,6 @@ class _ResponsiveAdminProductFormScreenState
       if (weight.isEmpty) 'Khối lượng',
       if (!_isSelectedSemiFinishedCategory && storageNote.isEmpty)
         'Ghi chú bảo quản',
-      if (!_isSelectedSemiFinishedCategory && deliveryNote.isEmpty)
-        'Ghi chú giao hàng',
       if (!_isSelectedSemiFinishedCategory &&
           (priceValue == null || priceValue <= 0))
         'Giá',
@@ -568,8 +564,6 @@ class _ResponsiveAdminProductFormScreenState
           ],
         ),
         const SizedBox(height: 12),
-        _field('Ghi chú giao hàng', _deliveryNoteController),
-        const SizedBox(height: 12),
         _field('Mô tả', _descriptionController, maxLines: 4),
         const SizedBox(height: 12),
         _field('Thành phần', _ingredientsTextController, maxLines: 3),
@@ -615,8 +609,6 @@ class _ResponsiveAdminProductFormScreenState
       if (showWebSaleFields) ...[
         const SizedBox(height: 12),
         _field('Ghi chú bảo quản', _storageNoteController),
-        const SizedBox(height: 12),
-        _field('Ghi chú giao hàng', _deliveryNoteController),
         const SizedBox(height: 12),
         _field('Mô tả', _descriptionController, maxLines: 4),
         const SizedBox(height: 12),
