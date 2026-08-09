@@ -189,7 +189,9 @@ class _ResponsiveAdminProductFormScreenState
     final ingredientsText = _isSelectedSemiFinishedCategory
         ? ''
         : _ingredientsTextController.text.trim();
-    final priceValue = int.tryParse(_priceController.text.trim());
+    final priceValue = _isSelectedSemiFinishedCategory
+        ? 0
+        : int.tryParse(_priceController.text.trim());
     final images = _imagesController.text
         .split('\n')
         .map((item) => item.trim())
@@ -218,7 +220,9 @@ class _ResponsiveAdminProductFormScreenState
         'Ghi chú bảo quản',
       if (!_isSelectedSemiFinishedCategory && deliveryNote.isEmpty)
         'Ghi chú giao hàng',
-      if (priceValue == null || priceValue <= 0) 'Giá',
+      if (!_isSelectedSemiFinishedCategory &&
+          (priceValue == null || priceValue <= 0))
+        'Giá',
       if (images.isEmpty) 'Ảnh',
     ];
     if (missingFields.isNotEmpty) {
@@ -232,7 +236,7 @@ class _ResponsiveAdminProductFormScreenState
     return AdminProductDraft(
       title: title,
       category: category,
-      priceValue: priceValue!,
+      priceValue: priceValue ?? 0,
       description: description,
       images: images,
       sku: sku,
@@ -541,10 +545,12 @@ class _ResponsiveAdminProductFormScreenState
       const SizedBox(height: 12),
       Row(
         children: [
-          Expanded(
-              child: _field('Giá', _priceController,
-                  keyboardType: TextInputType.number)),
-          const SizedBox(width: 12),
+          if (showWebSaleFields) ...[
+            Expanded(
+                child: _field('Giá', _priceController,
+                    keyboardType: TextInputType.number)),
+            const SizedBox(width: 12),
+          ],
           Expanded(child: _field('SKU', _skuController)),
           if (showWebSaleFields) ...[
             const SizedBox(width: 12),
@@ -594,8 +600,10 @@ class _ResponsiveAdminProductFormScreenState
       _field('Tên sản phẩm', _titleController),
       const SizedBox(height: 12),
       _categoryDropdown(),
-      const SizedBox(height: 12),
-      _field('Giá', _priceController, keyboardType: TextInputType.number),
+      if (showWebSaleFields) ...[
+        const SizedBox(height: 12),
+        _field('Giá', _priceController, keyboardType: TextInputType.number),
+      ],
       const SizedBox(height: 12),
       _field('SKU', _skuController),
       if (showWebSaleFields) ...[

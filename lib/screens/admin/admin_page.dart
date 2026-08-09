@@ -4112,42 +4112,44 @@ class _RecipeCard extends StatelessWidget {
               color: accentColor,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Cost theo mẻ: ${_formatCurrency(recipe.totalCost)}',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AdminColors.green,
+          if (!_isSemiFinished) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Cost theo mẻ: ${_formatCurrency(recipe.totalCost)}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AdminColors.green,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Cost / ${recipe.yieldUnit}: ${_formatCurrency(recipe.costPerUnit)}',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AdminColors.blue,
+            const SizedBox(height: 4),
+            Text(
+              'Cost / ${recipe.yieldUnit}: ${_formatCurrency(recipe.costPerUnit)}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AdminColors.blue,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Giá bán / ${recipe.yieldUnit}: ${_formatCurrency(recipe.sellingPrice)}',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AdminColors.textDark,
+            const SizedBox(height: 4),
+            Text(
+              'Giá bán / ${recipe.yieldUnit}: ${_formatCurrency(recipe.sellingPrice)}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AdminColors.textDark,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Lợi nhuận gộp ước tính: ${_formatCurrency(recipe.grossProfitEstimate)} • ${recipe.grossMarginPercent.toStringAsFixed(1)}%',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AdminColors.green,
+            const SizedBox(height: 4),
+            Text(
+              'Lợi nhuận gộp ước tính: ${_formatCurrency(recipe.grossProfitEstimate)} • ${recipe.grossMarginPercent.toStringAsFixed(1)}%',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AdminColors.green,
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 8),
           ...recipe.ingredients.map((ingredient) {
             return Padding(
@@ -4159,7 +4161,7 @@ class _RecipeCard extends StatelessWidget {
               ),
             );
           }),
-          if (_semiFinishedIngredients.length >= 2) ...[
+          if (!_isSemiFinished && _semiFinishedIngredients.length >= 2) ...[
             const SizedBox(height: 8),
             _RecipeOptionCostPanel(
               recipe: recipe,
