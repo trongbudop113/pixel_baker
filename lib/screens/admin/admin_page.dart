@@ -6,7 +6,6 @@ import '../../app/models/admin_models.dart';
 import '../../app/models/auth_page_models.dart';
 import '../../app/models/contact_models.dart';
 import '../../app/models/home_models.dart';
-import '../../app/models/menu_models.dart';
 import '../../app/models/story_models.dart';
 import '../../app/routing/app_router.dart';
 import '../../app/services/app_services.dart';
@@ -4057,10 +4056,6 @@ class _RecipeCard extends StatelessWidget {
   final AdminState state;
 
   bool get _isSemiFinished => recipe.recipeType == 'semi_finished';
-  List<AdminRecipeIngredientModel> get _semiFinishedIngredients =>
-      recipe.ingredients
-          .where((ingredient) => ingredient.sourceType == 'recipe')
-          .toList(growable: false);
 
   @override
   Widget build(BuildContext context) {
@@ -4152,13 +4147,6 @@ class _RecipeCard extends StatelessWidget {
               ),
             );
           }),
-          if (!_isSemiFinished && _semiFinishedIngredients.length >= 2) ...[
-            const SizedBox(height: 8),
-            _RecipeOptionCostPanel(
-              recipe: recipe,
-              semiFinishedIngredients: _semiFinishedIngredients,
-            ),
-          ],
           if (!_isSemiFinished && recipe.optionGroups.isNotEmpty) ...[
             const SizedBox(height: 8),
             _ProductOptionRecipePanel(recipe: recipe),
@@ -4209,179 +4197,6 @@ class _RecipeCard extends StatelessWidget {
   }
 }
 
-class _RecipeOptionCostPanel extends StatelessWidget {
-  const _RecipeOptionCostPanel({
-    required this.recipe,
-    required this.semiFinishedIngredients,
-  });
-
-  final AdminRecipeModel recipe;
-  final List<AdminRecipeIngredientModel> semiFinishedIngredients;
-
-  @override
-  Widget build(BuildContext context) {
-    final totalSemiCostPerUnit = semiFinishedIngredients.fold<int>(
-      0,
-      (sum, ingredient) => sum + _ingredientCostPerUnit(ingredient),
-    );
-    final optionalIngredients = semiFinishedIngredients
-        .where(_isOptionalCombineIngredient)
-        .toList(growable: false);
-    final optionIngredients = optionalIngredients.isNotEmpty
-        ? optionalIngredients
-        : semiFinishedIngredients;
-    final singleChoiceMultiplier =
-        optionalIngredients.isEmpty ? optionIngredients.length : 1;
-    final options = <_RecipeCostOption>[
-      _RecipeCostOption(
-        label: 'Tất cả',
-        description: semiFinishedIngredients
-            .map((ingredient) => ingredient.ingredientName)
-            .join(', '),
-        costPerUnit: recipe.costPerUnit,
-        delta: 0,
-        isDefault: true,
-      ),
-      ...optionIngredients.map((ingredient) {
-        final keptCost = _ingredientCostPerUnit(ingredient);
-        final delta = optionalIngredients.isNotEmpty
-            ? -keptCost
-            : (keptCost * singleChoiceMultiplier) - totalSemiCostPerUnit;
-        final nextCost = recipe.costPerUnit + delta;
-        final labelSuffix =
-            singleChoiceMultiplier > 1 ? ' (x$singleChoiceMultiplier)' : '';
-        return _RecipeCostOption(
-          label: optionalIngredients.isNotEmpty
-              ? 'Không ${ingredient.ingredientName}'
-              : 'Chỉ ${ingredient.ingredientName}$labelSuffix',
-          description: optionalIngredients.isNotEmpty
-              ? 'Giữ các bán thành phẩm còn lại'
-              : 'Dùng $singleChoiceMultiplier phần ${ingredient.ingredientName}',
-          costPerUnit: nextCost < 0 ? 0 : nextCost,
-          delta: delta,
-        );
-      }),
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFD8E3F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Option tính cost',
-            style: TextStyle(
-              color: AdminColors.textDark,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: options.map((option) {
-              final optionSellingPrice = (recipe.sellingPrice + option.delta)
-                  .clamp(0, 1 << 31)
-                  .toInt();
-
-              return Container(
-                width: 220,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color:
-                      option.isDefault ? const Color(0xFFEFF6FF) : Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: option.isDefault
-                        ? AdminColors.blue
-                        : const Color(0xFFE5E7EB),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      option.label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AdminColors.textDark,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      option.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AdminColors.textSoft,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Cost / ${recipe.yieldUnit}: ${_formatCurrency(option.costPerUnit)}',
-                      style: const TextStyle(
-                        color: AdminColors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Giá bán / ${recipe.yieldUnit}: ${_formatCurrency(optionSellingPrice)}',
-                      style: const TextStyle(
-                        color: AdminColors.textDark,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (!option.isDefault) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'Chênh lệch: ${_formatSignedCurrency(option.delta)}',
-                        style: TextStyle(
-                          color: option.delta < 0
-                              ? AdminColors.orange
-                              : AdminColors.green,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }).toList(growable: false),
-          ),
-        ],
-      ),
-    );
-  }
-
-  int _ingredientCostPerUnit(AdminRecipeIngredientModel ingredient) {
-    final yieldQuantity = recipe.yieldQuantity <= 0 ? 1 : recipe.yieldQuantity;
-    return (ingredient.lineCost / yieldQuantity).round();
-  }
-
-  bool _isOptionalCombineIngredient(AdminRecipeIngredientModel ingredient) {
-    final name = ingredient.ingredientName.toLowerCase();
-    return name.contains('phủ') ||
-        name.contains('topping') ||
-        name.contains('trang trí');
-  }
-}
-
 class _ProductOptionRecipePanel extends StatelessWidget {
   const _ProductOptionRecipePanel({required this.recipe});
 
@@ -4389,7 +4204,6 @@ class _ProductOptionRecipePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final saltedEggUnitCost = _saltedEggUnitCost();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(10),
@@ -4411,8 +4225,6 @@ class _ProductOptionRecipePanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ...recipe.optionGroups.map((group) {
-            final defaultOption = _defaultOption(group);
-            final defaultEggCount = _eggCount(defaultOption?.label);
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Column(
@@ -4433,18 +4245,6 @@ class _ProductOptionRecipePanel extends StatelessWidget {
                     children: group.options.map((option) {
                       final optionSellingPrice =
                           (recipe.sellingPrice + option.priceDelta)
-                              .clamp(0, 1 << 31)
-                              .toInt();
-                      final optionEggCount = _eggCount(option.label);
-                      final costDelta = saltedEggUnitCost == null ||
-                              defaultEggCount == null ||
-                              optionEggCount == null
-                          ? null
-                          : (optionEggCount - defaultEggCount) *
-                              saltedEggUnitCost;
-                      final optionCost = costDelta == null
-                          ? null
-                          : (recipe.costPerUnit + costDelta)
                               .clamp(0, 1 << 31)
                               .toInt();
                       return Container(
@@ -4475,17 +4275,6 @@ class _ProductOptionRecipePanel extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            Text(
-                              optionCost == null
-                                  ? 'Cost: chưa map nguyên liệu'
-                                  : 'Cost / ${recipe.yieldUnit}: ${_formatCurrency(optionCost)}',
-                              style: const TextStyle(
-                                color: AdminColors.green,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
                             Text(
                               'Giá bán / ${recipe.yieldUnit}: ${_formatCurrency(optionSellingPrice)}',
                               style: const TextStyle(
@@ -4520,49 +4309,6 @@ class _ProductOptionRecipePanel extends StatelessWidget {
       ),
     );
   }
-
-  ProductOptionItem? _defaultOption(ProductOptionGroup group) {
-    for (final option in group.options) {
-      if (option.isDefault) {
-        return option;
-      }
-    }
-    return group.options.isEmpty ? null : group.options.first;
-  }
-
-  int? _eggCount(String? label) {
-    if (label == null) return null;
-    final normalized = label.toLowerCase();
-    if (!normalized.contains('trứng')) return null;
-    final match = RegExp(r'\d+').firstMatch(normalized);
-    return match == null ? null : int.tryParse(match.group(0)!);
-  }
-
-  int? _saltedEggUnitCost() {
-    for (final ingredient in recipe.ingredients) {
-      final name = ingredient.ingredientName.toLowerCase();
-      if (name.contains('trứng muối')) {
-        return ingredient.unitPrice;
-      }
-    }
-    return null;
-  }
-}
-
-class _RecipeCostOption {
-  const _RecipeCostOption({
-    required this.label,
-    required this.description,
-    required this.costPerUnit,
-    required this.delta,
-    this.isDefault = false,
-  });
-
-  final String label;
-  final String description;
-  final int costPerUnit;
-  final int delta;
-  final bool isDefault;
 }
 
 String _recipeYieldLabel(AdminRecipeModel recipe) {
