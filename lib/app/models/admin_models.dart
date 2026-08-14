@@ -1000,6 +1000,7 @@ class AdminRecipeModel {
     required this.sellingPrice,
     required this.grossProfitEstimate,
     required this.grossMarginPercent,
+    this.optionGroups = const [],
     required this.createdAt,
   });
 
@@ -1015,6 +1016,7 @@ class AdminRecipeModel {
   final int sellingPrice;
   final int grossProfitEstimate;
   final double grossMarginPercent;
+  final List<ProductOptionGroup> optionGroups;
   final String createdAt;
 
   factory AdminRecipeModel.fromJson(Map<String, dynamic> json) {
@@ -1035,6 +1037,11 @@ class AdminRecipeModel {
       sellingPrice: (json['sellingPrice'] as num?)?.toInt() ?? 0,
       grossProfitEstimate: (json['grossProfitEstimate'] as num?)?.toInt() ?? 0,
       grossMarginPercent: (json['grossMarginPercent'] as num?)?.toDouble() ?? 0,
+      optionGroups: ((json['optionGroups'] as List?) ?? const [])
+          .map((item) => ProductOptionGroup.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ))
+          .toList(growable: false),
       createdAt: (json['createdAt'] ?? '').toString(),
     );
   }

@@ -249,6 +249,7 @@ class AdminRecipeResponse(ApiModel):
     sellingPrice: int = 0
     grossProfitEstimate: int = 0
     grossMarginPercent: float = 0
+    optionGroups: List[Dict[str, Any]] = []
     createdAt: str
 
 

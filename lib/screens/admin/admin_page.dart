@@ -6,6 +6,7 @@ import '../../app/models/admin_models.dart';
 import '../../app/models/auth_page_models.dart';
 import '../../app/models/contact_models.dart';
 import '../../app/models/home_models.dart';
+import '../../app/models/menu_models.dart';
 import '../../app/models/story_models.dart';
 import '../../app/routing/app_router.dart';
 import '../../app/services/app_services.dart';
@@ -4168,6 +4169,10 @@ class _RecipeCard extends StatelessWidget {
               semiFinishedIngredients: _semiFinishedIngredients,
             ),
           ],
+          if (!_isSemiFinished && recipe.optionGroups.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _ProductOptionRecipePanel(recipe: recipe),
+          ],
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -4378,6 +4383,173 @@ class _RecipeOptionCostPanel extends StatelessWidget {
     return name.contains('phủ') ||
         name.contains('topping') ||
         name.contains('trang trí');
+  }
+}
+
+class _ProductOptionRecipePanel extends StatelessWidget {
+  const _ProductOptionRecipePanel({required this.recipe});
+
+  final AdminRecipeModel recipe;
+
+  @override
+  Widget build(BuildContext context) {
+    final saltedEggUnitCost = _saltedEggUnitCost();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Option sản phẩm',
+            style: TextStyle(
+              color: AdminColors.textDark,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...recipe.optionGroups.map((group) {
+            final defaultOption = _defaultOption(group);
+            final defaultEggCount = _eggCount(defaultOption?.label);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    group.label,
+                    style: const TextStyle(
+                      color: AdminColors.textSoft,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: group.options.map((option) {
+                      final optionSellingPrice =
+                          (recipe.sellingPrice + option.priceDelta)
+                              .clamp(0, 1 << 31)
+                              .toInt();
+                      final optionEggCount = _eggCount(option.label);
+                      final costDelta = saltedEggUnitCost == null ||
+                              defaultEggCount == null ||
+                              optionEggCount == null
+                          ? null
+                          : (optionEggCount - defaultEggCount) *
+                              saltedEggUnitCost;
+                      final optionCost = costDelta == null
+                          ? null
+                          : (recipe.costPerUnit + costDelta)
+                              .clamp(0, 1 << 31)
+                              .toInt();
+                      return Container(
+                        width: 210,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: option.isDefault
+                              ? const Color(0xFFFFF7ED)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: option.isDefault
+                                ? AdminColors.orange
+                                : const Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              option.label,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AdminColors.textDark,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              optionCost == null
+                                  ? 'Cost: chưa map nguyên liệu'
+                                  : 'Cost / ${recipe.yieldUnit}: ${_formatCurrency(optionCost)}',
+                              style: const TextStyle(
+                                color: AdminColors.green,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Giá bán / ${recipe.yieldUnit}: ${_formatCurrency(optionSellingPrice)}',
+                              style: const TextStyle(
+                                color: AdminColors.textDark,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (!option.isDefault) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Giá lệch: ${_formatSignedCurrency(option.priceDelta)}',
+                                style: TextStyle(
+                                  color: option.priceDelta < 0
+                                      ? AdminColors.orange
+                                      : AdminColors.green,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }).toList(growable: false),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  ProductOptionItem? _defaultOption(ProductOptionGroup group) {
+    for (final option in group.options) {
+      if (option.isDefault) {
+        return option;
+      }
+    }
+    return group.options.isEmpty ? null : group.options.first;
+  }
+
+  int? _eggCount(String? label) {
+    if (label == null) return null;
+    final normalized = label.toLowerCase();
+    if (!normalized.contains('trứng')) return null;
+    final match = RegExp(r'\d+').firstMatch(normalized);
+    return match == null ? null : int.tryParse(match.group(0)!);
+  }
+
+  int? _saltedEggUnitCost() {
+    for (final ingredient in recipe.ingredients) {
+      final name = ingredient.ingredientName.toLowerCase();
+      if (name.contains('trứng muối')) {
+        return ingredient.unitPrice;
+      }
+    }
+    return null;
   }
 }
 

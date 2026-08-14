@@ -1365,7 +1365,24 @@ class AdminRepository:
 
     async def list_recipes(self) -> list[AdminRecipeResponse]:
         documents = await self._recipes.find({}).sort("createdAt", -1).to_list(length=500)
-        return [self._map_recipe(document) for document in documents]
+        product_ids = [int(document.get("productId") or 0) for document in documents]
+        products = await self._products.find(
+            {"id": {"$in": product_ids}},
+            {"id": 1, "optionGroups": 1},
+        ).to_list(length=500)
+        option_groups_by_product_id = {
+            int(product.get("id") or 0): list(product.get("optionGroups") or [])
+            for product in products
+        }
+        return [
+            self._map_recipe(
+                document,
+                option_groups=option_groups_by_product_id.get(
+                    int(document.get("productId") or 0),
+                ),
+            )
+            for document in documents
+        ]
 
     async def get_recipe_options(self) -> AdminRecipeOptionsResponse:
         return await self.get_recipe_options_for_edit()
@@ -1428,7 +1445,14 @@ class AdminRepository:
         document = await self._recipes.find_one({"id": recipe_id})
         if document is None:
             return None
-        return self._map_recipe(document)
+        product = await self._products.find_one(
+            {"id": int(document.get("productId") or 0)},
+            {"optionGroups": 1},
+        )
+        return self._map_recipe(
+            document,
+            option_groups=list(product.get("optionGroups") or []) if product else None,
+        )
 
     async def create_recipe(
         self,
@@ -2397,7 +2421,12 @@ class AdminRepository:
             lastUpdatedAt=str(document.get("lastUpdatedAt") or ""),
         )
 
-    def _map_recipe(self, document) -> AdminRecipeResponse:
+    def _map_recipe(
+        self,
+        document,
+        *,
+        option_groups: Optional[list[dict]] = None,
+    ) -> AdminRecipeResponse:
         ingredients = [
             AdminRecipeIngredientResponse(
                 ingredientId=str(item.get("ingredientId") or ""),
@@ -2428,6 +2457,7 @@ class AdminRepository:
             sellingPrice=product_price,
             grossProfitEstimate=gross_profit,
             grossMarginPercent=gross_margin,
+            optionGroups=list(option_groups if option_groups is not None else document.get("optionGroups") or []),
             createdAt=str(document.get("createdAt") or ""),
         )
 
@@ -2516,6 +2546,7 @@ class AdminRepository:
             "totalCost": total_cost,
             "costPerUnit": cost_per_unit,
             "sellingPrice": int(product.get("priceValue") or 0),
+            "optionGroups": list(product.get("optionGroups") or []),
             "createdAt": created_at,
         }
 
