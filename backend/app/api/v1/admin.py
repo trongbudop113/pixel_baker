@@ -887,6 +887,27 @@ async def sync_admin_recipes(
         ) from error
 
 
+@router.post("/recipes/{recipe_id}/sync", response_model=AdminRecipeResponse)
+async def sync_admin_recipe(
+    recipe_id: str,
+    _: UserResponse = Depends(require_admin_permission("recipes:manage")),
+    repository: AdminRepository = Depends(get_admin_repository),
+) -> AdminRecipeResponse:
+    try:
+        recipe = await repository.sync_recipe(recipe_id)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
+        ) from error
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy công thức.",
+        )
+    return recipe
+
+
 @router.get("/recipes/{recipe_id}", response_model=AdminRecipeResponse)
 async def get_admin_recipe(
     recipe_id: str,

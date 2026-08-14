@@ -1508,6 +1508,10 @@ class AdminRepository:
                 await self._sync_recipe_by_id(recipe_id, synced, set())
         return await self.list_recipes()
 
+    async def sync_recipe(self, recipe_id: str) -> Optional[AdminRecipeResponse]:
+        await self._sync_recipe_by_id(recipe_id, set(), set())
+        return await self.get_recipe(recipe_id)
+
     async def _sync_recipe_by_id(
         self,
         recipe_id: str,

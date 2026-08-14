@@ -1057,10 +1057,6 @@ class _RecipesManagementSection extends StatelessWidget {
           ],
           if (state.canManageRecipes) ...[
             _MiniActionButton(
-              label: 'Đồng bộ',
-              onTap: state.isUpdating ? null : state.syncRecipes,
-            ),
-            _MiniActionButton(
               label: 'Nhập Excel',
               onTap: state.isUpdating ? null : () => _importRecipes(context),
             ),
@@ -3909,12 +3905,6 @@ class _MobileAdminRecipesSection extends StatelessWidget {
         runSpacing: 8,
         children: [
           _MiniActionButton(
-            label: 'Đồng bộ',
-            onTap: state.canManageRecipes && !state.isUpdating
-                ? state.syncRecipes
-                : null,
-          ),
-          _MiniActionButton(
             label: 'Tạo',
             onTap: state.canManageRecipes
                 ? () => context.goNamed(
@@ -4192,6 +4182,12 @@ class _RecipeCard extends StatelessWidget {
                 onTap: state.canManageRecipes
                     ? () => _openCopyRecipeDialog(context, state, recipe)
                     : null,
+              ),
+              _MiniActionButton(
+                label: 'Đồng bộ',
+                onTap: !state.canManageRecipes || state.isUpdating
+                    ? null
+                    : () => state.syncRecipe(recipe),
               ),
               _MiniActionButton(
                 label: 'Xóa',

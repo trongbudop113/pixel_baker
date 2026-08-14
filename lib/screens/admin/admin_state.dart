@@ -780,6 +780,23 @@ class AdminState extends ScreenController<AdminViewState, Never> {
     );
   }
 
+  Future<void> syncRecipe(AdminRecipeModel recipe) async {
+    await _wrapUpdate(
+      action: () async {
+        final syncedRecipe = await _repository.syncRecipe(recipe.id);
+        final productCostReports = await _repository.fetchProductCostReports();
+        update((current) => current.copyWith(
+              recipes: [
+                for (final item in current.recipes)
+                  if (item.id == syncedRecipe.id) syncedRecipe else item,
+              ],
+              productCostReports: productCostReports,
+            ));
+      },
+      fallbackMessage: 'Không thể đồng bộ công thức.',
+    );
+  }
+
   Future<void> copyRecipe(AdminRecipeModel recipe, int productId) async {
     await _wrapUpdate(
       action: () async {

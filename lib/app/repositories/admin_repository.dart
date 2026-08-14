@@ -78,6 +78,7 @@ abstract class AdminRepository {
   Future<AdminRecipeModel> updateRecipe(
       String recipeId, AdminRecipeDraft draft);
   Future<List<AdminRecipeModel>> syncRecipes();
+  Future<AdminRecipeModel> syncRecipe(String recipeId);
   Future<AdminRecipeModel> copyRecipe(String recipeId, int productId);
   Future<void> deleteRecipe(String recipeId);
   Future<AdminIngredientModel> updateIngredient(
@@ -879,6 +880,17 @@ class ApiAdminRepository extends BaseApiRepository implements AdminRepository {
         _unwrapListPayload(json),
         AdminRecipeModel.fromJson,
       ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<AdminRecipeModel> syncRecipe(String recipeId) async {
+    final response = await apiClient.post<AdminRecipeModel>(
+      '/admin/recipes/$recipeId/sync',
+      requiresAuth: true,
+      decoder: (json) =>
+          readItem(_unwrapItemPayload(json), AdminRecipeModel.fromJson),
     );
     return response.data;
   }
